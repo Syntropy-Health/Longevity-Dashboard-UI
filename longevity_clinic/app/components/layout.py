@@ -26,7 +26,7 @@ def authenticated_layout(content: rx.Component) -> rx.Component:
                 content,
                 class_name="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 scroll-smooth scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-600/30",
             ),
-            class_name="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative",
+            class_name="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative md:ml-64",
         ),
         class_name=f"flex h-screen w-full font-['Open_Sans'] {GlassStyles.PAGE_BG} antialiased selection:bg-teal-500/20 selection:text-teal-100 bg-fixed",
     )

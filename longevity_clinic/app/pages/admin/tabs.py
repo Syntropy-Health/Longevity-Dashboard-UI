@@ -43,11 +43,11 @@ def efficiency_tab() -> rx.Component:
         rx.el.div(
             rx.el.h2(
                 "Clinical Operational Efficiency",
-                class_name=f"text-xl {GlassStyles.HEADING_LIGHT}",
+                class_name="text-xl font-bold text-white",
             ),
             rx.el.p(
                 "Monitor and optimize clinic performance metrics",
-                class_name=GlassStyles.SUBHEADING_LIGHT,
+                class_name="text-slate-400 text-sm mt-1",
             ),
             class_name="mb-6",
         ),
@@ -115,7 +115,7 @@ def efficiency_tab() -> rx.Component:
         # Provider Performance
         rx.el.div(
             rx.el.div(
-                rx.el.h3("Provider Performance", class_name="text-lg font-bold text-gray-800 mb-4"),
+                rx.el.h3("Provider Performance", class_name="text-lg font-bold text-white mb-4"),
                 rx.el.div(
                     rx.foreach(
                         [
@@ -127,14 +127,14 @@ def efficiency_tab() -> rx.Component:
                         lambda p: rx.el.div(
                             rx.el.div(
                                 rx.el.div(
-                                    rx.el.span("D", class_name="text-sm font-bold text-teal-600"),
-                                    class_name="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center",
+                                    rx.el.span("D", class_name="text-sm font-bold text-teal-300"),
+                                    class_name="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center border border-teal-500/30",
                                 ),
                                 rx.el.div(
-                                    rx.el.p(p["name"], class_name="font-medium text-gray-900"),
+                                    rx.el.p(p["name"], class_name="font-medium text-white"),
                                     rx.el.p(
                                         f"{p['patients']} patients this month",
-                                        class_name="text-sm text-gray-500",
+                                        class_name="text-sm text-slate-400",
                                     ),
                                     class_name="ml-3",
                                 ),
@@ -146,23 +146,22 @@ def efficiency_tab() -> rx.Component:
                                         class_name="h-2 rounded-full bg-teal-500",
                                         style={"width": f"{p['efficiency']}%"},
                                     ),
-                                    class_name="flex-1 h-2 bg-gray-200 rounded-full mr-3",
+                                    class_name="flex-1 h-2 bg-slate-700 rounded-full mr-3",
                                 ),
                                 rx.el.span(
                                     f"{p['efficiency']}%",
-                                    class_name="text-sm font-medium text-gray-700",
+                                    class_name="text-sm font-medium text-slate-300",
                                 ),
                                 class_name="flex items-center w-32",
                             ),
-                            class_name="flex items-center justify-between py-3",
+                            class_name="flex items-center justify-between py-3 border-b border-slate-700/30 last:border-b-0",
                         ),
                     ),
-                    class_name="divide-y divide-gray-100",
                 ),
-                class_name=f"{GlassStyles.PANEL_LIGHT} p-6",
+                class_name=f"{GlassStyles.PANEL} p-6",
             ),
             rx.el.div(
-                rx.el.h3("Treatment Completion Rates", class_name="text-lg font-bold text-gray-800 mb-4"),
+                rx.el.h3("Treatment Completion Rates", class_name="text-lg font-bold text-white mb-4"),
                 rx.el.div(
                     rx.foreach(
                         [
@@ -173,26 +172,25 @@ def efficiency_tab() -> rx.Component:
                         ],
                         lambda t: rx.el.div(
                             rx.el.div(
-                                rx.el.p(t["treatment"], class_name="font-medium text-gray-900"),
+                                rx.el.p(t["treatment"], class_name="font-medium text-white"),
                                 rx.el.div(
                                     rx.el.div(
                                         class_name=f"h-3 rounded-full bg-{t['color']}-500",
                                         style={"width": f"{t['rate']}%"},
                                     ),
-                                    class_name="flex-1 h-3 bg-gray-200 rounded-full mt-2",
+                                    class_name="flex-1 h-3 bg-slate-700 rounded-full mt-2",
                                 ),
                                 class_name="flex-1",
                             ),
                             rx.el.span(
                                 f"{t['rate']}%",
-                                class_name="text-lg font-bold text-gray-800 ml-4",
+                                class_name="text-lg font-bold text-white ml-4",
                             ),
-                            class_name="flex items-center py-3",
+                            class_name="flex items-center py-3 border-b border-slate-700/30 last:border-b-0",
                         ),
                     ),
-                    class_name="divide-y divide-gray-100",
                 ),
-                class_name=f"{GlassStyles.PANEL_LIGHT} p-6",
+                class_name=f"{GlassStyles.PANEL} p-6",
             ),
             class_name="grid grid-cols-1 lg:grid-cols-2 gap-6",
         ),

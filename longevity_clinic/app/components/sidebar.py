@@ -1,6 +1,10 @@
 import reflex as rx
+from ..config import current_config
 from ..states.auth_state import AuthState
 from ..styles.constants import GlassStyles
+
+# Demo user data for display
+demo_user = current_config.demo_user
 
 
 def sidebar_item(text: str, icon_name: str, href: str, is_active: bool = False) -> rx.Component:
@@ -77,18 +81,30 @@ def sidebar_content() -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     rx.el.span(
-                        AuthState.user_initials,
+                        rx.cond(
+                            AuthState.user_initials != "",
+                            AuthState.user_initials,
+                            demo_user.initials,
+                        ),
                         class_name="text-xs font-bold text-teal-300",
                     ),
                     class_name="w-10 h-10 rounded-full bg-teal-900/50 flex items-center justify-center mr-3 border border-teal-500/30",
                 ),
                 rx.el.div(
                     rx.el.p(
-                        AuthState.user["full_name"],
+                        rx.cond(
+                            AuthState.user["full_name"] != "",
+                            AuthState.user["full_name"],
+                            demo_user.full_name,
+                        ),
                         class_name="text-sm font-medium text-white leading-none mb-1 truncate max-w-[120px]",
                     ),
                     rx.el.p(
-                        AuthState.role_label,
+                        rx.cond(
+                            AuthState.role_label != "",
+                            AuthState.role_label,
+                            demo_user.role_label,
+                        ),
                         class_name="text-[10px] text-teal-400 uppercase tracking-wider",
                     ),
                     class_name="flex flex-col",
@@ -156,18 +172,31 @@ def mobile_menu() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.el.span(
-                            AuthState.user_initials,
+                            rx.cond(
+                                AuthState.user_initials != "",
+                                AuthState.user_initials,
+                                demo_user.initials,
+                            ),
                             class_name="text-lg font-bold text-teal-300",
                         ),
                         class_name="w-12 h-12 rounded-full bg-teal-900/50 flex items-center justify-center mr-3 border border-teal-500/30",
                     ),
                     rx.el.div(
                         rx.el.p(
-                            AuthState.user["full_name"],
+                            rx.cond(
+                                AuthState.user["full_name"] != "",
+                                AuthState.user["full_name"],
+                                demo_user.full_name,
+                            ),
                             class_name="text-base font-medium text-white",
                         ),
                         rx.el.p(
-                            AuthState.role_label, class_name="text-sm text-teal-400"
+                            rx.cond(
+                                AuthState.role_label != "",
+                                AuthState.role_label,
+                                demo_user.role_label,
+                            ),
+                            class_name="text-sm text-teal-400",
                         ),
                     ),
                     class_name="flex items-center mb-4",

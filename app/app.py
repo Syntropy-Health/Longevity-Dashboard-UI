@@ -3,80 +3,65 @@ from app.states.global_state import GlobalState
 from app.components.navbar import navbar
 from app.components.role_selector import role_selector
 from app.styles.glass_styles import GlassStyles
+from app.components.patient.dashboard_tabs import patient_dashboard_container
 
 
 def dashboard_content() -> rx.Component:
     """
-    Placeholder content for the dashboard to demonstrate the layout.
+    Render either the new patient dashboard or the simple placeholder for admin/guest.
+    Refactoring to support the new tabbed interface for patients.
     """
-    return rx.el.div(
+    return rx.cond(
+        GlobalState.is_patient,
         rx.el.div(
-            rx.el.h1(
-                f"Welcome back, {GlobalState.user_name}",
-                class_name="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight",
+            rx.el.div(
+                rx.el.h1(
+                    f"Welcome back, {GlobalState.user_name}",
+                    class_name="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight",
+                ),
+                rx.el.p(
+                    "Your cellular health optimization dashboard is ready.",
+                    class_name="text-lg text-slate-400 mb-8",
+                ),
             ),
-            rx.el.p(
-                "Your cellular health optimization dashboard is ready.",
-                class_name="text-xl text-slate-400 max-w-2xl",
-            ),
-            class_name="mb-12",
+            patient_dashboard_container(),
         ),
         rx.el.div(
             rx.el.div(
-                rx.el.div(
-                    rx.icon("heart-pulse", class_name="w-6 h-6 text-teal-400 mb-4"),
-                    rx.el.h3(
-                        "Biological Age",
-                        class_name="text-lg font-semibold text-white mb-1",
-                    ),
-                    rx.el.p(
-                        "34.2 Years",
-                        class_name="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-teal-500",
-                    ),
-                    rx.el.p(
-                        "-2.4 years vs Chronological",
-                        class_name="text-sm text-teal-400/80 mt-2",
-                    ),
-                    class_name="flex flex-col h-full justify-between",
+                rx.el.h1(
+                    f"Welcome back, {GlobalState.user_name}",
+                    class_name="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight",
                 ),
-                class_name=f"{GlassStyles.PANEL} p-6 h-48",
+                rx.el.p(
+                    "Your cellular health optimization dashboard is ready.",
+                    class_name="text-xl text-slate-400 max-w-2xl",
+                ),
+                class_name="mb-12",
             ),
             rx.el.div(
                 rx.el.div(
-                    rx.icon("activity", class_name="w-6 h-6 text-purple-400 mb-4"),
-                    rx.el.h3(
-                        "Next Protocol",
-                        class_name="text-lg font-semibold text-white mb-1",
+                    rx.el.div(
+                        rx.icon("heart-pulse", class_name="w-6 h-6 text-teal-400 mb-4"),
+                        rx.el.h3(
+                            "Biological Age",
+                            class_name="text-lg font-semibold text-white mb-1",
+                        ),
+                        rx.el.p(
+                            "34.2 Years",
+                            class_name="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-teal-500",
+                        ),
+                        rx.el.p(
+                            "-2.4 years vs Chronological",
+                            class_name="text-sm text-teal-400/80 mt-2",
+                        ),
+                        class_name="flex flex-col h-full justify-between",
                     ),
-                    rx.el.p(
-                        "NAD+ Infusion", class_name="text-2xl font-bold text-slate-200"
-                    ),
-                    rx.el.p(
-                        "Scheduled for Tomorrow, 2:00 PM",
-                        class_name="text-sm text-slate-400 mt-2",
-                    ),
-                    class_name="flex flex-col h-full justify-between",
+                    class_name=f"{GlassStyles.PANEL} p-6 h-48",
                 ),
-                class_name=f"{GlassStyles.PANEL} p-6 h-48",
+                class_name="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl",
             ),
-            rx.el.div(
-                rx.el.div(
-                    rx.icon("trending-up", class_name="w-6 h-6 text-blue-400 mb-4"),
-                    rx.el.h3(
-                        "Sleep Score",
-                        class_name="text-lg font-semibold text-white mb-1",
-                    ),
-                    rx.el.p("92/100", class_name="text-3xl font-bold text-slate-200"),
-                    rx.el.p(
-                        "+4% from last week", class_name="text-sm text-green-400 mt-2"
-                    ),
-                    class_name="flex flex-col h-full justify-between",
-                ),
-                class_name=f"{GlassStyles.PANEL} p-6 h-48",
-            ),
-            class_name="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl",
+            class_name="flex flex-col items-center justify-center pt-32 px-6",
         ),
-        class_name="flex flex-col items-center justify-center pt-32 px-6",
     )
 
 

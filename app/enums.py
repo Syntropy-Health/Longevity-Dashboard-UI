@@ -114,3 +114,41 @@ class BiomarkerTrend(StrEnum):
     UP = "up"
     DOWN = "down"
     STABLE = "stable"
+
+
+class ConditionStatus(StrEnum):
+    ACTIVE = "Active"
+    MANAGED = "Managed"
+    RESOLVED = "Resolved"
+    ARCHIVED = "Archived"
+
+
+class ConditionSeverity(StrEnum):
+    MILD = "Mild"
+    MODERATE = "Moderate"
+    SEVERE = "Severe"
+
+
+class MealType(StrEnum):
+    BREAKFAST = "Breakfast"
+    LUNCH = "Lunch"
+    DINNER = "Dinner"
+    SNACK = "Snack"
+
+
+class DataSourceType(StrEnum):
+    WEARABLE = "Wearable"
+    FILE = "File"
+    API = "API"
+
+
+class DataSourceStatus(StrEnum):
+    CONNECTED = "Connected"
+    DISCONNECTED = "Disconnected"
+    SYNCING = "Syncing"
+    ERROR = "Error"
+
+
+class CheckInType(StrEnum):
+    VOICE = "Voice"
+    TEXT = "Text"

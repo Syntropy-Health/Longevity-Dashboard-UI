@@ -203,7 +203,7 @@ class NotificationState(rx.State):
             "info": "info",
             "warning": "alert-triangle",
             "success": "circle-check",
-            "error": "x-circle",
+            "error": "circle-x",
             "appointment": "calendar",
             "treatment": "activity",
             "lab": "flask-conical"

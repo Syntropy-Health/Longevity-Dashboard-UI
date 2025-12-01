@@ -1,9 +1,11 @@
-import reflex as rx
-from typing import TypedDict, Optional
-import random
 import logging
+import random
+from typing import Optional, TypedDict
+
+import reflex as rx
 
 from .patient_state import PatientState
+from ..data import TREATMENT_CATEGORIES, TREATMENT_FREQUENCIES, TREATMENT_STATUSES
 
 
 class TreatmentProtocol(TypedDict):
@@ -136,6 +138,12 @@ class TreatmentState(rx.State):
         self.is_editor_open = False
 
     @rx.event
+    def handle_editor_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.is_editor_open = False
+
+    @rx.event
     def save_protocol(self):
         cost_val = 0.0
         try:
@@ -182,6 +190,13 @@ class TreatmentState(rx.State):
     def close_assign_modal(self):
         self.is_assign_open = False
         self.protocol_to_assign = None
+
+    @rx.event
+    def handle_assign_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.is_assign_open = False
+            self.protocol_to_assign = None
 
     @rx.event
     async def confirm_assignment(self):

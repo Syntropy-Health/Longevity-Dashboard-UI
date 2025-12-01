@@ -1,6 +1,20 @@
 import reflex as rx
 from ..states.auth_state import AuthState
+from ..states.notification_state import NotificationState
 from ..config import current_config
+from ..styles.constants import GlassStyles
+
+
+def notification_badge() -> rx.Component:
+    """Render notification count badge if there are unread notifications."""
+    return rx.cond(
+        NotificationState.unread_count > 0,
+        rx.box(
+            NotificationState.unread_count,
+            class_name=GlassStyles.NOTIFICATION_BADGE
+        ),
+        rx.fragment()
+    )
 
 
 def header() -> rx.Component:
@@ -9,7 +23,7 @@ def header() -> rx.Component:
             rx.el.button(
                 rx.icon("menu", class_name="w-6 h-6 text-gray-600"),
                 on_click=AuthState.toggle_mobile_menu,
-                class_name="mr-4 md:hidden p-2 rounded-2xl hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all",
+                class_name="mr-4 md:hidden p-2 rounded-2xl hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all",
             ),
             rx.el.h2(
                 rx.cond(AuthState.is_admin, "Clinic Dashboard", "Patient Portal"),
@@ -18,13 +32,20 @@ def header() -> rx.Component:
             class_name="flex items-center",
         ),
         rx.el.div(
+            # Notifications button with badge
             rx.el.button(
                 rx.icon("bell", class_name="w-5 h-5 text-gray-500"),
-                class_name="p-2.5 mr-2 rounded-full hover:bg-white/60 hover:shadow-sm transition-all relative border border-transparent hover:border-white/50 active:scale-95",
+                notification_badge(),
+                on_click=rx.redirect("/notifications"),
+                class_name=f"{GlassStyles.ICON_BUTTON_LIGHT} mr-2",
+                title="Notifications",
             ),
+            # Appointments button
             rx.el.button(
-                rx.icon("circle_plus", class_name="w-5 h-5 text-gray-500"),
-                class_name="p-2.5 mr-4 rounded-full hover:bg-white/60 hover:shadow-sm transition-all hidden sm:block border border-transparent hover:border-white/50 active:scale-95",
+                rx.icon("calendar-plus", class_name="w-5 h-5 text-gray-500"),
+                on_click=rx.redirect("/appointments"),
+                class_name=f"{GlassStyles.ICON_BUTTON_LIGHT} mr-4 hidden sm:block",
+                title="Schedule Appointment",
             ),
             rx.el.div(class_name="h-6 w-px bg-gray-400/30 mr-4 hidden sm:block"),
             rx.el.button(

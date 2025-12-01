@@ -99,6 +99,13 @@ class TreatmentSearchState(rx.State):
         self.selected_protocol = None
 
     @rx.event
+    def handle_details_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.is_details_open = False
+            self.selected_protocol = None
+
+    @rx.event
     def set_request_note(self, note: str):
         self.request_note = note
 

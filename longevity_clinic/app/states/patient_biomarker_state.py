@@ -3,6 +3,8 @@ from typing import TypedDict, Optional
 import random
 from datetime import datetime, timedelta
 
+from ..data import BIOMARKER_SIMPLE_CATEGORIES, BIOMARKER_STATUSES, BIOMARKER_TRENDS
+
 
 class BiomarkerDataPoint(TypedDict):
     date: str

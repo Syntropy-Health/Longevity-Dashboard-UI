@@ -2,6 +2,7 @@ import reflex as rx
 from ..components.layout import authenticated_layout
 from ..states.treatment_search_state import TreatmentSearchState, TreatmentProtocol
 from ..config import current_config
+from ..styles import GlassStyles
 
 
 def treatment_card(protocol: TreatmentProtocol) -> rx.Component:
@@ -53,100 +54,117 @@ def treatment_card(protocol: TreatmentProtocol) -> rx.Component:
 
 
 def treatment_details_modal() -> rx.Component:
-    return rx.cond(
-        TreatmentSearchState.is_details_open,
-        rx.el.div(
-            rx.el.div(
-                class_name="fixed inset-0 bg-slate-900/10 backdrop-blur-[2px] transition-opacity",
-                on_click=TreatmentSearchState.close_details,
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name=GlassStyles.MODAL_OVERLAY
             ),
-            rx.el.div(
-                rx.el.div(
+            rx.radix.primitives.dialog.content(
+                rx.cond(
+                    TreatmentSearchState.selected_protocol,
                     rx.el.div(
-                        rx.el.h3(
-                            "Treatment Details",
-                            class_name="text-xl font-light text-gray-900 tracking-tight",
+                        # Header
+                        rx.el.div(
+                            rx.radix.primitives.dialog.title(
+                                "Treatment Details",
+                                class_name=GlassStyles.MODAL_TITLE,
+                            ),
+                            rx.radix.primitives.dialog.close(
+                                rx.el.button(
+                                    rx.icon("x", class_name="w-5 h-5"),
+                                    class_name=GlassStyles.CLOSE_BUTTON,
+                                )
+                            ),
+                            class_name="flex justify-between items-center mb-4",
                         ),
-                        rx.el.button(
-                            rx.icon("x", class_name="w-6 h-6 text-gray-400"),
-                            on_click=TreatmentSearchState.close_details,
-                            class_name="p-2 hover:bg-gray-100/50 rounded-full transition-colors backdrop-blur-sm",
-                        ),
-                        class_name="flex justify-between items-center mb-6 pb-4 border-b border-gray-100/50",
-                    ),
-                    rx.el.div(
+                        # Protocol name and description
                         rx.el.h4(
                             TreatmentSearchState.selected_protocol["name"],
-                            class_name="text-2xl font-light text-emerald-800 mb-3",
+                            class_name="text-2xl font-semibold text-emerald-700 mb-3",
                         ),
-                        rx.el.p(
+                        rx.radix.primitives.dialog.description(
                             TreatmentSearchState.selected_protocol["description"],
-                            class_name="text-gray-600 mb-8 leading-relaxed font-light",
+                            class_name="text-gray-600 mb-6 leading-relaxed",
                         ),
+                        # Protocol details grid
                         rx.el.div(
                             rx.el.div(
                                 rx.el.span(
                                     "Category",
-                                    class_name="text-[10px] text-gray-400 uppercase font-bold block mb-2 tracking-widest",
+                                    class_name="text-[10px] text-gray-400 uppercase font-bold block mb-1 tracking-widest",
                                 ),
                                 rx.el.span(
                                     TreatmentSearchState.selected_protocol["category"],
-                                    class_name="text-sm text-gray-800 font-medium bg-white/40 px-3 py-1 rounded-lg border border-white/40",
+                                    class_name="text-sm text-gray-800 font-medium",
                                 ),
                             ),
                             rx.el.div(
                                 rx.el.span(
                                     "Frequency",
-                                    class_name="text-[10px] text-gray-400 uppercase font-bold block mb-2 tracking-widest",
+                                    class_name="text-[10px] text-gray-400 uppercase font-bold block mb-1 tracking-widest",
                                 ),
                                 rx.el.span(
                                     TreatmentSearchState.selected_protocol["frequency"],
-                                    class_name="text-sm text-gray-800 font-medium bg-white/40 px-3 py-1 rounded-lg border border-white/40",
+                                    class_name="text-sm text-gray-800 font-medium",
                                 ),
                             ),
                             rx.el.div(
                                 rx.el.span(
                                     "Duration",
-                                    class_name="text-[10px] text-gray-400 uppercase font-bold block mb-2 tracking-widest",
+                                    class_name="text-[10px] text-gray-400 uppercase font-bold block mb-1 tracking-widest",
                                 ),
                                 rx.el.span(
                                     TreatmentSearchState.selected_protocol["duration"],
-                                    class_name="text-sm text-gray-800 font-medium bg-white/40 px-3 py-1 rounded-lg border border-white/40",
+                                    class_name="text-sm text-gray-800 font-medium",
                                 ),
                             ),
                             rx.el.div(
                                 rx.el.span(
                                     "Cost",
-                                    class_name="text-[10px] text-gray-400 uppercase font-bold block mb-2 tracking-widest",
+                                    class_name="text-[10px] text-gray-400 uppercase font-bold block mb-1 tracking-widest",
                                 ),
                                 rx.el.span(
                                     f"${TreatmentSearchState.selected_protocol['cost']}",
-                                    class_name="text-sm text-gray-800 font-medium bg-white/40 px-3 py-1 rounded-lg border border-white/40",
+                                    class_name="text-sm text-gray-800 font-medium",
                                 ),
                             ),
-                            class_name="grid grid-cols-2 gap-6 mb-8 bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100/30 backdrop-blur-sm",
+                            class_name="grid grid-cols-2 gap-4 mb-6 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100/50",
                         ),
+                        # Notes textarea
                         rx.el.label(
                             "Notes for Provider (Optional)",
-                            class_name="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider ml-1",
+                            class_name=GlassStyles.LABEL,
                         ),
                         rx.el.textarea(
                             placeholder="Any specific concerns or questions...",
+                            value=TreatmentSearchState.request_note,
                             on_change=TreatmentSearchState.set_request_note,
-                            class_name=f"w-full p-4 {current_config.glass_input_style} resize-none h-28 mb-8",
+                            class_name=f"{GlassStyles.MODAL_TEXTAREA} h-28 mb-6",
                         ),
-                        rx.el.button(
-                            "Submit Request",
-                            on_click=TreatmentSearchState.submit_request,
-                            class_name=f"w-full py-4 {current_config.glass_button_primary} font-semibold rounded-2xl transition-all text-lg",
+                        # Footer buttons
+                        rx.el.div(
+                            rx.radix.primitives.dialog.close(
+                                rx.el.button(
+                                    "Cancel",
+                                    type="button",
+                                    class_name=GlassStyles.BUTTON_CANCEL,
+                                )
+                            ),
+                            rx.el.button(
+                                "Submit Request",
+                                on_click=TreatmentSearchState.submit_request,
+                                class_name=GlassStyles.BUTTON_PRIMARY,
+                            ),
+                            class_name="flex justify-end gap-3",
                         ),
                     ),
-                    class_name=f"{current_config.glass_panel_style} p-8 max-w-lg w-full shadow-[0_20px_60px_-12px_rgba(0,0,0,0.1)] border border-white/60 backdrop-blur-3xl",
+                    rx.fragment(),
                 ),
-                class_name="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none",
+                class_name=f"{GlassStyles.MODAL_CONTENT_MD} {GlassStyles.MODAL_PANEL}",
             ),
-            rx.el.div(class_name="pointer-events-auto"),
         ),
+        open=TreatmentSearchState.is_details_open,
+        on_open_change=TreatmentSearchState.handle_details_open_change,
     )
 
 

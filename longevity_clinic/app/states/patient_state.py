@@ -184,6 +184,12 @@ class PatientState(rx.State):
         self.new_patient_history = ""
 
     @rx.event
+    def handle_add_patient_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.close_add_patient()
+
+    @rx.event
     def open_view_patient(self, patient: Patient):
         self.selected_patient = patient
         self.is_view_patient_open = True
@@ -192,6 +198,13 @@ class PatientState(rx.State):
     def close_view_patient(self):
         self.is_view_patient_open = False
         self.selected_patient = None
+
+    @rx.event
+    def handle_view_patient_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.is_view_patient_open = False
+            self.selected_patient = None
 
     @rx.event
     def add_patient(self):
@@ -214,6 +227,30 @@ class PatientState(rx.State):
         }
         self.patients.append(new_patient)
         self.close_add_patient()
+
+    @rx.event
+    def set_new_patient_name(self, value: str):
+        self.new_patient_name = value
+
+    @rx.event
+    def set_new_patient_email(self, value: str):
+        self.new_patient_email = value
+
+    @rx.event
+    def set_new_patient_phone(self, value: str):
+        self.new_patient_phone = value
+
+    @rx.event
+    def set_new_patient_age(self, value: str):
+        self.new_patient_age = value
+
+    @rx.event
+    def set_new_patient_gender(self, value: str):
+        self.new_patient_gender = value
+
+    @rx.event
+    def set_new_patient_history(self, value: str):
+        self.new_patient_history = value
 
     @rx.event
     def assign_treatment_to_patient(self, patient_id: str, treatment: dict):

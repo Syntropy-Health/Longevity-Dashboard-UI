@@ -80,32 +80,6 @@ def chart_card(title: str, chart: rx.Component) -> rx.Component:
     )
 
 
-def efficiency_chart_placeholder(title: str, description: str) -> rx.Component:
-    """Placeholder for efficiency charts."""
-    return rx.el.div(
-        rx.el.h3(title, class_name="text-lg font-bold text-white mb-2"),
-        rx.el.p(description, class_name="text-sm text-slate-400 mb-4"),
-        rx.el.div(
-            rx.el.div(
-                rx.foreach(
-                    ["Mon", "Tue", "Wed", "Thu", "Fri"],
-                    lambda day: rx.el.div(
-                        rx.el.div(
-                            class_name="w-full bg-gradient-to-t from-teal-500 to-teal-300 rounded-t",
-                            style={"height": f"{60 + (hash(day) % 40)}%"}
-                        ),
-                        rx.el.span(day, class_name="text-xs text-slate-400 mt-2"),
-                        class_name="flex flex-col items-center justify-end h-40 w-1/5",
-                    ),
-                ),
-                class_name="flex items-end justify-between h-48 px-4",
-            ),
-            class_name="bg-slate-800/50 rounded-xl p-4",
-        ),
-        class_name=f"{GlassStyles.PANEL} p-6",
-    )
-
-
 def patient_table_row(patient: Patient) -> rx.Component:
     """Patient table row component."""
     return rx.el.tr(

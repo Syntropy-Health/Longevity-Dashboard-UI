@@ -241,7 +241,7 @@ class PatientState(rx.State):
         self.new_patient_phone = value
 
     @rx.event
-    def set_new_patient_age(self, value: str):
+    def set_new_patient_age(self, value: float):
         self.new_patient_age = value
 
     @rx.event

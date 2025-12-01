@@ -6,12 +6,13 @@ from ...components.charts import (
     overview_trend_chart,
     treatment_distribution_chart,
     biomarker_improvement_chart,
+    daily_patient_flow_chart,
+    room_utilization_chart,
 )
 from .components import (
     stat_card,
     efficiency_stat_card,
     chart_card,
-    efficiency_chart_placeholder,
 )
 
 
@@ -101,13 +102,13 @@ def efficiency_tab() -> rx.Component:
         
         # Charts row
         rx.el.div(
-            efficiency_chart_placeholder(
+            chart_card(
                 "Daily Patient Flow",
-                "Appointment volume and wait times throughout the day"
+                daily_patient_flow_chart(),
             ),
-            efficiency_chart_placeholder(
+            chart_card(
                 "Treatment Room Utilization",
-                "Room occupancy rates by time slot"
+                room_utilization_chart(),
             ),
             class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6",
         ),

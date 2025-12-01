@@ -12,7 +12,6 @@ from .components import (
     stat_card,
     efficiency_stat_card,
     chart_card,
-    efficiency_chart_placeholder,
     patient_table_row,
     dashboard_tabs,
 )
@@ -35,7 +34,6 @@ __all__ = [
     "stat_card",
     "efficiency_stat_card",
     "chart_card",
-    "efficiency_chart_placeholder",
     "patient_table_row",
     "dashboard_tabs",
     # Tabs

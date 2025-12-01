@@ -1,0 +1,462 @@
+"""Patient portal modal components."""
+
+import reflex as rx
+from ...states.patient_dashboard_state import PatientDashboardState
+from ...styles.constants import GlassStyles
+
+
+def checkin_modal() -> rx.Component:
+    """Check-in modal for voice/text logging."""
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.trigger(rx.fragment()),
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-50",
+            ),
+            rx.radix.primitives.dialog.content(
+                rx.el.div(
+                    rx.el.div(
+                        rx.radix.primitives.dialog.title(
+                            "New Check-in",
+                            class_name="text-xl font-bold text-white",
+                        ),
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                rx.icon("x", class_name="w-5 h-5"),
+                                class_name="text-slate-400 hover:text-white transition-colors",
+                            ),
+                        ),
+                        class_name="flex items-center justify-between mb-6",
+                    ),
+                    # Check-in type selector
+                    rx.el.div(
+                        rx.el.p("Type", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.div(
+                            rx.el.button(
+                                rx.icon("mic", class_name="w-5 h-5 mr-2"),
+                                "Voice",
+                                on_click=lambda: PatientDashboardState.set_checkin_type("voice"),
+                                class_name=rx.cond(
+                                    PatientDashboardState.checkin_type == "voice",
+                                    "flex-1 py-3 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center",
+                                    "flex-1 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10 flex items-center justify-center",
+                                ),
+                            ),
+                            rx.el.button(
+                                rx.icon("message-square", class_name="w-5 h-5 mr-2"),
+                                "Text",
+                                on_click=lambda: PatientDashboardState.set_checkin_type("text"),
+                                class_name=rx.cond(
+                                    PatientDashboardState.checkin_type == "text",
+                                    "flex-1 py-3 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center",
+                                    "flex-1 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10 flex items-center justify-center",
+                                ),
+                            ),
+                            class_name="flex gap-3",
+                        ),
+                        class_name="mb-6",
+                    ),
+                    # Content area
+                    rx.cond(
+                        PatientDashboardState.checkin_type == "voice",
+                        rx.el.div(
+                            rx.el.div(
+                                rx.icon("mic", class_name="w-12 h-12 text-teal-400"),
+                                class_name="w-24 h-24 rounded-full bg-teal-500/10 flex items-center justify-center border border-teal-500/20 mb-4",
+                            ),
+                            rx.el.p("Tap to start recording", class_name="text-sm text-slate-400"),
+                            class_name="flex flex-col items-center py-8",
+                        ),
+                        rx.el.div(
+                            rx.el.textarea(
+                                placeholder="How are you feeling today? Any symptoms, concerns, or updates...",
+                                class_name="w-full h-40 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-500 resize-none focus:outline-none focus:border-teal-500/50",
+                            ),
+                        ),
+                    ),
+                    # Topic tags
+                    rx.el.div(
+                        rx.el.p("Topics (optional)", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.div(
+                            rx.el.button(
+                                "Medication",
+                                class_name="px-3 py-1 rounded-full text-xs text-slate-400 border border-white/10 hover:bg-white/5",
+                            ),
+                            rx.el.button(
+                                "Symptoms",
+                                class_name="px-3 py-1 rounded-full text-xs text-slate-400 border border-white/10 hover:bg-white/5",
+                            ),
+                            rx.el.button(
+                                "Diet",
+                                class_name="px-3 py-1 rounded-full text-xs text-slate-400 border border-white/10 hover:bg-white/5",
+                            ),
+                            rx.el.button(
+                                "Exercise",
+                                class_name="px-3 py-1 rounded-full text-xs text-slate-400 border border-white/10 hover:bg-white/5",
+                            ),
+                            rx.el.button(
+                                "Sleep",
+                                class_name="px-3 py-1 rounded-full text-xs text-slate-400 border border-white/10 hover:bg-white/5",
+                            ),
+                            rx.el.button(
+                                "Mood",
+                                class_name="px-3 py-1 rounded-full text-xs text-slate-400 border border-white/10 hover:bg-white/5",
+                            ),
+                            class_name="flex flex-wrap gap-2",
+                        ),
+                        class_name="mt-6 mb-6",
+                    ),
+                    # Actions
+                    rx.el.div(
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                "Cancel",
+                                class_name=GlassStyles.BUTTON_SECONDARY,
+                            ),
+                        ),
+                        rx.el.button(
+                            "Save Check-in",
+                            on_click=PatientDashboardState.save_checkin,
+                            class_name=GlassStyles.BUTTON_PRIMARY,
+                        ),
+                        class_name="flex justify-end gap-3",
+                    ),
+                    class_name="p-6",
+                ),
+                class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg {GlassStyles.MODAL} z-50",
+            ),
+        ),
+        open=PatientDashboardState.show_checkin_modal,
+        on_open_change=PatientDashboardState.set_show_checkin_modal,
+    )
+
+
+def medication_modal() -> rx.Component:
+    """Medication detail modal."""
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.trigger(rx.fragment()),
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-50",
+            ),
+            rx.radix.primitives.dialog.content(
+                rx.el.div(
+                    rx.el.div(
+                        rx.radix.primitives.dialog.title(
+                            PatientDashboardState.selected_medication.get("name", "Medication"),
+                            class_name="text-xl font-bold text-white",
+                        ),
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                rx.icon("x", class_name="w-5 h-5"),
+                                class_name="text-slate-400 hover:text-white transition-colors",
+                            ),
+                        ),
+                        class_name="flex items-center justify-between mb-6",
+                    ),
+                    # Medication details
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p("Dosage", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                PatientDashboardState.selected_medication.get("dosage", "N/A"),
+                                class_name="text-white font-medium",
+                            ),
+                            class_name="mb-4",
+                        ),
+                        rx.el.div(
+                            rx.el.p("Frequency", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                PatientDashboardState.selected_medication.get("frequency", "N/A"),
+                                class_name="text-white font-medium",
+                            ),
+                            class_name="mb-4",
+                        ),
+                        rx.el.div(
+                            rx.el.p("Status", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.span(
+                                PatientDashboardState.selected_medication.get("status", "active"),
+                                class_name="px-3 py-1 rounded-full text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20 capitalize",
+                            ),
+                            class_name="mb-4",
+                        ),
+                        rx.el.div(
+                            rx.el.p("Adherence Rate", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.div(
+                                rx.el.span(
+                                    f"{PatientDashboardState.selected_medication.get('adherence_rate', 0):.0f}%",
+                                    class_name="text-2xl font-bold text-teal-400",
+                                ),
+                            ),
+                        ),
+                        class_name=f"{GlassStyles.PANEL} p-4 mb-6",
+                    ),
+                    # Actions
+                    rx.el.div(
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                "Close",
+                                class_name=GlassStyles.BUTTON_SECONDARY,
+                            ),
+                        ),
+                        rx.el.button(
+                            "Log Dose",
+                            class_name=GlassStyles.BUTTON_PRIMARY,
+                        ),
+                        class_name="flex justify-end gap-3",
+                    ),
+                    class_name="p-6",
+                ),
+                class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
+            ),
+        ),
+        open=PatientDashboardState.show_medication_modal,
+        on_open_change=PatientDashboardState.set_show_medication_modal,
+    )
+
+
+def condition_modal() -> rx.Component:
+    """Condition detail modal."""
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.trigger(rx.fragment()),
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-50",
+            ),
+            rx.radix.primitives.dialog.content(
+                rx.el.div(
+                    rx.el.div(
+                        rx.radix.primitives.dialog.title(
+                            PatientDashboardState.selected_condition.get("name", "Condition"),
+                            class_name="text-xl font-bold text-white",
+                        ),
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                rx.icon("x", class_name="w-5 h-5"),
+                                class_name="text-slate-400 hover:text-white transition-colors",
+                            ),
+                        ),
+                        class_name="flex items-center justify-between mb-6",
+                    ),
+                    # Condition details
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p("ICD-10 Code", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                PatientDashboardState.selected_condition.get("icd_code", "N/A"),
+                                class_name="text-white font-medium",
+                            ),
+                            class_name="mb-4",
+                        ),
+                        rx.el.div(
+                            rx.el.p("Diagnosed", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                PatientDashboardState.selected_condition.get("diagnosed_date", "N/A"),
+                                class_name="text-white font-medium",
+                            ),
+                            class_name="mb-4",
+                        ),
+                        rx.el.div(
+                            rx.el.p("Severity", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                PatientDashboardState.selected_condition.get("severity", "N/A"),
+                                class_name="text-white font-medium capitalize",
+                            ),
+                            class_name="mb-4",
+                        ),
+                        rx.el.div(
+                            rx.el.p("Status", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.span(
+                                PatientDashboardState.selected_condition.get("status", "active"),
+                                class_name="px-3 py-1 rounded-full text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20 capitalize",
+                            ),
+                        ),
+                        class_name=f"{GlassStyles.PANEL} p-4 mb-6",
+                    ),
+                    # Related treatments
+                    rx.el.div(
+                        rx.el.p("Related Treatments", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            PatientDashboardState.selected_condition.get("treatments", "No treatments linked"),
+                            class_name="text-sm text-slate-300",
+                        ),
+                        class_name="mb-6",
+                    ),
+                    # Actions
+                    rx.el.div(
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                "Close",
+                                class_name=GlassStyles.BUTTON_SECONDARY,
+                            ),
+                        ),
+                        class_name="flex justify-end",
+                    ),
+                    class_name="p-6",
+                ),
+                class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
+            ),
+        ),
+        open=PatientDashboardState.show_condition_modal,
+        on_open_change=PatientDashboardState.set_show_condition_modal,
+    )
+
+
+def symptom_modal() -> rx.Component:
+    """Symptom logging modal."""
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.trigger(rx.fragment()),
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-50",
+            ),
+            rx.radix.primitives.dialog.content(
+                rx.el.div(
+                    rx.el.div(
+                        rx.radix.primitives.dialog.title(
+                            f"Log: {PatientDashboardState.selected_symptom.get('name', 'Symptom')}",
+                            class_name="text-xl font-bold text-white",
+                        ),
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                rx.icon("x", class_name="w-5 h-5"),
+                                class_name="text-slate-400 hover:text-white transition-colors",
+                            ),
+                        ),
+                        class_name="flex items-center justify-between mb-6",
+                    ),
+                    # Severity slider
+                    rx.el.div(
+                        rx.el.p("Severity", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.div(
+                            rx.el.span("1", class_name="text-sm text-slate-400"),
+                            rx.el.div(
+                                class_name="flex-1 h-2 bg-white/10 rounded-full mx-3",
+                            ),
+                            rx.el.span("10", class_name="text-sm text-slate-400"),
+                            class_name="flex items-center",
+                        ),
+                        class_name="mb-6",
+                    ),
+                    # Notes
+                    rx.el.div(
+                        rx.el.p("Notes", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.textarea(
+                            placeholder="Any additional details about this symptom...",
+                            class_name="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 resize-none focus:outline-none focus:border-teal-500/50",
+                        ),
+                        class_name="mb-6",
+                    ),
+                    # Actions
+                    rx.el.div(
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                "Cancel",
+                                class_name=GlassStyles.BUTTON_SECONDARY,
+                            ),
+                        ),
+                        rx.el.button(
+                            "Save Log",
+                            on_click=PatientDashboardState.save_symptom_log,
+                            class_name=GlassStyles.BUTTON_PRIMARY,
+                        ),
+                        class_name="flex justify-end gap-3",
+                    ),
+                    class_name="p-6",
+                ),
+                class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
+            ),
+        ),
+        open=PatientDashboardState.show_symptom_modal,
+        on_open_change=PatientDashboardState.set_show_symptom_modal,
+    )
+
+
+def connect_source_modal() -> rx.Component:
+    """Connect data source modal."""
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.trigger(rx.fragment()),
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-50",
+            ),
+            rx.radix.primitives.dialog.content(
+                rx.el.div(
+                    rx.el.div(
+                        rx.radix.primitives.dialog.title(
+                            "Connect Data Source",
+                            class_name="text-xl font-bold text-white",
+                        ),
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                rx.icon("x", class_name="w-5 h-5"),
+                                class_name="text-slate-400 hover:text-white transition-colors",
+                            ),
+                        ),
+                        class_name="flex items-center justify-between mb-6",
+                    ),
+                    # Available sources
+                    rx.el.div(
+                        rx.el.p("Available Connections", class_name="text-xs text-slate-400 uppercase tracking-wider mb-3"),
+                        rx.el.div(
+                            rx.el.div(
+                                rx.icon("watch", class_name="w-6 h-6 text-teal-400 mr-3"),
+                                rx.el.div(
+                                    rx.el.p("Apple Watch", class_name="text-sm font-medium text-white"),
+                                    rx.el.p("Wearable device", class_name="text-xs text-slate-400"),
+                                    class_name="flex-1",
+                                ),
+                                rx.el.button(
+                                    "Connect",
+                                    class_name="px-3 py-1.5 text-xs font-medium bg-teal-500/20 text-teal-300 rounded-lg border border-teal-500/30 hover:bg-teal-500/30 transition-colors",
+                                ),
+                                class_name="flex items-center p-4 border-b border-white/5",
+                            ),
+                            rx.el.div(
+                                rx.icon("smartphone", class_name="w-6 h-6 text-purple-400 mr-3"),
+                                rx.el.div(
+                                    rx.el.p("Oura Ring", class_name="text-sm font-medium text-white"),
+                                    rx.el.p("Sleep & activity tracker", class_name="text-xs text-slate-400"),
+                                    class_name="flex-1",
+                                ),
+                                rx.el.button(
+                                    "Connect",
+                                    class_name="px-3 py-1.5 text-xs font-medium bg-teal-500/20 text-teal-300 rounded-lg border border-teal-500/30 hover:bg-teal-500/30 transition-colors",
+                                ),
+                                class_name="flex items-center p-4 border-b border-white/5",
+                            ),
+                            rx.el.div(
+                                rx.icon("stethoscope", class_name="w-6 h-6 text-blue-400 mr-3"),
+                                rx.el.div(
+                                    rx.el.p("Epic MyChart", class_name="text-sm font-medium text-white"),
+                                    rx.el.p("EHR Integration", class_name="text-xs text-slate-400"),
+                                    class_name="flex-1",
+                                ),
+                                rx.el.button(
+                                    "Connect",
+                                    class_name="px-3 py-1.5 text-xs font-medium bg-teal-500/20 text-teal-300 rounded-lg border border-teal-500/30 hover:bg-teal-500/30 transition-colors",
+                                ),
+                                class_name="flex items-center p-4",
+                            ),
+                            class_name=f"{GlassStyles.PANEL}",
+                        ),
+                        class_name="mb-6",
+                    ),
+                    # Actions
+                    rx.el.div(
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                "Close",
+                                class_name=GlassStyles.BUTTON_SECONDARY,
+                            ),
+                        ),
+                        class_name="flex justify-end",
+                    ),
+                    class_name="p-6",
+                ),
+                class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
+            ),
+        ),
+        open=PatientDashboardState.show_connect_modal,
+        on_open_change=PatientDashboardState.set_show_connect_modal,
+    )

@@ -215,6 +215,12 @@ class PatientBiomarkerState(rx.State):
     def clear_selected_biomarker(self):
         self.selected_biomarker = None
 
+    @rx.event
+    def load_biomarkers(self):
+        """Load biomarker data - placeholder for API call."""
+        # Data is already initialized, this is a hook for future API integration
+        pass
+
     @rx.var
     def selected_biomarker_history(self) -> list[BiomarkerDataPoint]:
         if self.selected_biomarker:

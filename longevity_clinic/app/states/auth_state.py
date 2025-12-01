@@ -68,6 +68,12 @@ class AuthState(rx.State):
         return rx.redirect("/")
 
     @rx.event
+    def check_auth(self):
+        """Check if user is authenticated and redirect to login if not."""
+        if not self.is_authenticated:
+            return rx.redirect("/login")
+
+    @rx.event
     async def register(self, form_data: dict):
         self.is_loading = True
         self.register_error = ""
@@ -85,6 +91,13 @@ class AuthState(rx.State):
         if len(name_parts) >= 2:
             return f"{name_parts[0][0]}{name_parts[1][0]}".upper()
         return self.user["full_name"][:2].upper()
+
+    @rx.var
+    def user_first_name(self) -> str:
+        if not self.user:
+            return "Guest"
+        name_parts = self.user["full_name"].split(" ")
+        return name_parts[0] if name_parts else "Guest"
 
     @rx.var
     def is_admin(self) -> bool:

@@ -156,6 +156,19 @@ class GlassStyles:
     # Modal overlay - semi-transparent dark with blur
     MODAL_OVERLAY = "fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50"
     
+    # Modal shorthand (for dark mode modals)
+    modal = (
+        "bg-slate-800/90 backdrop-blur-xl border border-slate-700/50 "
+        "shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] rounded-2xl p-6"
+    )
+    MODAL = modal  # Alias for uppercase access
+    
+    # Card shorthand (for dark mode cards)
+    card = (
+        "bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl "
+        "shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]"
+    )
+    
     # Glass panel for modals
     MODAL_PANEL = (
         "bg-white/90 backdrop-blur-xl border border-teal-100/50 "
@@ -271,14 +284,14 @@ class GlassStyles:
     )
     
     # Metric label (small uppercase)
-    METRIC_LABEL = "text-[10px] font-bold text-slate-500 uppercase tracking-widest"
+    METRIC_LABEL = "text-[10px] font-bold text-slate-400 uppercase tracking-widest"
     
     # Metric value (large number)
     METRIC_VALUE = "text-4xl font-light text-white tracking-tighter"
     METRIC_VALUE_SM = "text-2xl font-bold text-white"
     
     # Metric unit
-    METRIC_UNIT = "text-[10px] text-slate-500 font-semibold uppercase"
+    METRIC_UNIT = "text-[10px] text-slate-400 font-semibold uppercase"
     
     # Status badges for biomarkers
     STATUS_OPTIMAL = (
@@ -309,7 +322,7 @@ class GlassStyles:
         "flex items-center bg-slate-700/30 rounded-full px-3 py-1.5 w-fit "
         "border border-slate-600/40 backdrop-blur-sm"
     )
-    REFERENCE_LABEL = "text-[9px] text-slate-500 mr-2 uppercase tracking-widest font-bold"
+    REFERENCE_LABEL = "text-[9px] text-slate-400 mr-2 uppercase tracking-widest font-bold"
     REFERENCE_VALUE = "text-xs font-semibold text-slate-300"
     
     # Section headers

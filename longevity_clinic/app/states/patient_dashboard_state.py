@@ -1,7 +1,19 @@
 """Patient dashboard state management."""
 
 import reflex as rx
+import asyncio
 from typing import List, Dict, Any, TypedDict
+
+from .functions import (
+    start_voice_recording,
+    stop_voice_recording,
+    transcribe_voice_input,
+    process_text_checkin,
+    extract_health_topics,
+    save_checkin,
+    log_symptom,
+    log_medication_dose,
+)
 
 
 class NutritionSummary(TypedDict):
@@ -65,6 +77,27 @@ class SymptomLog(TypedDict):
     timestamp: str
 
 
+class Reminder(TypedDict):
+    """Health reminder type."""
+    id: str
+    title: str
+    description: str
+    time: str
+    type: str  # medication, appointment, checkup, exercise
+    completed: bool
+
+
+class SymptomTrend(TypedDict):
+    """Symptom trend data type."""
+    id: str
+    symptom_name: str
+    current_severity: int
+    previous_severity: int
+    trend: str  # improving, worsening, stable
+    change_percent: float
+    period: str
+
+
 class DataSource(TypedDict):
     """Data source type."""
     id: str
@@ -100,12 +133,30 @@ class PatientDashboardState(rx.State):
     # Check-in modal state
     show_checkin_modal: bool = False
     checkin_type: str = "voice"
+    checkin_text: str = ""
+    selected_topics: List[str] = []
+    
+    # Voice recording state
+    is_recording: bool = False
+    recording_session_id: str = ""
+    recording_duration: float = 0.0
+    transcribed_text: str = ""
+    transcription_status: str = ""  # 'idle', 'recording', 'transcribing', 'done', 'error'
     
     # Other modal states
     show_medication_modal: bool = False
     show_condition_modal: bool = False
     show_symptom_modal: bool = False
     show_connect_modal: bool = False
+    show_add_food_modal: bool = False
+    
+    # Add food form state
+    new_food_name: str = ""
+    new_food_calories: str = ""
+    new_food_protein: str = ""
+    new_food_carbs: str = ""
+    new_food_fat: str = ""
+    new_food_meal_type: str = "snack"
     
     # Selected items for modals
     selected_medication: Dict[str, Any] = {}
@@ -287,6 +338,79 @@ class PatientDashboardState(rx.State):
         },
     ]
     
+    reminders: List[Reminder] = [
+        {
+            "id": "1",
+            "title": "Take Metformin",
+            "description": "500mg with breakfast",
+            "time": "8:00 AM",
+            "type": "medication",
+            "completed": True,
+        },
+        {
+            "id": "2",
+            "title": "Blood Pressure Check",
+            "description": "Log your morning reading",
+            "time": "9:00 AM",
+            "type": "checkup",
+            "completed": False,
+        },
+        {
+            "id": "3",
+            "title": "Evening Walk",
+            "description": "30 minutes moderate pace",
+            "time": "6:00 PM",
+            "type": "exercise",
+            "completed": False,
+        },
+        {
+            "id": "4",
+            "title": "Take Lisinopril",
+            "description": "10mg in the morning",
+            "time": "8:30 AM",
+            "type": "medication",
+            "completed": True,
+        },
+        {
+            "id": "5",
+            "title": "Dr. Chen Appointment",
+            "description": "Follow-up consultation",
+            "time": "Tomorrow, 2:00 PM",
+            "type": "appointment",
+            "completed": False,
+        },
+    ]
+    
+    symptom_trends: List[SymptomTrend] = [
+        {
+            "id": "1",
+            "symptom_name": "Fatigue",
+            "current_severity": 5,
+            "previous_severity": 7,
+            "trend": "improving",
+            "change_percent": 28.6,
+            "period": "Last 7 days",
+        },
+        {
+            "id": "2",
+            "symptom_name": "Headache",
+            "current_severity": 3,
+            "previous_severity": 3,
+            "trend": "stable",
+            "change_percent": 0.0,
+            "period": "Last 7 days",
+        },
+        {
+            "id": "3",
+            "symptom_name": "Joint Stiffness",
+            "current_severity": 4,
+            "previous_severity": 6,
+            "trend": "improving",
+            "change_percent": 33.3,
+            "period": "Last 7 days",
+        },
+    ]
+    
     data_sources: List[DataSource] = [
         {
             "id": "1",
@@ -440,14 +564,84 @@ class PatientDashboardState(rx.State):
     def set_checkin_type(self, checkin_type: str):
         """Set check-in type."""
         self.checkin_type = checkin_type
+        # Reset recording state when switching types
+        self.is_recording = False
+        self.recording_duration = 0.0
+        self.transcribed_text = ""
+        self.transcription_status = "idle"
+    
+    def set_checkin_text(self, text: str):
+        """Set the check-in text content."""
+        self.checkin_text = text
+    
+    def toggle_topic(self, topic: str):
+        """Toggle a topic selection."""
+        if topic in self.selected_topics:
+            self.selected_topics = [t for t in self.selected_topics if t != topic]
+        else:
+            self.selected_topics = [*self.selected_topics, topic]
+    
+    def is_topic_selected(self, topic: str) -> bool:
+        """Check if a topic is selected."""
+        return topic in self.selected_topics
+    
+    @rx.event
+    async def toggle_recording(self):
+        """Toggle voice recording on/off."""
+        if not self.is_recording:
+            # Start recording
+            self.is_recording = True
+            self.transcription_status = "recording"
+            self.recording_duration = 0.0
+            
+            result = await start_voice_recording()
+            self.recording_session_id = result["session_id"]
+            
+            # Start duration timer (simulated)
+            yield PatientDashboardState.increment_recording_duration
+        else:
+            # Stop recording
+            self.is_recording = False
+            self.transcription_status = "transcribing"
+            
+            # Stop and get audio
+            await stop_voice_recording(self.recording_session_id)
+            
+            # Transcribe the audio
+            transcription = await transcribe_voice_input(None)
+            self.transcribed_text = transcription["text"]
+            self.transcription_status = "done"
+            
+            # Extract topics from transcription
+            topics_result = await extract_health_topics(self.transcribed_text)
+            self.selected_topics = topics_result["topics"]
+    
+    @rx.event
+    async def increment_recording_duration(self):
+        """Increment the recording duration timer."""
+        while self.is_recording:
+            await asyncio.sleep(1)
+            if self.is_recording:
+                self.recording_duration += 1.0
+                yield
     
     def open_checkin_modal(self):
         """Open check-in modal."""
         self.show_checkin_modal = True
+        # Reset state
+        self.checkin_type = "voice"
+        self.checkin_text = ""
+        self.selected_topics = []
+        self.is_recording = False
+        self.recording_duration = 0.0
+        self.transcribed_text = ""
+        self.transcription_status = "idle"
     
     def close_checkin_modal(self):
         """Close check-in modal."""
         self.show_checkin_modal = False
+        self.is_recording = False
+        self.transcription_status = "idle"
     
     def open_medication_modal(self, medication: Dict[str, Any]):
         """Open medication modal with selected medication."""
@@ -487,15 +681,156 @@ class PatientDashboardState(rx.State):
         """Close connect data source modal."""
         self.show_connect_modal = False
     
-    def save_checkin(self):
-        """Save a new check-in."""
-        # In a real app, this would save to database
-        self.show_checkin_modal = False
+    def open_add_food_modal(self):
+        """Open add food modal."""
+        self.show_add_food_modal = True
+        # Reset form
+        self.new_food_name = ""
+        self.new_food_calories = ""
+        self.new_food_protein = ""
+        self.new_food_carbs = ""
+        self.new_food_fat = ""
+        self.new_food_meal_type = "snack"
     
-    def save_symptom_log(self):
-        """Save a symptom log entry."""
-        # In a real app, this would save to database
+    def close_add_food_modal(self):
+        """Close add food modal."""
+        self.show_add_food_modal = False
+    
+    def set_new_food_name(self, value: str):
+        """Set new food name."""
+        self.new_food_name = value
+    
+    def set_new_food_calories(self, value: str):
+        """Set new food calories."""
+        self.new_food_calories = value
+    
+    def set_new_food_protein(self, value: str):
+        """Set new food protein."""
+        self.new_food_protein = value
+    
+    def set_new_food_carbs(self, value: str):
+        """Set new food carbs."""
+        self.new_food_carbs = value
+    
+    def set_new_food_fat(self, value: str):
+        """Set new food fat."""
+        self.new_food_fat = value
+    
+    def set_new_food_meal_type(self, value: str):
+        """Set new food meal type."""
+        self.new_food_meal_type = value
+    
+    def save_food_entry(self):
+        """Save a new food entry."""
+        from datetime import datetime
+        import uuid
+        
+        # Create new food entry
+        new_entry = {
+            "id": str(uuid.uuid4())[:8],
+            "name": self.new_food_name,
+            "calories": int(self.new_food_calories) if self.new_food_calories else 0,
+            "protein": float(self.new_food_protein) if self.new_food_protein else 0.0,
+            "carbs": float(self.new_food_carbs) if self.new_food_carbs else 0.0,
+            "fat": float(self.new_food_fat) if self.new_food_fat else 0.0,
+            "time": datetime.now().strftime("%I:%M %p"),
+            "meal_type": self.new_food_meal_type,
+        }
+        
+        # Add to list
+        self.food_entries = [*self.food_entries, new_entry]
+        
+        # Update nutrition summary
+        self.nutrition_summary = {
+            **self.nutrition_summary,
+            "total_calories": self.nutrition_summary["total_calories"] + new_entry["calories"],
+            "total_protein": self.nutrition_summary["total_protein"] + new_entry["protein"],
+            "total_carbs": self.nutrition_summary["total_carbs"] + new_entry["carbs"],
+            "total_fat": self.nutrition_summary["total_fat"] + new_entry["fat"],
+        }
+        
+        # Close modal
+        self.show_add_food_modal = False
+    
+    @rx.event
+    async def save_checkin(self):
+        """Save a new check-in using the processing functions."""
+        # Determine content based on type
+        content = ""
+        if self.checkin_type == "voice":
+            content = self.transcribed_text
+        else:
+            # Process text input
+            text_result = await process_text_checkin(self.checkin_text)
+            if not text_result["is_valid"]:
+                # Handle validation error
+                return
+            content = text_result["sanitized_text"]
+        
+        # Extract topics if not already done
+        if not self.selected_topics and content:
+            topics_result = await extract_health_topics(content)
+            self.selected_topics = topics_result["topics"]
+        
+        # Save the check-in
+        result = await save_checkin(
+            checkin_type=self.checkin_type,
+            content=content,
+            topics=self.selected_topics,
+        )
+        
+        if result["status"] == "success":
+            # Add to local checkins list for demo
+            from datetime import datetime
+            new_checkin = {
+                "id": result["checkin_id"],
+                "type": self.checkin_type,
+                "summary": content[:100] + "..." if len(content) > 100 else content,
+                "timestamp": datetime.now().strftime("Today, %I:%M %p"),
+                "sentiment": "neutral",
+                "key_topics": self.selected_topics,
+                "provider_reviewed": False,
+            }
+            self.checkins = [new_checkin, *self.checkins]
+        
+        self.show_checkin_modal = False
+        # Reset state
+        self.is_recording = False
+        self.recording_duration = 0.0
+        self.transcribed_text = ""
+        self.checkin_text = ""
+        self.selected_topics = []
+        self.transcription_status = "idle"
+    
+    @rx.event
+    async def save_symptom_log(self):
+        """Save a symptom log entry using the processing functions."""
+        if self.selected_symptom:
+            result = await log_symptom(
+                symptom_name=self.selected_symptom.get("name", "Unknown"),
+                severity=5,  # Default - would come from form
+                notes="",
+            )
+            if result["status"] == "success":
+                # Add to local logs for demo
+                from datetime import datetime
+                new_log = {
+                    "id": result["log_id"],
+                    "symptom_name": self.selected_symptom.get("name", "Unknown"),
+                    "severity": 5,
+                    "notes": "",
+                    "timestamp": datetime.now().strftime("Today, %I:%M %p"),
+                }
+                self.symptom_logs = [new_log, *self.symptom_logs]
+        
         self.show_symptom_modal = False
+    
+    @rx.event
+    async def log_dose(self, medication_id: str):
+        """Log a medication dose."""
+        result = await log_medication_dose(medication_id=medication_id)
+        # Update UI or show confirmation
+        self.show_medication_modal = False
     
     def load_dashboard_data(self):
         """Load dashboard data on mount."""

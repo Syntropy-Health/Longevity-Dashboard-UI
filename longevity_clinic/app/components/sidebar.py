@@ -38,11 +38,11 @@ def sidebar_content() -> rx.Component:
             rx.icon("activity", class_name="w-8 h-8 text-teal-400 mr-3"),
             rx.el.div(
                 rx.el.span(
-                    "Longevity",
+                    current_config.app_name.split(" ")[0] if " " in current_config.app_name else current_config.app_name,
                     class_name="block font-bold text-lg tracking-tight text-white leading-none",
                 ),
                 rx.el.span(
-                    "Clinic",
+                    " ".join(current_config.app_name.split(" ")[1:]) if " " in current_config.app_name else "CLINIC",
                     class_name="block text-xs text-teal-400 uppercase tracking-widest",
                 ),
             ),
@@ -53,7 +53,7 @@ def sidebar_content() -> rx.Component:
                 AuthState.is_admin,
                 rx.el.div(
                     rx.el.p(
-                        "ADMINISTRATION",
+                        current_config.admin_role_name.upper(),
                         class_name="px-4 mt-6 mb-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest",
                     ),
                     sidebar_item("Dashboard", "layout-dashboard", "/admin/dashboard"),
@@ -64,7 +64,7 @@ def sidebar_content() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.p(
-                        "PATIENT PORTAL",
+                        current_config.patient_role_name.upper() + " PORTAL",
                         class_name="px-4 mt-6 mb-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest",
                     ),
                     sidebar_item("Portal Home", "home", "/patient/portal"),
@@ -93,8 +93,8 @@ def sidebar_content() -> rx.Component:
                 rx.el.div(
                     rx.el.p(
                         rx.cond(
-                            AuthState.user["full_name"] != "",
-                            AuthState.user["full_name"],
+                            AuthState.user_full_name != "",
+                            AuthState.user_full_name,
                             demo_user.full_name,
                         ),
                         class_name="text-sm font-medium text-white leading-none mb-1 truncate max-w-[120px]",
@@ -121,7 +121,7 @@ def sidebar() -> rx.Component:
     """The desktop sidebar component with dark theme."""
     return rx.el.aside(
         sidebar_content(),
-        class_name="fixed top-0 left-0 h-full w-64 bg-slate-900/80 backdrop-blur-xl border-r border-white/10 hidden md:flex flex-col z-40",
+        class_name=f"fixed top-0 left-0 h-full w-64 {GlassStyles.SIDEBAR} hidden md:flex flex-col z-40",
     )
 
 
@@ -136,7 +136,7 @@ def mobile_menu() -> rx.Component:
             rx.el.div(
                 rx.icon("activity", class_name="w-8 h-8 text-teal-400 mr-2"),
                 rx.el.span(
-                    "Longevity Clinic", class_name="text-xl font-bold text-white"
+                    current_config.app_name, class_name="text-xl font-bold text-white"
                 ),
                 rx.el.button(
                     rx.icon("x", class_name="w-6 h-6 text-slate-400 hover:text-white"),
@@ -184,8 +184,8 @@ def mobile_menu() -> rx.Component:
                     rx.el.div(
                         rx.el.p(
                             rx.cond(
-                                AuthState.user["full_name"] != "",
-                                AuthState.user["full_name"],
+                                AuthState.user_full_name != "",
+                                AuthState.user_full_name,
                                 demo_user.full_name,
                             ),
                             class_name="text-base font-medium text-white",

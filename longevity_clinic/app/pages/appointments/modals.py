@@ -8,6 +8,7 @@ This module contains modal dialogs for the appointments page:
 import reflex as rx
 
 from ...styles.constants import GlassStyles
+from ...data.demo import DEMO_PATIENTS
 
 
 def booking_modal(state) -> rx.Component:
@@ -62,6 +63,28 @@ def booking_modal(state) -> rx.Component:
                     # Form content
                     rx.box(
                         rx.vstack(
+                            # Patient selection
+                            rx.vstack(
+                                rx.text("Patient", class_name="text-slate-300 text-sm font-medium"),
+                                rx.select.root(
+                                    rx.select.trigger(
+                                        placeholder="Select patient",
+                                        class_name="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg text-white",
+                                    ),
+                                    rx.select.content(
+                                        *[
+                                            rx.select.item(patient["name"], value=patient["id"])
+                                            for patient in DEMO_PATIENTS
+                                        ],
+                                        class_name="bg-slate-800 border border-slate-700",
+                                    ),
+                                    value=state.booking_patient,
+                                    on_change=state.set_booking_patient,
+                                ),
+                                width="100%",
+                                align_items="start",
+                                spacing="2",
+                            ),
                             # Appointment type
                             rx.vstack(
                                 rx.text("Appointment Type", class_name="text-slate-300 text-sm font-medium"),

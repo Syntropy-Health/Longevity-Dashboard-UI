@@ -8,7 +8,7 @@ config = rx.Config(
         rx.plugins.TailwindV4Plugin(),
     ],
     # Database
-    db_url=os.getenv("db_url", "postgresql://postgres:postgres@localhost:5432/longevity_clinic"),
+    db_url=os.getenv("DB_URL", "postgresql://postgres:postgres@localhost:5432/longevity_clinic"),
     # Additional frontend packages
     frontend_packages=["react-icons"],
     # CORS settings for production

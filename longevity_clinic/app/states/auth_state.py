@@ -108,3 +108,10 @@ class AuthState(rx.State):
         if not self.user:
             return ""
         return self.user["role"].capitalize()
+
+    @rx.var
+    def user_full_name(self) -> str:
+        """Get user's full name safely."""
+        if not self.user:
+            return ""
+        return self.user.get("full_name", "")

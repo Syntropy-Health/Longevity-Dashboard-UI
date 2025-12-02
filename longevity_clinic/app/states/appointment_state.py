@@ -5,6 +5,8 @@ from datetime import datetime, date, timedelta
 import calendar as cal
 import reflex as rx
 
+from ..data.demo import DEMO_PATIENTS
+
 
 class Appointment(TypedDict):
     """Structure for an appointment."""
@@ -54,6 +56,7 @@ class AppointmentState(rx.State):
     # Booking form fields
     booking_type: str = ""
     booking_doctor: str = ""
+    booking_patient: str = ""
     booking_date: str = ""
     booking_time: str = ""
     booking_notes: str = ""
@@ -414,6 +417,7 @@ class AppointmentState(rx.State):
             # Reset form when closing
             self.booking_type = ""
             self.booking_doctor = ""
+            self.booking_patient = ""
             self.booking_date = ""
             self.booking_time = ""
             self.booking_notes = ""
@@ -441,6 +445,10 @@ class AppointmentState(rx.State):
     def set_booking_doctor(self, value: str):
         """Set booking doctor."""
         self.booking_doctor = value
+
+    def set_booking_patient(self, value: str):
+        """Set booking patient."""
+        self.booking_patient = value
     
     def set_booking_date(self, value: str):
         """Set booking date."""
@@ -459,6 +467,17 @@ class AppointmentState(rx.State):
         if not self.booking_date or not self.booking_time:
             return
         
+        # Find patient name if patient selected
+        patient_name = "Current User"
+        patient_id = "current"
+        
+        if self.booking_patient:
+            patient_id = self.booking_patient
+            for p in DEMO_PATIENTS:
+                if p["id"] == self.booking_patient:
+                    patient_name = p["name"]
+                    break
+        
         new_id = f"APT{len(self.appointments) + 100}"
         new_appointment = {
             "id": new_id,
@@ -468,8 +487,8 @@ class AppointmentState(rx.State):
             "time": self.booking_time,
             "duration_minutes": 60,
             "treatment_type": self.booking_type or "Consultation",
-            "patient_id": "current",
-            "patient_name": "Current User",
+            "patient_id": patient_id,
+            "patient_name": patient_name,
             "provider": self.booking_doctor or "Dr. Johnson",
             "status": "scheduled",
             "notes": self.booking_notes
@@ -480,6 +499,7 @@ class AppointmentState(rx.State):
         # Reset form
         self.booking_type = ""
         self.booking_doctor = ""
+        self.booking_patient = ""
         self.booking_date = ""
         self.booking_time = ""
         self.booking_notes = ""

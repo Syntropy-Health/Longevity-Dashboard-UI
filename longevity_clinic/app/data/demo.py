@@ -213,6 +213,7 @@ __all__ = [
     "BIOMARKER_METRIC_DEMO_DATA",
     "ADMIN_NOTIFICATIONS_DEMO",
     "PATIENT_NOTIFICATIONS_DEMO",
+    "DEMO_PATIENTS",
 ]
 
 
@@ -334,4 +335,17 @@ PATIENT_NOTIFICATIONS_DEMO: list[dict] = [
         "recipient_role": "patient",
         "patient_id": "current"
     }
+]
+
+
+# =============================================================================
+# Patient Demo Data
+# =============================================================================
+
+DEMO_PATIENTS: list[dict] = [
+    {"id": "P001", "name": "Sarah Chen", "email": "sarah.chen@example.com"},
+    {"id": "P002", "name": "Marcus Williams", "email": "marcus.w@example.com"},
+    {"id": "P003", "name": "Elena Rodriguez", "email": "elena.r@example.com"},
+    {"id": "P004", "name": "James Miller", "email": "james.m@example.com"},
+    {"id": "P005", "name": "Emily Wong", "email": "emily.w@example.com"},
 ]

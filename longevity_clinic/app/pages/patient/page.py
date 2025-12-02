@@ -23,6 +23,7 @@ from .modals import (
     condition_modal,
     symptom_modal,
     connect_source_modal,
+    add_food_modal,
 )
 
 
@@ -72,6 +73,7 @@ def patient_portal() -> rx.Component:
             condition_modal(),
             symptom_modal(),
             connect_source_modal(),
+            add_food_modal(),
             on_mount=[
                 PatientBiomarkerState.load_biomarkers,
                 PatientDashboardState.load_dashboard_data,

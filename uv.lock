@@ -213,10 +213,14 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "reflex" },
+    { name = "reflex-calendar" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex", specifier = ">=0.8.20" }]
+requires-dist = [
+    { name = "reflex", specifier = ">=0.8.20" },
+    { name = "reflex-calendar" },
+]
 
 [[package]]
 name = "mako"
@@ -481,6 +485,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f1/7a/d1879b8f5c171371ce8fe2765e6699459e4f5b53a262124939dd674cdefe/reflex-0.8.20.tar.gz", hash = "sha256:793fa9132e40564784df898b58162e5346fb17dfb7f9f87f7ba1999eadba8349", size = 563250, upload-time = "2025-11-17T19:47:30.832Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/72/e1/e83147378c3daac289dcd69db63833bf6be6a8f3f69bd9367413f227f69b/reflex-0.8.20-py3-none-any.whl", hash = "sha256:6af2b2ad2f2a97ebeb45370dfbbe76dd4ca24c8cd51227fe4cbe7f15fb672ed5", size = 804436, upload-time = "2025-11-17T19:47:29.195Z" },
+]
+
+[[package]]
+name = "reflex-calendar"
+version = "0.0.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "reflex" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e7/c9/362730fcfe58a97bfe10ec1155e3b26e27374b83be8394d4fda56521a670/reflex_calendar-0.0.6.tar.gz", hash = "sha256:edfcd63870dee25ba5eebe50986304c98894b0a086a29b001d6ea6dc5de577c1", size = 5564, upload-time = "2025-01-13T16:24:05.168Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/db/f8/134c9ddac87f992cbae86a1257e28ca640bd8a95cce083d0f1512f752003/reflex_calendar-0.0.6-py3-none-any.whl", hash = "sha256:38e3e9307f88bcf02f4294c0fedacaa96b67f2f352fced9f5901c44b68d07684", size = 6013, upload-time = "2025-01-13T16:24:02.797Z" },
 ]
 
 [[package]]

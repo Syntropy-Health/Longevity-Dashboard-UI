@@ -1,3 +1,4 @@
+import os
 from typing import Literal
 
 from pydantic import BaseModel, computed_field
@@ -35,11 +36,13 @@ class DemoUserConfig(BaseModel):
 class AppConfig(BaseModel):
     """Main application configuration."""
 
-    app_name: str = "Vitality Clinic"
-    clinic_name: str = "Vitality Health"
-    admin_role_name: str = "Administrator"
-    patient_role_name: str = "Patient"
-    theme_color: str = "emerald"
+    app_name: str = os.getenv("APP_NAME", "Vitality Clinic")
+    clinic_name: str = os.getenv("CLINIC_NAME", "Vitality Health")
+    admin_role_name: str = os.getenv("ADMIN_ROLE_NAME", "Administrator")
+    patient_role_name: str = os.getenv("PATIENT_ROLE_NAME", "Patient")
+    theme_color: str = os.getenv("THEME_COLOR", "emerald")
+    
+    # Glass UI Styles
     glass_bg_gradient: str = "bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-blue-50/30 via-white to-emerald-50/30"
     glass_panel_style: str = "bg-white/60 backdrop-blur-3xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] hover:bg-white/80 transition-all duration-500"
     glass_header_style: str = "bg-white/30 backdrop-blur-xl border-b border-white/20 sticky top-0 z-50 supports-[backdrop-filter]:bg-white/10"

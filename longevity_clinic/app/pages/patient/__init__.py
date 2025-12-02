@@ -9,7 +9,10 @@ This module provides the patient portal interface with:
 """
 
 from .page import patient_portal
+from .components import patient_sidebar_tabs, dashboard_tabs
 
 __all__ = [
     "patient_portal",
+    "patient_sidebar_tabs",
+    "dashboard_tabs",
 ]

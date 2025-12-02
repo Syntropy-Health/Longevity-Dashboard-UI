@@ -301,19 +301,27 @@ def tab_button(label: str, tab_id: str, icon: str) -> rx.Component:
     )
 
 
-def dashboard_tabs() -> rx.Component:
-    """Main dashboard tab navigation."""
+def patient_sidebar_tabs() -> rx.Component:
+    """Patient dashboard tab navigation - streamlined version.
+    
+    Shows: Dashboard (overview), Check-ins, Settings (includes data sources).
+    Other tabs are accessible from the overview page.
+    """
     return rx.el.div(
         rx.el.div(
-            tab_button("Overview", "overview", "layout-dashboard"),
+            tab_button("Dashboard", "overview", "layout-dashboard"),
             tab_button("Food Tracker", "food", "apple"),
             tab_button("Medications", "medications", "pill"),
             tab_button("Conditions", "conditions", "heart-pulse"),
             tab_button("Symptoms", "symptoms", "thermometer"),
-            tab_button("Data Sources", "data_sources", "link"),
             tab_button("Check-ins", "checkins", "mic"),
             tab_button("Settings", "settings", "settings"),
             class_name="flex flex-wrap gap-2 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10",
         ),
         class_name="mb-8",
     )
+
+
+def dashboard_tabs() -> rx.Component:
+    """Main dashboard tab navigation - legacy, now aliased to patient_sidebar_tabs."""
+    return patient_sidebar_tabs()

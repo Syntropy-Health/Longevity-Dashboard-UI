@@ -105,6 +105,11 @@ class NotificationState(rx.State):
         }
         return icons.get(notification_type, "bell")
     
+    @rx.var
+    def has_selected_notification(self) -> bool:
+        """Check if a notification is currently selected."""
+        return bool(self.selected_notification and self.selected_notification.get("id"))
+    
     def get_color_for_type(self, notification_type: str) -> str:
         """Get the appropriate color class for a notification type."""
         colors = {

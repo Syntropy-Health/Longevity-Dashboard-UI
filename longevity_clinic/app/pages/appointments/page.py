@@ -7,8 +7,7 @@ import reflex as rx
 
 from ...styles.constants import GlassStyles
 from ...states.auth_state import AuthState
-from ...components.sidebar import sidebar
-from ...components.header import header
+from ...components.layout import authenticated_layout
 from .sections import appointments_sidebar, appointments_content
 from .modals import details_modal
 
@@ -158,55 +157,29 @@ def appointments_page() -> rx.Component:
     Returns:
         The complete appointments page component
     """
-    return rx.box(
-        rx.hstack(
-            # Sidebar
-            sidebar(),
-            # Main content
-            rx.box(
-                rx.vstack(
-                    # Header
-                    header(),
-                    # Page title
-                    rx.box(
-                        rx.hstack(
-                            rx.vstack(
-                                rx.text("Appointments", class_name="text-2xl font-bold text-white"),
-                                rx.text(
-                                    "Manage your appointments and schedule visits",
-                                    class_name="text-slate-400 text-sm",
-                                ),
-                                align_items="start",
-                                spacing="1",
-                            ),
-                            rx.spacer(),
-                            width="100%",
-                        ),
-                        class_name="px-6 py-4",
-                    ),
-                    # Main layout with sidebar and content
-                    rx.box(
-                        rx.hstack(
-                            # Left sidebar with calendar
-                            appointments_sidebar(AppointmentState),
-                            # Main content area
-                            appointments_content(AppointmentState),
-                            spacing="6",
-                            align_items="start",
-                            width="100%",
-                        ),
-                        class_name="px-6 pb-6 flex-1 overflow-auto",
-                    ),
-                    spacing="0",
-                    width="100%",
-                    height="100vh",
+    return authenticated_layout(
+        rx.el.div(
+            # Page header
+            rx.el.div(
+                rx.el.h1(
+                    "Appointments",
+                    class_name=f"text-2xl {GlassStyles.HEADING_LIGHT} mb-2",
                 ),
-                class_name="flex-1 bg-slate-900 overflow-hidden",
+                rx.el.p(
+                    "Manage your appointments and schedule visits",
+                    class_name="text-slate-400 text-sm",
+                ),
+                class_name="mb-6",
             ),
-            spacing="0",
-            width="100%",
-        ),
-        # Details modal
-        details_modal(AppointmentState),
-        class_name="min-h-screen bg-slate-900",
+            # Main layout with calendar sidebar and content
+            rx.el.div(
+                # Left sidebar with calendar
+                appointments_sidebar(AppointmentState),
+                # Main content area
+                appointments_content(AppointmentState),
+                class_name="flex flex-col lg:flex-row gap-6",
+            ),
+            # Details modal
+            details_modal(AppointmentState),
+        )
     )

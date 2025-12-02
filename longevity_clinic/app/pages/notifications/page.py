@@ -14,14 +14,7 @@ from .views import notifications_content
 @rx.page(
     route="/notifications",
     title="Notifications - Longevity Clinic",
-    on_load=[
-        AuthState.check_auth,
-        rx.cond(
-            AuthState.is_admin,
-            NotificationState.load_admin_notifications,
-            NotificationState.load_patient_notifications
-        )
-    ]
+    on_load=[AuthState.check_auth]
 )
 def notifications_page() -> rx.Component:
     """Notifications page component.
@@ -32,6 +25,7 @@ def notifications_page() -> rx.Component:
     return authenticated_layout(
         rx.box(
             notifications_content(),
-            class_name="p-6 max-w-4xl mx-auto"
+            class_name="p-6 max-w-4xl mx-auto",
+            on_mount=NotificationState.load_notifications_for_role,
         )
     )

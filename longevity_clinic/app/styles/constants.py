@@ -69,7 +69,7 @@ class GlassStyles:
     
     # Primary button - teal gradient
     BUTTON_PRIMARY = (
-        "px-6 py-2.5 rounded-xl font-medium bg-gradient-to-r from-teal-500/80 to-teal-400/80 "
+        "px-7 py-2.5 rounded-xl font-medium bg-gradient-to-r from-teal-500/80 to-teal-400/80 "
         "hover:from-teal-400 hover:to-teal-300 text-slate-900 shadow-lg shadow-teal-500/20 "
         "transition-all duration-200 backdrop-blur-sm"
     )

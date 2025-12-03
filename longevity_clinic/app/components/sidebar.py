@@ -72,6 +72,12 @@ def sidebar_content() -> rx.Component:
                     sidebar_item(
                         "Treatment Search", "search", "/patient/treatment-search"
                     ),
+                    rx.el.p(
+                        "QUICK ACCESS",
+                        class_name="px-4 mt-6 mb-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest",
+                    ),
+                    sidebar_item("Check-ins", "mic", "/patient/checkins"),
+                    sidebar_item("Settings", "settings", "/patient/settings"),
                     class_name="flex flex-col px-3",
                 ),
             ),
@@ -164,6 +170,8 @@ def mobile_menu() -> rx.Component:
                         mobile_sidebar_item(
                             "Treatment Search", "search", "/patient/treatment-search"
                         ),
+                        mobile_sidebar_item("Check-ins", "mic", "/patient/checkins"),
+                        mobile_sidebar_item("Settings", "settings", "/patient/settings"),
                     ),
                 ),
                 class_name="flex-1 overflow-y-auto",

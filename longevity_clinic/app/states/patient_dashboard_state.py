@@ -105,7 +105,9 @@ class DataSource(TypedDict):
     type: str
     status: str
     icon: str
+    image: str
     last_sync: str
+    connected: bool
 
 
 class CheckIn(TypedDict):
@@ -162,6 +164,10 @@ class PatientDashboardState(rx.State):
     selected_medication: Dict[str, Any] = {}
     selected_condition: Dict[str, Any] = {}
     selected_symptom: Dict[str, Any] = {}
+    
+    # Settings state
+    email_notifications: bool = True
+    push_notifications: bool = True
     
     # Data
     nutrition_summary: NutritionSummary = {
@@ -418,7 +424,9 @@ class PatientDashboardState(rx.State):
             "type": "wearable",
             "status": "connected",
             "icon": "watch",
+            "image": "/devices/apple_watch.svg",
             "last_sync": "5 min ago",
+            "connected": True,
         },
         {
             "id": "2",
@@ -426,7 +434,9 @@ class PatientDashboardState(rx.State):
             "type": "scale",
             "status": "connected",
             "icon": "weight",
+            "image": "/devices/withings_scale.svg",
             "last_sync": "2 hours ago",
+            "connected": True,
         },
         {
             "id": "3",
@@ -434,7 +444,9 @@ class PatientDashboardState(rx.State):
             "type": "wearable",
             "status": "connected",
             "icon": "circle",
+            "image": "/devices/oura_ring.svg",
             "last_sync": "1 hour ago",
+            "connected": True,
         },
         {
             "id": "4",
@@ -442,7 +454,9 @@ class PatientDashboardState(rx.State):
             "type": "cgm",
             "status": "connected",
             "icon": "activity",
+            "image": "/devices/dexcom_g7.svg",
             "last_sync": "Real-time",
+            "connected": True,
         },
         {
             "id": "5",
@@ -450,7 +464,9 @@ class PatientDashboardState(rx.State):
             "type": "app",
             "status": "connected",
             "icon": "smartphone",
+            "image": "/devices/myfitnesspal.svg",
             "last_sync": "30 min ago",
+            "connected": True,
         },
         {
             "id": "6",
@@ -458,7 +474,9 @@ class PatientDashboardState(rx.State):
             "type": "ehr",
             "status": "connected",
             "icon": "stethoscope",
+            "image": "/devices/epic_mychart.svg",
             "last_sync": "1 day ago",
+            "connected": True,
         },
     ]
     
@@ -525,7 +543,7 @@ class PatientDashboardState(rx.State):
     @rx.var
     def connected_sources_count(self) -> int:
         """Count connected data sources."""
-        return len([s for s in self.data_sources if s["status"] == "connected"])
+        return len([s for s in self.data_sources if s.get("connected", False)])
     
     @rx.var
     def filtered_data_sources(self) -> List[DataSource]:
@@ -561,6 +579,22 @@ class PatientDashboardState(rx.State):
         """Set data sources filter."""
         self.data_sources_filter = filter_value
     
+    def toggle_data_source_connection(self, source_id: str):
+        """Toggle a data source connection on/off."""
+        updated_sources = []
+        for source in self.data_sources:
+            if source["id"] == source_id:
+                new_connected = not source["connected"]
+                updated_sources.append({
+                    **source,
+                    "connected": new_connected,
+                    "status": "connected" if new_connected else "disconnected",
+                    "last_sync": "Just now" if new_connected else "Disconnected",
+                })
+            else:
+                updated_sources.append(source)
+        self.data_sources = updated_sources
+    
     def set_checkin_type(self, checkin_type: str):
         """Set check-in type."""
         self.checkin_type = checkin_type
@@ -574,6 +608,14 @@ class PatientDashboardState(rx.State):
         """Set the check-in text content."""
         self.checkin_text = text
     
+    def toggle_email_notifications(self):
+        """Toggle email notifications."""
+        self.email_notifications = not self.email_notifications
+    
+    def toggle_push_notifications(self):
+        """Toggle push notifications."""
+        self.push_notifications = not self.push_notifications
+    
     def toggle_topic(self, topic: str):
         """Toggle a topic selection."""
         if topic in self.selected_topics:
@@ -586,44 +628,61 @@ class PatientDashboardState(rx.State):
         return topic in self.selected_topics
     
     @rx.event
+    async def start_recording(self):
+        """Start voice recording."""
+        self.is_recording = True
+        self.transcription_status = "recording"
+        self.recording_duration = 0.0
+        
+        result = await start_voice_recording()
+        self.recording_session_id = result["session_id"]
+    
+    @rx.event
+    async def stop_recording(self):
+        """Stop voice recording and transcribe."""
+        # Stop recording first
+        self.is_recording = False
+        self.transcription_status = "transcribing"
+        
+        # Stop and get audio
+        await stop_voice_recording(self.recording_session_id)
+        
+        # Transcribe the audio
+        transcription = await transcribe_voice_input(None)
+        self.transcribed_text = transcription["text"]
+        self.transcription_status = "done"
+        
+        # Extract topics from transcription
+        topics_result = await extract_health_topics(self.transcribed_text)
+        self.selected_topics = topics_result["topics"]
+    
+    @rx.event
     async def toggle_recording(self):
         """Toggle voice recording on/off."""
         if not self.is_recording:
             # Start recording
-            self.is_recording = True
-            self.transcription_status = "recording"
-            self.recording_duration = 0.0
-            
-            result = await start_voice_recording()
-            self.recording_session_id = result["session_id"]
-            
-            # Start duration timer (simulated)
+            yield PatientDashboardState.start_recording
+            # Start duration timer in background
             yield PatientDashboardState.increment_recording_duration
         else:
             # Stop recording
-            self.is_recording = False
-            self.transcription_status = "transcribing"
-            
-            # Stop and get audio
-            await stop_voice_recording(self.recording_session_id)
-            
-            # Transcribe the audio
-            transcription = await transcribe_voice_input(None)
-            self.transcribed_text = transcription["text"]
-            self.transcription_status = "done"
-            
-            # Extract topics from transcription
-            topics_result = await extract_health_topics(self.transcribed_text)
-            self.selected_topics = topics_result["topics"]
+            yield PatientDashboardState.stop_recording
     
-    @rx.event
+    @rx.event(background=True)
     async def increment_recording_duration(self):
         """Increment the recording duration timer."""
-        while self.is_recording:
+        async with self:
+            # Check initial state
+            if not self.is_recording:
+                return
+        
+        while True:
             await asyncio.sleep(1)
-            if self.is_recording:
+            async with self:
+                # Check if still recording before incrementing
+                if not self.is_recording:
+                    return
                 self.recording_duration += 1.0
-                yield
     
     def open_checkin_modal(self):
         """Open check-in modal."""
@@ -700,25 +759,49 @@ class PatientDashboardState(rx.State):
         """Set new food name."""
         self.new_food_name = value
     
-    def set_new_food_calories(self, value: str):
+    def set_new_food_calories(self, value: float):
         """Set new food calories."""
-        self.new_food_calories = value
+        self.new_food_calories = str(value) if value else ""
     
-    def set_new_food_protein(self, value: str):
+    def set_new_food_protein(self, value: float):
         """Set new food protein."""
-        self.new_food_protein = value
+        self.new_food_protein = str(value) if value else ""
     
-    def set_new_food_carbs(self, value: str):
+    def set_new_food_carbs(self, value: float):
         """Set new food carbs."""
-        self.new_food_carbs = value
+        self.new_food_carbs = str(value) if value else ""
     
-    def set_new_food_fat(self, value: str):
+    def set_new_food_fat(self, value: float):
         """Set new food fat."""
-        self.new_food_fat = value
+        self.new_food_fat = str(value) if value else ""
     
     def set_new_food_meal_type(self, value: str):
         """Set new food meal type."""
         self.new_food_meal_type = value
+    
+    def set_show_checkin_modal(self, value: bool):
+        """Set show checkin modal state."""
+        self.show_checkin_modal = value
+    
+    def set_show_medication_modal(self, value: bool):
+        """Set show medication modal state."""
+        self.show_medication_modal = value
+    
+    def set_show_condition_modal(self, value: bool):
+        """Set show condition modal state."""
+        self.show_condition_modal = value
+    
+    def set_show_symptom_modal(self, value: bool):
+        """Set show symptom modal state."""
+        self.show_symptom_modal = value
+    
+    def set_show_connect_modal(self, value: bool):
+        """Set show connect modal state."""
+        self.show_connect_modal = value
+    
+    def set_show_add_food_modal(self, value: bool):
+        """Set show add food modal state."""
+        self.show_add_food_modal = value
     
     def save_food_entry(self):
         """Save a new food entry."""

@@ -1,5 +1,16 @@
 import reflex as rx
 import os
+from pathlib import Path
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+        print(f"Loaded environment from {env_path}")
+except ImportError:
+    print("python-dotenv not installed, skipping .env loading")
 
 # Get deployment URLs from environment
 frontend_url = os.getenv("FRONTEND_DEPLOY_URL", "http://localhost:3000")

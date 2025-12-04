@@ -4,6 +4,18 @@ from typing import Literal
 from pydantic import BaseModel, computed_field
 
 
+# Ensure OpenAI API key is loaded from environment
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+CALL_API_TOKEN = os.getenv("CALL_API_TOKEN", "")
+
+# Validate required API keys on startup
+if not OPENAI_API_KEY:
+    print("WARNING: OPENAI_API_KEY not set. Voice transcription and AI features will not work.")
+
+if not CALL_API_TOKEN:
+    print("WARNING: CALL_API_TOKEN not set. Call log fetching will not work.")
+
+
 class DemoUserConfig(BaseModel):
     """Demo user profile configuration for sidebar and UI display."""
 
@@ -41,6 +53,11 @@ class AppConfig(BaseModel):
     admin_role_name: str = os.getenv("ADMIN_ROLE_NAME", "Administrator")
     patient_role_name: str = os.getenv("PATIENT_ROLE_NAME", "Patient")
     theme_color: str = os.getenv("THEME_COLOR", "emerald")
+    
+    # API Configuration
+    openai_api_key: str = OPENAI_API_KEY
+    call_api_token: str = CALL_API_TOKEN
+    call_logs_api_base: str = "https://directus-staging-ee94.up.railway.app/items/call_logs"
     
     # Glass UI Styles
     glass_bg_gradient: str = "bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-blue-50/30 via-white to-emerald-50/30"

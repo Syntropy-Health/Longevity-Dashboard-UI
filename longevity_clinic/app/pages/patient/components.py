@@ -301,11 +301,11 @@ def tab_button(label: str, tab_id: str, icon: str) -> rx.Component:
     )
 
 
-def patient_sidebar_tabs() -> rx.Component:
-    """Patient dashboard tab navigation - streamlined version.
+def patient_portal_tabs() -> rx.Component:
+    """Patient dashboard tab navigation - main portal tabs only.
     
-    Shows: Dashboard (overview), Check-ins, Settings (includes data sources).
-    Other tabs are accessible from the overview page.
+    Shows: Dashboard (overview), Food Tracker, Medications, Conditions, Symptoms
+    Check-ins and Settings are separate pages (no tabs shown on those pages).
     """
     return rx.el.div(
         rx.el.div(
@@ -314,14 +314,17 @@ def patient_sidebar_tabs() -> rx.Component:
             tab_button("Medications", "medications", "pill"),
             tab_button("Conditions", "conditions", "heart-pulse"),
             tab_button("Symptoms", "symptoms", "thermometer"),
-            tab_button("Check-ins", "checkins", "mic"),
-            tab_button("Settings", "settings", "settings"),
             class_name="flex flex-wrap gap-2 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10",
         ),
         class_name="mb-8",
     )
 
 
+def patient_sidebar_tabs() -> rx.Component:
+    """Patient dashboard tab navigation - legacy alias for patient_portal_tabs."""
+    return patient_portal_tabs()
+
+
 def dashboard_tabs() -> rx.Component:
-    """Main dashboard tab navigation - legacy, now aliased to patient_sidebar_tabs."""
-    return patient_sidebar_tabs()
+    """Main dashboard tab navigation - legacy, now aliased to patient_portal_tabs."""
+    return patient_portal_tabs()

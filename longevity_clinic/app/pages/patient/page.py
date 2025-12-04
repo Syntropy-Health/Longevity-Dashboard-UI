@@ -6,16 +6,13 @@ from ...states.auth_state import AuthState
 from ...states.patient_biomarker_state import PatientBiomarkerState
 from ...states.patient_dashboard_state import PatientDashboardState
 from ...styles.constants import GlassStyles
-from .components import patient_sidebar_tabs
+from .components import patient_portal_tabs
 from .tabs import (
     overview_tab,
     food_tracker_tab,
     medications_tab,
     conditions_tab,
     symptoms_tab,
-    data_sources_tab,
-    checkins_tab,
-    settings_tab,
 )
 from .modals import (
     checkin_modal,
@@ -27,8 +24,8 @@ from .modals import (
 )
 
 
-def patient_portal() -> rx.Component:
-    """Patient dashboard page with comprehensive health tracking."""
+def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
+    """Base patient dashboard component with configurable initial tab."""
     return authenticated_layout(
         rx.el.div(
             # Page Header
@@ -51,7 +48,7 @@ def patient_portal() -> rx.Component:
             # Main Layout: Sidebar + Content
             rx.el.div(
                 # Tab Navigation (horizontal for now, could be sidebar later)
-                patient_sidebar_tabs(),
+                patient_portal_tabs(),
                 
                 # Tab Content
                 rx.match(
@@ -61,8 +58,6 @@ def patient_portal() -> rx.Component:
                     ("medications", medications_tab()),
                     ("conditions", conditions_tab()),
                     ("symptoms", symptoms_tab()),
-                    ("checkins", checkins_tab()),
-                    ("settings", settings_with_data_sources_tab()),
                     overview_tab(),  # Default
                 ),
             ),
@@ -77,17 +72,12 @@ def patient_portal() -> rx.Component:
             on_mount=[
                 PatientBiomarkerState.load_biomarkers,
                 PatientDashboardState.load_dashboard_data,
+                lambda: PatientDashboardState.set_active_tab(initial_tab),
             ],
         )
     )
 
 
-def settings_with_data_sources_tab() -> rx.Component:
-    """Settings tab that includes data sources section."""
-    return rx.el.div(
-        settings_tab(),
-        rx.el.div(
-            rx.el.h3("Data Sources", class_name="text-lg font-semibold text-white mb-4 mt-8"),
-            data_sources_tab(),
-        ),
-    )
+def patient_portal() -> rx.Component:
+    """Patient dashboard page with comprehensive health tracking."""
+    return _patient_portal_base("overview")

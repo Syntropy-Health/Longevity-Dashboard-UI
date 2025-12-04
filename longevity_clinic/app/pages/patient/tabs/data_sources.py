@@ -169,12 +169,6 @@ def data_sources_tab() -> rx.Component:
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
-            rx.el.button(
-                rx.icon("plus", class_name="w-4 h-4 mr-1"),
-                "Connect New",
-                on_click=PatientDashboardState.open_connect_modal,
-                class_name=GlassStyles.BUTTON_PRIMARY + " flex items-center whitespace-nowrap",
-            ),
             class_name="flex flex-wrap gap-2 mb-6",
         ),
         # Content based on filter
@@ -199,6 +193,16 @@ def data_sources_tab() -> rx.Component:
                 rx.el.div(
                     rx.foreach(PatientDashboardState.filtered_data_sources, data_source_card),
                     class_name="space-y-4",
+                ),
+                # "Not here?" link
+                rx.el.div(
+                    rx.el.span("Don't see your device? ", class_name="text-slate-500 text-sm"),
+                    rx.el.button(
+                        "Suggest an integration",
+                        on_click=PatientDashboardState.open_suggest_integration_modal,
+                        class_name="text-teal-400 text-sm hover:text-teal-300 underline underline-offset-2 transition-colors",
+                    ),
+                    class_name="mt-6 text-center",
                 ),
             ),
         ),

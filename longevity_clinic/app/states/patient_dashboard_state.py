@@ -151,6 +151,12 @@ class PatientDashboardState(rx.State):
     show_symptom_modal: bool = False
     show_connect_modal: bool = False
     show_add_food_modal: bool = False
+    show_suggest_integration_modal: bool = False
+    
+    # Suggest integration form state
+    suggested_integration_name: str = ""
+    suggested_integration_description: str = ""
+    integration_suggestion_submitted: bool = False
     
     # Add food form state
     new_food_name: str = ""
@@ -595,14 +601,24 @@ class PatientDashboardState(rx.State):
                 updated_sources.append(source)
         self.data_sources = updated_sources
     
-    def set_checkin_type(self, checkin_type: str):
+    @rx.event
+    async def set_checkin_type(self, checkin_type: str):
         """Set check-in type."""
+        from .voice_transcription_state import VoiceTranscriptionState
+        
         self.checkin_type = checkin_type
         # Reset recording state when switching types
         self.is_recording = False
         self.recording_duration = 0.0
         self.transcribed_text = ""
         self.transcription_status = "idle"
+        
+        # Clear voice transcription state
+        voice_state = await self.get_state(VoiceTranscriptionState)
+        voice_state.transcript = ""
+        voice_state.has_error = False
+        voice_state.error_message = ""
+        voice_state.processing = False
     
     def set_checkin_text(self, text: str):
         """Set the check-in text content."""
@@ -684,8 +700,11 @@ class PatientDashboardState(rx.State):
                     return
                 self.recording_duration += 1.0
     
-    def open_checkin_modal(self):
+    @rx.event
+    async def open_checkin_modal(self):
         """Open check-in modal."""
+        from .voice_transcription_state import VoiceTranscriptionState
+        
         self.show_checkin_modal = True
         # Reset state
         self.checkin_type = "voice"
@@ -695,12 +714,29 @@ class PatientDashboardState(rx.State):
         self.recording_duration = 0.0
         self.transcribed_text = ""
         self.transcription_status = "idle"
+        
+        # Clear voice transcription state
+        voice_state = await self.get_state(VoiceTranscriptionState)
+        voice_state.transcript = ""
+        voice_state.has_error = False
+        voice_state.error_message = ""
+        voice_state.processing = False
     
-    def close_checkin_modal(self):
+    @rx.event
+    async def close_checkin_modal(self):
         """Close check-in modal."""
+        from .voice_transcription_state import VoiceTranscriptionState
+        
         self.show_checkin_modal = False
         self.is_recording = False
         self.transcription_status = "idle"
+        
+        # Clear voice transcription state
+        voice_state = await self.get_state(VoiceTranscriptionState)
+        voice_state.transcript = ""
+        voice_state.has_error = False
+        voice_state.error_message = ""
+        voice_state.processing = False
     
     def open_medication_modal(self, medication: Dict[str, Any]):
         """Open medication modal with selected medication."""
@@ -754,6 +790,34 @@ class PatientDashboardState(rx.State):
     def close_add_food_modal(self):
         """Close add food modal."""
         self.show_add_food_modal = False
+    
+    def open_suggest_integration_modal(self):
+        """Open suggest integration modal."""
+        self.show_suggest_integration_modal = True
+        self.suggested_integration_name = ""
+        self.suggested_integration_description = ""
+        self.integration_suggestion_submitted = False
+    
+    def close_suggest_integration_modal(self):
+        """Close suggest integration modal."""
+        self.show_suggest_integration_modal = False
+    
+    def set_show_suggest_integration_modal(self, value: bool):
+        """Set suggest integration modal visibility."""
+        self.show_suggest_integration_modal = value
+    
+    def set_suggested_integration_name(self, value: str):
+        """Set suggested integration name."""
+        self.suggested_integration_name = value
+    
+    def set_suggested_integration_description(self, value: str):
+        """Set suggested integration description."""
+        self.suggested_integration_description = value
+    
+    def submit_integration_suggestion(self):
+        """Submit integration suggestion."""
+        # In a real app, this would send the suggestion to the backend
+        self.integration_suggestion_submitted = True
     
     def set_new_food_name(self, value: str):
         """Set new food name."""
@@ -884,6 +948,71 @@ class PatientDashboardState(rx.State):
         self.checkin_text = ""
         self.selected_topics = []
         self.transcription_status = "idle"
+    
+    @rx.event
+    async def save_checkin_with_voice(self):
+        """Save a new check-in, getting voice transcript from VoiceTranscriptionState."""
+        from .voice_transcription_state import VoiceTranscriptionState
+        
+        # Get the voice transcription state to access the transcript
+        voice_state = await self.get_state(VoiceTranscriptionState)
+        
+        # Determine content based on type
+        content = ""
+        if self.checkin_type == "voice":
+            # Get transcript from the VoiceTranscriptionState
+            content = voice_state.transcript
+        else:
+            # Process text input
+            text_result = await process_text_checkin(self.checkin_text)
+            if not text_result["is_valid"]:
+                # Handle validation error
+                return
+            content = text_result["sanitized_text"]
+        
+        # Don't save empty check-ins
+        if not content.strip():
+            return
+        
+        # Extract topics if not already done
+        if not self.selected_topics and content:
+            topics_result = await extract_health_topics(content)
+            self.selected_topics = topics_result["topics"]
+        
+        # Save the check-in
+        result = await save_checkin(
+            checkin_type=self.checkin_type,
+            content=content,
+            topics=self.selected_topics,
+        )
+        
+        if result["status"] == "success":
+            # Add to local checkins list for demo
+            from datetime import datetime
+            new_checkin = {
+                "id": result["checkin_id"],
+                "type": self.checkin_type,
+                "summary": content[:100] + "..." if len(content) > 100 else content,
+                "timestamp": datetime.now().strftime("Today, %I:%M %p"),
+                "sentiment": "neutral",
+                "key_topics": self.selected_topics,
+                "provider_reviewed": False,
+            }
+            self.checkins = [new_checkin, *self.checkins]
+        
+        self.show_checkin_modal = False
+        # Reset state
+        self.is_recording = False
+        self.recording_duration = 0.0
+        self.transcribed_text = ""
+        self.checkin_text = ""
+        self.selected_topics = []
+        self.transcription_status = "idle"
+        
+        # Clear the voice transcription state
+        voice_state.transcript = ""
+        voice_state.has_error = False
+        voice_state.error_message = ""
     
     @rx.event
     async def save_symptom_log(self):

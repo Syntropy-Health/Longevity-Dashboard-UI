@@ -7,6 +7,8 @@ from .treatment_search_state import TreatmentSearchState
 from .patient_dashboard_state import PatientDashboardState
 from .notification_state import NotificationState
 from .appointment_state import AppointmentState
+from .voice_transcription_state import VoiceTranscriptionState, audio_capture, voice_recorder_component
+from .admin_checkins_state import AdminCheckinsState
 
 __all__ = [
     "AuthState",
@@ -18,4 +20,8 @@ __all__ = [
     "PatientDashboardState",
     "NotificationState",
     "AppointmentState",
+    "VoiceTranscriptionState",
+    "audio_capture",
+    "voice_recorder_component",
+    "AdminCheckinsState",
 ]

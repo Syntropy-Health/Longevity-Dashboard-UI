@@ -2,6 +2,7 @@
 
 import reflex as rx
 from ...states.patient_dashboard_state import PatientDashboardState
+from ...states.voice_transcription_state import VoiceTranscriptionState, audio_capture
 from ...styles.constants import GlassStyles
 from ...states.functions import get_recording_duration_display
 
@@ -14,26 +15,32 @@ def _format_duration(seconds: float) -> str:
 
 
 def voice_recording_button() -> rx.Component:
-    """Voice recording button with animated states."""
+    """Voice recording button with animated states using real audio capture."""
     return rx.el.div(
+        # Include the audio capture component (invisible)
+        audio_capture,
         # Recording button container with pulse animation when recording
         rx.el.div(
             rx.el.button(
                 rx.icon(
                     rx.cond(
-                        PatientDashboardState.is_recording,
+                        audio_capture.is_recording,
                         "square",  # Stop icon when recording
                         "mic",     # Mic icon when idle
                     ),
                     class_name=rx.cond(
-                        PatientDashboardState.is_recording,
+                        audio_capture.is_recording,
                         "w-10 h-10 text-white",
                         "w-12 h-12 text-teal-400",
                     ),
                 ),
-                on_click=PatientDashboardState.toggle_recording,
+                on_click=rx.cond(
+                    audio_capture.is_recording,
+                    VoiceTranscriptionState.stop_recording,
+                    VoiceTranscriptionState.start_recording,
+                ),
                 class_name=rx.cond(
-                    PatientDashboardState.is_recording,
+                    audio_capture.is_recording,
                     # Recording state - red pulsing button
                     "w-24 h-24 rounded-full bg-red-500 flex items-center justify-center border-4 border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse cursor-pointer transition-all duration-300 hover:bg-red-600",
                     # Idle state - teal button
@@ -42,9 +49,9 @@ def voice_recording_button() -> rx.Component:
             ),
             class_name="mb-4",
         ),
-        # Status text and duration
+        # Status text and processing indicator
         rx.cond(
-            PatientDashboardState.is_recording,
+            audio_capture.is_recording,
             rx.el.div(
                 rx.el.div(
                     rx.el.span(
@@ -52,15 +59,15 @@ def voice_recording_button() -> rx.Component:
                         class_name="text-red-400 font-bold text-sm animate-pulse mr-2",
                     ),
                     rx.el.span(
-                        PatientDashboardState.recording_duration.to(int).to_string() + "s",
-                        class_name="text-white font-mono text-lg",
+                        "Recording...",
+                        class_name="text-white font-mono text-sm",
                     ),
                     class_name="flex items-center justify-center mb-2",
                 ),
                 rx.el.p("Tap to stop recording", class_name="text-sm text-slate-400"),
             ),
             rx.cond(
-                PatientDashboardState.transcription_status == "transcribing",
+                VoiceTranscriptionState.processing,
                 rx.el.div(
                     rx.el.div(
                         rx.icon("loader-circle", class_name="w-5 h-5 text-teal-400 animate-spin mr-2"),
@@ -69,7 +76,7 @@ def voice_recording_button() -> rx.Component:
                     ),
                 ),
                 rx.cond(
-                    PatientDashboardState.transcription_status == "done",
+                    VoiceTranscriptionState.transcript != "",
                     rx.el.div(
                         rx.el.div(
                             rx.icon("circle-check", class_name="w-5 h-5 text-teal-400 mr-2"),
@@ -81,6 +88,18 @@ def voice_recording_button() -> rx.Component:
                 ),
             ),
         ),
+        # Error display
+        rx.cond(
+            VoiceTranscriptionState.has_error,
+            rx.el.div(
+                rx.el.p(
+                    VoiceTranscriptionState.error_message,
+                    class_name="text-red-400 text-xs text-center",
+                ),
+                class_name="mt-2",
+            ),
+            rx.fragment(),
+        ),
         class_name="flex flex-col items-center py-6",
     )
 
@@ -88,12 +107,20 @@ def voice_recording_button() -> rx.Component:
 def transcription_display() -> rx.Component:
     """Display transcribed text from voice recording."""
     return rx.cond(
-        PatientDashboardState.transcribed_text != "",
+        VoiceTranscriptionState.transcript != "",
         rx.el.div(
-            rx.el.p("Transcription", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+            rx.el.div(
+                rx.el.p("Transcription", class_name="text-xs text-slate-400 uppercase tracking-wider"),
+                rx.el.button(
+                    rx.icon("trash-2", class_name="w-3 h-3"),
+                    on_click=VoiceTranscriptionState.clear_transcript,
+                    class_name="p-1 text-slate-400 hover:text-red-400 transition-colors",
+                ),
+                class_name="flex items-center justify-between mb-2",
+            ),
             rx.el.div(
                 rx.el.p(
-                    PatientDashboardState.transcribed_text,
+                    VoiceTranscriptionState.transcript,
                     class_name="text-sm text-white leading-relaxed",
                 ),
                 class_name="bg-white/5 border border-white/10 rounded-xl p-4 max-h-32 overflow-y-auto",
@@ -211,15 +238,15 @@ def checkin_modal() -> rx.Component:
                         ),
                         rx.el.button(
                             rx.cond(
-                                PatientDashboardState.transcription_status == "transcribing",
+                                VoiceTranscriptionState.processing,
                                 rx.fragment(
                                     rx.icon("loader-circle", class_name="w-4 h-4 mr-2 animate-spin"),
                                     "Processing...",
                                 ),
                                 "Save Check-in",
                             ),
-                            on_click=PatientDashboardState.save_checkin,
-                            disabled=PatientDashboardState.transcription_status == "transcribing",
+                            on_click=PatientDashboardState.save_checkin_with_voice,
+                            disabled=VoiceTranscriptionState.processing,
                             class_name=GlassStyles.BUTTON_PRIMARY + " disabled:opacity-50 disabled:cursor-not-allowed",
                         ),
                         class_name="flex justify-end gap-3",
@@ -719,4 +746,106 @@ def add_food_modal() -> rx.Component:
         ),
         open=PatientDashboardState.show_add_food_modal,
         on_open_change=PatientDashboardState.set_show_add_food_modal,
+    )
+
+
+def suggest_integration_modal() -> rx.Component:
+    """Modal for suggesting new integrations."""
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.trigger(rx.fragment()),
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-50",
+            ),
+            rx.radix.primitives.dialog.content(
+                rx.el.div(
+                    rx.el.div(
+                        rx.radix.primitives.dialog.title(
+                            "Suggest an Integration",
+                            class_name="text-xl font-bold text-white",
+                        ),
+                        rx.radix.primitives.dialog.close(
+                            rx.el.button(
+                                rx.icon("x", class_name="w-5 h-5"),
+                                class_name="text-slate-400 hover:text-white transition-colors",
+                            ),
+                        ),
+                        class_name="flex items-center justify-between mb-4",
+                    ),
+                    rx.el.p(
+                        "Don't see your device or service? Let us know what integration you'd like to see.",
+                        class_name="text-slate-400 text-sm mb-6",
+                    ),
+                    rx.cond(
+                        PatientDashboardState.integration_suggestion_submitted,
+                        # Success state
+                        rx.el.div(
+                            rx.el.div(
+                                rx.icon("circle-check", class_name="w-12 h-12 text-teal-400 mb-4"),
+                                rx.el.h3("Thank you!", class_name="text-lg font-semibold text-white mb-2"),
+                                rx.el.p(
+                                    "We've received your suggestion and will review it for future updates.",
+                                    class_name="text-slate-400 text-sm text-center",
+                                ),
+                                class_name="flex flex-col items-center py-6",
+                            ),
+                            rx.el.div(
+                                rx.radix.primitives.dialog.close(
+                                    rx.el.button(
+                                        "Close",
+                                        class_name=GlassStyles.BUTTON_PRIMARY,
+                                    ),
+                                ),
+                                class_name="flex justify-center mt-4",
+                            ),
+                        ),
+                        # Form state
+                        rx.el.div(
+                            # Integration name
+                            rx.el.div(
+                                rx.el.p("Device / Service Name", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                                rx.el.input(
+                                    placeholder="e.g., Whoop, Levels, Eight Sleep",
+                                    value=PatientDashboardState.suggested_integration_name,
+                                    on_change=PatientDashboardState.set_suggested_integration_name,
+                                    class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all",
+                                ),
+                                class_name="mb-4",
+                            ),
+                            # Description
+                            rx.el.div(
+                                rx.el.p("Why would this be helpful? (optional)", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                                rx.el.textarea(
+                                    placeholder="Tell us how this integration would help you track your health...",
+                                    value=PatientDashboardState.suggested_integration_description,
+                                    on_change=PatientDashboardState.set_suggested_integration_description,
+                                    rows=3,
+                                    class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all resize-none",
+                                ),
+                                class_name="mb-6",
+                            ),
+                            # Actions
+                            rx.el.div(
+                                rx.radix.primitives.dialog.close(
+                                    rx.el.button(
+                                        "Cancel",
+                                        class_name=GlassStyles.BUTTON_SECONDARY,
+                                    ),
+                                ),
+                                rx.el.button(
+                                    "Submit Suggestion",
+                                    on_click=PatientDashboardState.submit_integration_suggestion,
+                                    class_name=GlassStyles.BUTTON_PRIMARY,
+                                ),
+                                class_name="flex justify-end gap-3",
+                            ),
+                        ),
+                    ),
+                    class_name="p-6",
+                ),
+                class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
+            ),
+        ),
+        open=PatientDashboardState.show_suggest_integration_modal,
+        on_open_change=PatientDashboardState.set_show_suggest_integration_modal,
     )

@@ -2,6 +2,20 @@ import reflex as rx
 from typing import TypedDict, Optional
 import random
 from datetime import datetime, timedelta
+import asyncio
+import httpx
+from openai import AsyncOpenAI
+
+from ..config import current_config
+from ..data.demo import DEMO_PHONE_NUMBER
+
+
+# Initialize OpenAI client for summarization (uses OPENAI_API_KEY env var automatically)
+openai_client = AsyncOpenAI()
+
+# API Configuration from centralized config
+CALL_LOGS_API_BASE = current_config.call_logs_api_base
+CALL_API_TOKEN = current_config.call_api_token
 
 
 class Patient(TypedDict):
@@ -23,6 +37,29 @@ class ChartData(TypedDict):
     name: str
     value: int
     value2: int
+
+
+class CallLogEntry(TypedDict):
+    """Call log entry from the API."""
+    id: int
+    caller_phone: str
+    call_date: str
+    call_duration: int
+    summary: str
+    full_transcript: str
+    notes: str
+    call_id: str
+
+
+class TranscriptSummary(TypedDict):
+    """Processed transcript summary for display."""
+    call_id: str
+    patient_phone: str
+    call_date: str
+    summary: str
+    ai_summary: str
+    type: str  # "call" to distinguish from regular check-ins
+    timestamp: str
 
 
 class PatientState(rx.State):
@@ -132,6 +169,20 @@ class PatientState(rx.State):
         {"name": "Wk 12", "score": 82},
         {"name": "Wk 16", "score": 88},
     ]
+    
+    # Call logs and transcript summaries
+    # Key is call_id to avoid re-processing the same call
+    transcript_summaries: dict[str, TranscriptSummary] = {}
+    call_logs_loading: bool = False
+    call_logs_error: str = ""
+    last_fetch_time: str = ""
+    
+    @rx.var
+    def transcript_summaries_list(self) -> list[TranscriptSummary]:
+        """Get transcript summaries as a sorted list (most recent first)."""
+        summaries = list(self.transcript_summaries.values())
+        # Sort by call_date descending
+        return sorted(summaries, key=lambda x: x.get("call_date", ""), reverse=True)
 
     @rx.var
     def filtered_patients(self) -> list[Patient]:
@@ -275,3 +326,176 @@ class PatientState(rx.State):
                     if t["id"] != treatment_id
                 ]
                 break
+    
+    async def _summarize_transcript(self, full_transcript: str) -> str:
+        """Use OpenAI to create a brief summary of the transcript."""
+        try:
+            response = await openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a medical assistant. Summarize the following patient call transcript in 2-3 sentences, focusing on key health concerns, symptoms, or updates mentioned. Be concise and clinical."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Summarize this call transcript:\n\n{full_transcript[:4000]}"  # Limit input length
+                    }
+                ],
+                max_tokens=150,
+                temperature=0.3
+            )
+            return response.choices[0].message.content or "Summary not available."
+        except Exception as e:
+            print(f"Error summarizing transcript: {e}")  # noqa: T201
+            return "Summary generation failed."
+    
+    async def _fetch_call_logs(self, phone_number: str) -> list[CallLogEntry]:
+        """Fetch call logs from the API for a specific phone number."""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    CALL_LOGS_API_BASE,
+                    params={
+                        "limit": 50,
+                        "offset": 0,
+                        "page": 1,
+                        "sort": "-call_date",
+                        "fields": "*.*",
+                        "filter[caller_phone][_eq]": phone_number,
+                        "filter[full_transcript][_nnull]": "true",
+                    },
+                    headers={
+                        "accept": "application/json",
+                        "Authorization": f"Bearer {CALL_API_TOKEN}",
+                    },
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data.get("data", [])
+        except Exception as e:
+            print(f"Error fetching call logs: {e}")  # noqa: T201
+            raise
+    
+    @rx.event(background=True)
+    async def fetch_call_logs_periodic(self):
+        """Background event that fetches call logs every 5 minutes."""
+        while True:
+            async with self:
+                self.call_logs_loading = True
+                self.call_logs_error = ""
+            
+            try:
+                # Fetch call logs for the demo phone number
+                call_logs = await self._fetch_call_logs(DEMO_PHONE_NUMBER)
+                
+                # Process only new calls (not already in transcript_summaries)
+                for log in call_logs:
+                    call_id = log.get("call_id", "")
+                    if not call_id:
+                        continue
+                    
+                    async with self:
+                        # Skip if already processed
+                        if call_id in self.transcript_summaries:
+                            continue
+                    
+                    # Generate AI summary for the transcript
+                    full_transcript = log.get("full_transcript", "")
+                    ai_summary = await self._summarize_transcript(full_transcript) if full_transcript else ""
+                    
+                    # Format the call date for display
+                    call_date = log.get("call_date", "")
+                    try:
+                        dt = datetime.fromisoformat(call_date.replace("Z", "+00:00"))
+                        formatted_date = dt.strftime("%B %d, %Y at %I:%M %p")
+                    except (ValueError, AttributeError):
+                        formatted_date = call_date
+                    
+                    # Create the summary entry
+                    summary_entry: TranscriptSummary = {
+                        "call_id": call_id,
+                        "patient_phone": log.get("caller_phone", ""),
+                        "call_date": call_date,
+                        "summary": log.get("summary", ""),
+                        "ai_summary": ai_summary,
+                        "type": "call",
+                        "timestamp": formatted_date,
+                    }
+                    
+                    async with self:
+                        # Use dict update to add new entry
+                        self.transcript_summaries = {
+                            **self.transcript_summaries,
+                            call_id: summary_entry,
+                        }
+                
+                async with self:
+                    self.call_logs_loading = False
+                    self.last_fetch_time = datetime.now().strftime("%I:%M %p")
+                
+            except Exception as e:
+                async with self:
+                    self.call_logs_loading = False
+                    self.call_logs_error = str(e)
+            
+            # Wait 5 minutes before next fetch
+            await asyncio.sleep(300)
+    
+    @rx.event
+    async def fetch_call_logs_once(self):
+        """Fetch call logs once (for initial load)."""
+        self.call_logs_loading = True
+        self.call_logs_error = ""
+        
+        try:
+            # Fetch call logs for the demo phone number
+            call_logs = await self._fetch_call_logs(DEMO_PHONE_NUMBER)
+            
+            # Process only new calls (not already in transcript_summaries)
+            for log in call_logs:
+                call_id = log.get("call_id", "")
+                if not call_id or call_id in self.transcript_summaries:
+                    continue
+                
+                # Generate AI summary for the transcript
+                full_transcript = log.get("full_transcript", "")
+                ai_summary = await self._summarize_transcript(full_transcript) if full_transcript else ""
+                
+                # Format the call date for display
+                call_date = log.get("call_date", "")
+                try:
+                    dt = datetime.fromisoformat(call_date.replace("Z", "+00:00"))
+                    formatted_date = dt.strftime("%B %d, %Y at %I:%M %p")
+                except (ValueError, AttributeError):
+                    formatted_date = call_date
+                
+                # Create the summary entry
+                summary_entry: TranscriptSummary = {
+                    "call_id": call_id,
+                    "patient_phone": log.get("caller_phone", ""),
+                    "call_date": call_date,
+                    "summary": log.get("summary", ""),
+                    "ai_summary": ai_summary,
+                    "type": "call",
+                    "timestamp": formatted_date,
+                }
+                
+                # Add to transcript_summaries
+                self.transcript_summaries = {
+                    **self.transcript_summaries,
+                    call_id: summary_entry,
+                }
+            
+            self.call_logs_loading = False
+            self.last_fetch_time = datetime.now().strftime("%I:%M %p")
+            
+        except Exception as e:
+            self.call_logs_loading = False
+            self.call_logs_error = str(e)
+    
+    @rx.event
+    def start_call_logs_fetching(self):
+        """Start the periodic call logs fetching."""
+        return PatientState.fetch_call_logs_periodic

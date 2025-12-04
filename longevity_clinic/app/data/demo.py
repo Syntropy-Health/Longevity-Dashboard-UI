@@ -209,11 +209,15 @@ BIOMARKER_METRIC_DEMO_DATA: dict[BiomarkerCategoryEnum, list[BiomarkerMetricSeed
 }
 
 
+# Demo phone number for call logs API
+DEMO_PHONE_NUMBER = "+12126804645"
+
 __all__ = [
     "BIOMARKER_METRIC_DEMO_DATA",
     "ADMIN_NOTIFICATIONS_DEMO",
     "PATIENT_NOTIFICATIONS_DEMO",
     "DEMO_PATIENTS",
+    "DEMO_PHONE_NUMBER",
 ]
 
 

@@ -17,7 +17,7 @@ TOOLTIP_PROPS = {
     "item_style": {"color": "#94A3B8", "padding": "0"},
     "label_style": {"color": "#F1F5F9", "fontWeight": "600", "marginBottom": "0.25rem"},
     "cursor": {"stroke": "#475569", "strokeWidth": 1, "strokeDasharray": "4 4"},
-    "separator": "",
+    "separator": ": ",
 }
 
 
@@ -80,6 +80,7 @@ def biomarker_history_chart() -> rx.Component:
         ),
         rx.recharts.area(
             data_key="value",
+            name="Reading",
             stroke="#2DD4BF",
             fill="rgba(45, 212, 191, 0.2)",
             type_="monotone",

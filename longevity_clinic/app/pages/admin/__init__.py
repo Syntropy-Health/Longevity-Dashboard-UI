@@ -4,6 +4,7 @@ This module provides the admin dashboard interface with:
 - Overview with key metrics and charts
 - Patient management
 - Clinical efficiency tracking
+- Check-ins management
 """
 
 from .page import admin_dashboard
@@ -26,6 +27,7 @@ from .modals import (
     add_patient_modal,
     view_patient_modal,
 )
+from .checkins_page import admin_checkins_page
 
 __all__ = [
     "admin_dashboard",
@@ -44,4 +46,6 @@ __all__ = [
     # Modals
     "add_patient_modal",
     "view_patient_modal",
+    # Check-ins page
+    "admin_checkins_page",
 ]

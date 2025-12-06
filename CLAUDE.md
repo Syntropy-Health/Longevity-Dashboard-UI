@@ -37,7 +37,7 @@ The app follows Reflex's state-driven architecture with a clear separation betwe
 
 ```
 longevity_clinic/app/
-├── app.py              # Main app entry point, route definitions
+├── rxconfig.py              # Main app entry point, route definitions
 ├── config.py           # Pydantic-based configuration (theme, styling)
 ├── pages/              # Page components (auth, admin, patient views)
 ├── components/         # Reusable UI components (header, sidebar, charts, layout)
@@ -87,7 +87,7 @@ When creating new components, always reference these config constants rather tha
 
 ### Page Routing
 
-Routes are defined in `app/app.py`:
+Routes are defined in `app/longevity_clinic.py`:
 - `/` and `/login` → `auth_page`
 - `/admin/dashboard` → `admin_dashboard` (patient management, clinic metrics)
 - `/admin/treatments` → `treatments_page` (treatment protocol library)
@@ -107,7 +107,7 @@ Routes are defined in `app/app.py`:
 ### Adding New Pages
 
 1. Create page function in `longevity_clinic/app/pages/<page_name>.py`
-2. Import and add route in `longevity_clinic/app/app.py`:
+2. Import and add route in `longevity_clinic/app/longevity_clinic.py`:
    ```python
    from .pages.<page_name> import <page_function>
    app.add_page(<page_function>, route="/<route_path>")

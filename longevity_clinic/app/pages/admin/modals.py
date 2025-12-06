@@ -9,9 +9,7 @@ def add_patient_modal() -> rx.Component:
     """Modal for adding new patients."""
     return rx.radix.primitives.dialog.root(
         rx.radix.primitives.dialog.portal(
-            rx.radix.primitives.dialog.overlay(
-                class_name=GlassStyles.MODAL_OVERLAY
-            ),
+            rx.radix.primitives.dialog.overlay(class_name=GlassStyles.MODAL_OVERLAY),
             rx.radix.primitives.dialog.content(
                 rx.el.div(
                     # Header
@@ -43,7 +41,9 @@ def add_patient_modal() -> rx.Component:
                                 ),
                             ),
                             rx.el.div(
-                                rx.el.label("Email Address", class_name=GlassStyles.LABEL),
+                                rx.el.label(
+                                    "Email Address", class_name=GlassStyles.LABEL
+                                ),
                                 rx.el.input(
                                     type="email",
                                     value=PatientState.new_patient_email,
@@ -57,7 +57,9 @@ def add_patient_modal() -> rx.Component:
                         # Phone, Age, Gender row
                         rx.el.div(
                             rx.el.div(
-                                rx.el.label("Phone Number", class_name=GlassStyles.LABEL),
+                                rx.el.label(
+                                    "Phone Number", class_name=GlassStyles.LABEL
+                                ),
                                 rx.el.input(
                                     type="tel",
                                     value=PatientState.new_patient_phone,
@@ -92,7 +94,9 @@ def add_patient_modal() -> rx.Component:
                         ),
                         # Medical History
                         rx.el.div(
-                            rx.el.label("Medical History Summary", class_name=GlassStyles.LABEL),
+                            rx.el.label(
+                                "Medical History Summary", class_name=GlassStyles.LABEL
+                            ),
                             rx.el.textarea(
                                 rows="3",
                                 value=PatientState.new_patient_history,
@@ -132,9 +136,7 @@ def view_patient_modal() -> rx.Component:
     """Modal for viewing patient details."""
     return rx.radix.primitives.dialog.root(
         rx.radix.primitives.dialog.portal(
-            rx.radix.primitives.dialog.overlay(
-                class_name=GlassStyles.MODAL_OVERLAY
-            ),
+            rx.radix.primitives.dialog.overlay(class_name=GlassStyles.MODAL_OVERLAY),
             rx.radix.primitives.dialog.content(
                 rx.cond(
                     PatientState.selected_patient,
@@ -191,7 +193,8 @@ def view_patient_modal() -> rx.Component:
                                 ),
                                 rx.el.div(
                                     rx.icon(
-                                        "phone", class_name="w-4 h-4 text-slate-400 mr-2"
+                                        "phone",
+                                        class_name="w-4 h-4 text-slate-400 mr-2",
                                     ),
                                     rx.el.span(
                                         PatientState.selected_patient["phone"],
@@ -225,10 +228,15 @@ def view_patient_modal() -> rx.Component:
                                 class_name="text-md font-semibold text-white mb-3 mt-2",
                             ),
                             rx.cond(
-                                PatientState.selected_patient["assigned_treatments"].length() > 0,
+                                PatientState.selected_patient[
+                                    "assigned_treatments"
+                                ].length()
+                                > 0,
                                 rx.el.div(
                                     rx.foreach(
-                                        PatientState.selected_patient["assigned_treatments"],
+                                        PatientState.selected_patient[
+                                            "assigned_treatments"
+                                        ],
                                         lambda t: rx.el.div(
                                             rx.el.div(
                                                 rx.el.p(

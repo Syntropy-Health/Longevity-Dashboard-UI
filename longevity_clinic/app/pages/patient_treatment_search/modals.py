@@ -9,9 +9,7 @@ def treatment_details_modal() -> rx.Component:
     """Treatment details and request modal."""
     return rx.radix.primitives.dialog.root(
         rx.radix.primitives.dialog.portal(
-            rx.radix.primitives.dialog.overlay(
-                class_name=GlassStyles.MODAL_OVERLAY
-            ),
+            rx.radix.primitives.dialog.overlay(class_name=GlassStyles.MODAL_OVERLAY),
             rx.radix.primitives.dialog.content(
                 rx.cond(
                     TreatmentSearchState.selected_protocol,

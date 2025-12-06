@@ -1,11 +1,28 @@
 """Demo datasets used across the Longevity Clinic application."""
 
+from typing import List
+
 from .biomarkers import (
     BiomarkerCategoryEnum,
     BiomarkerMetricName,
     BiomarkerMetricSeed,
     BiomarkerStatus,
     MeasurementUnit,
+)
+from .state_schemas import (
+    Patient,
+    ChartData,
+    NutritionSummary,
+    FoodEntry,
+    Medication,
+    Condition,
+    Symptom,
+    SymptomLog,
+    Reminder,
+    SymptomTrend,
+    DataSource,
+    CheckIn,
+    CheckInModel,
 )
 
 
@@ -213,11 +230,54 @@ BIOMARKER_METRIC_DEMO_DATA: dict[BiomarkerCategoryEnum, list[BiomarkerMetricSeed
 DEMO_PHONE_NUMBER = "+12126804645"
 
 __all__ = [
+    # Biomarker demo data
     "BIOMARKER_METRIC_DEMO_DATA",
+    # Notification demo data
     "ADMIN_NOTIFICATIONS_DEMO",
     "PATIENT_NOTIFICATIONS_DEMO",
+    # Patient demo data
     "DEMO_PATIENTS",
     "DEMO_PHONE_NUMBER",
+    # Re-exported schemas (from state_schemas)
+    "Patient",
+    "ChartData",
+    "NutritionSummary",
+    "FoodEntry",
+    "Medication",
+    "Condition",
+    "Symptom",
+    "SymptomLog",
+    "Reminder",
+    "SymptomTrend",
+    "DataSource",
+    "CheckIn",
+    "CheckInModel",
+    # Patient dashboard demo data
+    "DEMO_NUTRITION_SUMMARY",
+    "DEMO_FOOD_ENTRIES",
+    "DEMO_MEDICATIONS",
+    "DEMO_CONDITIONS",
+    "DEMO_SYMPTOMS",
+    "DEMO_SYMPTOM_LOGS",
+    "DEMO_REMINDERS",
+    "DEMO_SYMPTOM_TRENDS",
+    "DEMO_DATA_SOURCES",
+    "DEMO_CHECKINS",
+    # Patient state demo data
+    "DEMO_PATIENTS_STATE",
+    "DEMO_TREND_DATA",
+    "DEMO_TREATMENT_DATA",
+    "DEMO_BIOMARKER_DATA",
+    # Admin check-ins demo data
+    "DEMO_ADMIN_CHECKINS",
+    # Patient biomarker portal demo data
+    "DEMO_PORTAL_BIOMARKERS",
+    "DEMO_PORTAL_TREATMENTS",
+    "DEMO_PORTAL_APPOINTMENTS",
+    # Appointment state demo data
+    "DEMO_APPOINTMENTS",
+    "TREATMENT_TYPES",
+    "PROVIDERS",
 ]
 
 
@@ -234,7 +294,7 @@ ADMIN_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": False,
         "created_at": "2025-01-15T09:30:00",
         "recipient_role": "admin",
-        "patient_id": "P001"
+        "patient_id": "P001",
     },
     {
         "id": "2",
@@ -244,7 +304,7 @@ ADMIN_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": False,
         "created_at": "2025-01-15T08:45:00",
         "recipient_role": "admin",
-        "patient_id": "P002"
+        "patient_id": "P002",
     },
     {
         "id": "3",
@@ -254,7 +314,7 @@ ADMIN_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": True,
         "created_at": "2025-01-14T16:20:00",
         "recipient_role": "admin",
-        "patient_id": None
+        "patient_id": None,
     },
     {
         "id": "4",
@@ -264,7 +324,7 @@ ADMIN_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": False,
         "created_at": "2025-01-15T07:00:00",
         "recipient_role": "admin",
-        "patient_id": "P003"
+        "patient_id": "P003",
     },
     {
         "id": "5",
@@ -274,7 +334,7 @@ ADMIN_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": False,
         "created_at": "2025-01-15T06:00:00",
         "recipient_role": "admin",
-        "patient_id": None
+        "patient_id": None,
     },
     {
         "id": "6",
@@ -284,8 +344,8 @@ ADMIN_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": True,
         "created_at": "2025-01-01T00:00:00",
         "recipient_role": "admin",
-        "patient_id": None
-    }
+        "patient_id": None,
+    },
 ]
 
 PATIENT_NOTIFICATIONS_DEMO: list[dict] = [
@@ -297,7 +357,7 @@ PATIENT_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": False,
         "created_at": "2025-01-15T09:00:00",
         "recipient_role": "patient",
-        "patient_id": "current"
+        "patient_id": "current",
     },
     {
         "id": "102",
@@ -307,7 +367,7 @@ PATIENT_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": False,
         "created_at": "2025-01-14T14:30:00",
         "recipient_role": "patient",
-        "patient_id": "current"
+        "patient_id": "current",
     },
     {
         "id": "103",
@@ -317,7 +377,7 @@ PATIENT_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": True,
         "created_at": "2025-01-13T11:00:00",
         "recipient_role": "patient",
-        "patient_id": "current"
+        "patient_id": "current",
     },
     {
         "id": "104",
@@ -327,7 +387,7 @@ PATIENT_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": True,
         "created_at": "2025-01-10T15:45:00",
         "recipient_role": "patient",
-        "patient_id": "current"
+        "patient_id": "current",
     },
     {
         "id": "105",
@@ -337,8 +397,8 @@ PATIENT_NOTIFICATIONS_DEMO: list[dict] = [
         "is_read": True,
         "created_at": "2025-01-15T07:00:00",
         "recipient_role": "patient",
-        "patient_id": "current"
-    }
+        "patient_id": "current",
+    },
 ]
 
 
@@ -353,3 +413,827 @@ DEMO_PATIENTS: list[dict] = [
     {"id": "P004", "name": "James Miller", "email": "james.m@example.com"},
     {"id": "P005", "name": "Emily Wong", "email": "emily.w@example.com"},
 ]
+
+
+# =============================================================================
+# Patient Dashboard Demo Data
+# =============================================================================
+
+DEMO_NUTRITION_SUMMARY: NutritionSummary = {
+    "total_calories": 1850,
+    "goal_calories": 2200,
+    "total_protein": 95.5,
+    "total_carbs": 180.0,
+    "total_fat": 65.0,
+    "water_intake": 2.4,
+}
+
+DEMO_FOOD_ENTRIES: List[FoodEntry] = [
+    {
+        "id": "1",
+        "name": "Greek Yogurt with Berries",
+        "calories": 320,
+        "protein": 18.0,
+        "carbs": 28.0,
+        "fat": 12.0,
+        "time": "8:30 AM",
+        "meal_type": "breakfast",
+    },
+    {
+        "id": "2",
+        "name": "Grilled Salmon Salad",
+        "calories": 520,
+        "protein": 42.0,
+        "carbs": 18.0,
+        "fat": 28.0,
+        "time": "12:45 PM",
+        "meal_type": "lunch",
+    },
+    {
+        "id": "3",
+        "name": "Protein Smoothie",
+        "calories": 280,
+        "protein": 25.0,
+        "carbs": 32.0,
+        "fat": 8.0,
+        "time": "3:30 PM",
+        "meal_type": "snack",
+    },
+    {
+        "id": "4",
+        "name": "Chicken Stir-Fry",
+        "calories": 730,
+        "protein": 45.0,
+        "carbs": 62.0,
+        "fat": 24.0,
+        "time": "7:00 PM",
+        "meal_type": "dinner",
+    },
+]
+
+DEMO_MEDICATIONS: List[Medication] = [
+    {
+        "id": "1",
+        "name": "Metformin",
+        "dosage": "500mg",
+        "frequency": "Twice daily with meals",
+        "status": "active",
+        "adherence_rate": 96.0,
+    },
+    {
+        "id": "2",
+        "name": "Lisinopril",
+        "dosage": "10mg",
+        "frequency": "Once daily in morning",
+        "status": "active",
+        "adherence_rate": 92.0,
+    },
+    {
+        "id": "3",
+        "name": "Vitamin D3",
+        "dosage": "5000 IU",
+        "frequency": "Once daily with food",
+        "status": "active",
+        "adherence_rate": 88.0,
+    },
+    {
+        "id": "4",
+        "name": "Omega-3 Fish Oil",
+        "dosage": "1200mg",
+        "frequency": "Twice daily",
+        "status": "active",
+        "adherence_rate": 85.0,
+    },
+]
+
+DEMO_CONDITIONS: List[Condition] = [
+    {
+        "id": "1",
+        "name": "Type 2 Diabetes",
+        "icd_code": "E11.9",
+        "diagnosed_date": "Jan 2022",
+        "status": "managed",
+        "severity": "moderate",
+        "treatments": "Metformin, Diet management",
+    },
+    {
+        "id": "2",
+        "name": "Hypertension",
+        "icd_code": "I10",
+        "diagnosed_date": "Mar 2021",
+        "status": "managed",
+        "severity": "mild",
+        "treatments": "Lisinopril, Exercise",
+    },
+    {
+        "id": "3",
+        "name": "Vitamin D Deficiency",
+        "icd_code": "E55.9",
+        "diagnosed_date": "Aug 2023",
+        "status": "active",
+        "severity": "mild",
+        "treatments": "Vitamin D3 supplementation",
+    },
+    {
+        "id": "4",
+        "name": "Allergic Rhinitis",
+        "icd_code": "J30.4",
+        "diagnosed_date": "2015",
+        "status": "resolved",
+        "severity": "mild",
+        "treatments": "Environmental management",
+    },
+]
+
+DEMO_SYMPTOMS: List[Symptom] = [
+    {
+        "id": "1",
+        "name": "Fatigue",
+        "severity": "moderate",
+        "frequency": "2-3 times per week",
+        "trend": "improving",
+    },
+    {
+        "id": "2",
+        "name": "Headache",
+        "severity": "mild",
+        "frequency": "1-2 times per week",
+        "trend": "stable",
+    },
+    {
+        "id": "3",
+        "name": "Joint Stiffness",
+        "severity": "mild",
+        "frequency": "Morning, daily",
+        "trend": "improving",
+    },
+]
+
+DEMO_SYMPTOM_LOGS: List[SymptomLog] = [
+    {
+        "id": "1",
+        "symptom_name": "Fatigue",
+        "severity": 5,
+        "notes": "Felt tired after lunch, may be related to heavy meal",
+        "timestamp": "Today, 2:30 PM",
+    },
+    {
+        "id": "2",
+        "symptom_name": "Headache",
+        "severity": 3,
+        "notes": "Mild headache in the morning, resolved with water",
+        "timestamp": "Yesterday, 9:00 AM",
+    },
+    {
+        "id": "3",
+        "symptom_name": "Joint Stiffness",
+        "severity": 4,
+        "notes": "Morning stiffness lasted about 20 minutes",
+        "timestamp": "Yesterday, 7:30 AM",
+    },
+]
+
+DEMO_REMINDERS: List[Reminder] = [
+    {
+        "id": "1",
+        "title": "Take Metformin",
+        "description": "500mg with breakfast",
+        "time": "8:00 AM",
+        "type": "medication",
+        "completed": True,
+    },
+    {
+        "id": "2",
+        "title": "Blood Pressure Check",
+        "description": "Log your morning reading",
+        "time": "9:00 AM",
+        "type": "checkup",
+        "completed": False,
+    },
+    {
+        "id": "3",
+        "title": "Evening Walk",
+        "description": "30 minutes moderate pace",
+        "time": "6:00 PM",
+        "type": "exercise",
+        "completed": False,
+    },
+    {
+        "id": "4",
+        "title": "Take Lisinopril",
+        "description": "10mg in the morning",
+        "time": "8:30 AM",
+        "type": "medication",
+        "completed": True,
+    },
+    {
+        "id": "5",
+        "title": "Dr. Chen Appointment",
+        "description": "Follow-up consultation",
+        "time": "Tomorrow, 2:00 PM",
+        "type": "appointment",
+        "completed": False,
+    },
+]
+
+DEMO_SYMPTOM_TRENDS: List[SymptomTrend] = [
+    {
+        "id": "1",
+        "symptom_name": "Fatigue",
+        "current_severity": 5,
+        "previous_severity": 7,
+        "trend": "improving",
+        "change_percent": 28.6,
+        "period": "Last 7 days",
+    },
+    {
+        "id": "2",
+        "symptom_name": "Headache",
+        "current_severity": 3,
+        "previous_severity": 3,
+        "trend": "stable",
+        "change_percent": 0.0,
+        "period": "Last 7 days",
+    },
+    {
+        "id": "3",
+        "symptom_name": "Joint Stiffness",
+        "current_severity": 4,
+        "previous_severity": 6,
+        "trend": "improving",
+        "change_percent": 33.3,
+        "period": "Last 7 days",
+    },
+]
+
+DEMO_DATA_SOURCES: List[DataSource] = [
+    {
+        "id": "1",
+        "name": "Apple Watch Series 9",
+        "type": "wearable",
+        "status": "connected",
+        "icon": "watch",
+        "image": "/devices/apple_watch.svg",
+        "last_sync": "5 min ago",
+        "connected": True,
+    },
+    {
+        "id": "2",
+        "name": "Withings Body+",
+        "type": "scale",
+        "status": "connected",
+        "icon": "weight",
+        "image": "/devices/withings_scale.svg",
+        "last_sync": "2 hours ago",
+        "connected": True,
+    },
+    {
+        "id": "3",
+        "name": "Oura Ring Gen 3",
+        "type": "wearable",
+        "status": "connected",
+        "icon": "circle",
+        "image": "/devices/oura_ring.svg",
+        "last_sync": "1 hour ago",
+        "connected": True,
+    },
+    {
+        "id": "4",
+        "name": "Dexcom G7",
+        "type": "cgm",
+        "status": "connected",
+        "icon": "activity",
+        "image": "/devices/dexcom_g7.svg",
+        "last_sync": "Real-time",
+        "connected": True,
+    },
+    {
+        "id": "5",
+        "name": "MyFitnessPal",
+        "type": "app",
+        "status": "connected",
+        "icon": "smartphone",
+        "image": "/devices/myfitnesspal.svg",
+        "last_sync": "30 min ago",
+        "connected": True,
+    },
+    {
+        "id": "6",
+        "name": "Epic MyChart",
+        "type": "ehr",
+        "status": "connected",
+        "icon": "stethoscope",
+        "image": "/devices/epic_mychart.svg",
+        "last_sync": "1 day ago",
+        "connected": True,
+    },
+]
+
+DEMO_CHECKINS: List[CheckIn] = [
+    {
+        "id": "1",
+        "type": "voice",
+        "summary": "Feeling good today, energy levels are up. Noticed some minor joint stiffness this morning but it went away after stretching.",
+        "timestamp": "Today, 10:30 AM",
+        "sentiment": "positive",
+        "key_topics": ["energy", "joint stiffness", "exercise"],
+        "provider_reviewed": False,
+        "patient_name": "Sarah Chen",
+    },
+    {
+        "id": "2",
+        "type": "text",
+        "summary": "Had a headache yesterday evening. Took some water and rested, felt better after an hour.",
+        "timestamp": "Yesterday, 8:15 PM",
+        "sentiment": "neutral",
+        "key_topics": ["headache", "hydration"],
+        "provider_reviewed": True,
+        "patient_name": "Marcus Williams",
+    },
+    {
+        "id": "3",
+        "type": "voice",
+        "summary": "Blood sugar has been stable this week. Following the new meal plan closely.",
+        "timestamp": "2 days ago, 9:00 AM",
+        "sentiment": "positive",
+        "key_topics": ["blood sugar", "diet", "medication"],
+        "provider_reviewed": True,
+        "patient_name": "Elena Rodriguez",
+    },
+]
+
+
+# =============================================================================
+# Patient State Demo Data
+# =============================================================================
+
+DEMO_PATIENTS_STATE: List[Patient] = [
+    {
+        "id": "P001",
+        "full_name": "John Doe",
+        "email": "john.doe@example.com",
+        "phone": "(555) 123-4567",
+        "age": 45,
+        "gender": "Male",
+        "last_visit": "2023-10-15",
+        "status": "Active",
+        "biomarker_score": 85,
+        "medical_history": "Hypertension, Vitamin D deficiency",
+        "next_appointment": "2023-11-20",
+        "assigned_treatments": [],
+    },
+    {
+        "id": "P002",
+        "full_name": "Jane Smith",
+        "email": "jane.smith@example.com",
+        "phone": "(555) 987-6543",
+        "age": 38,
+        "gender": "Female",
+        "last_visit": "2023-10-28",
+        "status": "Active",
+        "biomarker_score": 92,
+        "medical_history": "None",
+        "next_appointment": "2023-11-15",
+        "assigned_treatments": [],
+    },
+    {
+        "id": "P003",
+        "full_name": "Robert Johnson",
+        "email": "robert.j@example.com",
+        "phone": "(555) 456-7890",
+        "age": 52,
+        "gender": "Male",
+        "last_visit": "2023-09-10",
+        "status": "Inactive",
+        "biomarker_score": 68,
+        "medical_history": "Type 2 Diabetes Pre-cursor",
+        "next_appointment": "Pending",
+        "assigned_treatments": [],
+    },
+    {
+        "id": "P004",
+        "full_name": "Emily Davis",
+        "email": "emily.d@example.com",
+        "phone": "(555) 222-3333",
+        "age": 29,
+        "gender": "Female",
+        "last_visit": "2023-11-01",
+        "status": "Onboarding",
+        "biomarker_score": 0,
+        "medical_history": "Anemia",
+        "next_appointment": "2023-11-12",
+        "assigned_treatments": [],
+    },
+    {
+        "id": "P005",
+        "full_name": "Michael Wilson",
+        "email": "michael.w@example.com",
+        "phone": "(555) 444-5555",
+        "age": 61,
+        "gender": "Male",
+        "last_visit": "2023-10-05",
+        "status": "Active",
+        "biomarker_score": 74,
+        "medical_history": "High Cholesterol",
+        "next_appointment": "2023-11-25",
+        "assigned_treatments": [],
+    },
+]
+
+DEMO_TREND_DATA: list[dict] = [
+    {"name": "Jan", "active": 120, "new": 15},
+    {"name": "Feb", "active": 132, "new": 18},
+    {"name": "Mar", "active": 145, "new": 20},
+    {"name": "Apr", "active": 160, "new": 25},
+    {"name": "May", "active": 178, "new": 22},
+    {"name": "Jun", "active": 195, "new": 30},
+]
+
+DEMO_TREATMENT_DATA: list[dict] = [
+    {"name": "IV Therapy", "count": 45},
+    {"name": "Cryo", "count": 30},
+    {"name": "Supplements", "count": 85},
+    {"name": "Hormone", "count": 25},
+    {"name": "Physio", "count": 15},
+]
+
+DEMO_BIOMARKER_DATA: list[dict] = [
+    {"name": "Wk 1", "score": 65},
+    {"name": "Wk 4", "score": 72},
+    {"name": "Wk 8", "score": 78},
+    {"name": "Wk 12", "score": 82},
+    {"name": "Wk 16", "score": 88},
+]
+
+
+# =============================================================================
+# Admin Check-ins Demo Data
+# =============================================================================
+
+DEMO_ADMIN_CHECKINS: list[dict] = [
+    {
+        "id": "1",
+        "patient_id": "p1",
+        "patient_name": "John Doe",
+        "type": "voice",
+        "summary": "Feeling good today, energy levels are up. Noticed some minor joint stiffness this morning but it went away after stretching.",
+        "timestamp": "Today, 10:30 AM",
+        "submitted_at": "2024-12-04T10:30:00",
+        "sentiment": "positive",
+        "key_topics": ["energy", "joint stiffness", "exercise"],
+        "status": "pending",
+        "provider_reviewed": False,
+        "reviewed_by": "",
+        "reviewed_at": "",
+    },
+    {
+        "id": "2",
+        "patient_id": "p2",
+        "patient_name": "Sarah Johnson",
+        "type": "text",
+        "summary": "Had a headache yesterday evening. Took some water and rested, felt better after an hour. Wondering if it's related to my new medication.",
+        "timestamp": "Today, 9:15 AM",
+        "submitted_at": "2024-12-04T09:15:00",
+        "sentiment": "neutral",
+        "key_topics": ["headache", "hydration", "medication"],
+        "status": "pending",
+        "provider_reviewed": False,
+        "reviewed_by": "",
+        "reviewed_at": "",
+    },
+    {
+        "id": "3",
+        "patient_id": "p1",
+        "patient_name": "John Doe",
+        "type": "voice",
+        "summary": "Blood sugar has been stable this week. Following the new meal plan closely. Feeling more energetic overall.",
+        "timestamp": "Yesterday, 2:00 PM",
+        "submitted_at": "2024-12-03T14:00:00",
+        "sentiment": "positive",
+        "key_topics": ["blood sugar", "diet", "medication"],
+        "status": "reviewed",
+        "provider_reviewed": True,
+        "reviewed_by": "Dr. Chen",
+        "reviewed_at": "2024-12-03T16:30:00",
+    },
+    {
+        "id": "4",
+        "patient_id": "p3",
+        "patient_name": "Michael Brown",
+        "type": "text",
+        "summary": "Experiencing chest discomfort after exercise. Not sure if related to new workout routine or something else.",
+        "timestamp": "Yesterday, 11:00 AM",
+        "submitted_at": "2024-12-03T11:00:00",
+        "sentiment": "concerned",
+        "key_topics": ["chest pain", "exercise", "symptoms"],
+        "status": "flagged",
+        "provider_reviewed": True,
+        "reviewed_by": "Dr. Chen",
+        "reviewed_at": "2024-12-03T12:00:00",
+    },
+    {
+        "id": "5",
+        "patient_id": "p4",
+        "patient_name": "Emily Davis",
+        "type": "voice",
+        "summary": "Sleep quality has improved since starting the new supplement regimen. Getting about 7-8 hours consistently now.",
+        "timestamp": "2 days ago, 8:00 AM",
+        "submitted_at": "2024-12-02T08:00:00",
+        "sentiment": "positive",
+        "key_topics": ["sleep", "supplements"],
+        "status": "reviewed",
+        "provider_reviewed": True,
+        "reviewed_by": "Dr. Smith",
+        "reviewed_at": "2024-12-02T10:00:00",
+    },
+    {
+        "id": "6",
+        "patient_id": "p2",
+        "patient_name": "Sarah Johnson",
+        "type": "voice",
+        "summary": "Anxiety levels have been higher this week. Work stress is affecting my sleep and eating patterns.",
+        "timestamp": "2 days ago, 4:30 PM",
+        "submitted_at": "2024-12-02T16:30:00",
+        "sentiment": "negative",
+        "key_topics": ["anxiety", "stress", "sleep", "diet"],
+        "status": "pending",
+        "provider_reviewed": False,
+        "reviewed_by": "",
+        "reviewed_at": "",
+    },
+    {
+        "id": "7",
+        "patient_id": "p5",
+        "patient_name": "Robert Wilson",
+        "type": "text",
+        "summary": "Blood pressure readings have been slightly elevated. Taking medication as prescribed but monitoring closely.",
+        "timestamp": "3 days ago, 9:00 AM",
+        "submitted_at": "2024-12-01T09:00:00",
+        "sentiment": "neutral",
+        "key_topics": ["blood pressure", "medication"],
+        "status": "reviewed",
+        "provider_reviewed": True,
+        "reviewed_by": "Dr. Chen",
+        "reviewed_at": "2024-12-01T11:00:00",
+    },
+]
+
+
+# =============================================================================
+# Patient Biomarker Portal Demo Data
+# =============================================================================
+
+DEMO_PORTAL_BIOMARKERS: list[dict] = [
+    {
+        "id": "bio_1",
+        "name": "Vitamin D (25-OH)",
+        "category": "Metabolic",
+        "unit": "ng/mL",
+        "description": "Crucial for bone health, immune function, and mood regulation.",
+        "optimal_min": 40.0,
+        "optimal_max": 80.0,
+        "critical_min": 20.0,
+        "critical_max": 100.0,
+        "current_value": 45.2,
+        "status": "Optimal",
+        "trend": "up",
+        "history": [
+            {"date": "Jan", "value": 28.5},
+            {"date": "Mar", "value": 32.1},
+            {"date": "May", "value": 38.4},
+            {"date": "Jul", "value": 42.0},
+            {"date": "Sep", "value": 45.2},
+        ],
+    },
+    {
+        "id": "bio_2",
+        "name": "hs-CRP",
+        "category": "Inflammation",
+        "unit": "mg/L",
+        "description": "High-sensitivity C-reactive protein, a marker of systemic inflammation.",
+        "optimal_min": 0.0,
+        "optimal_max": 1.0,
+        "critical_min": 0.0,
+        "critical_max": 3.0,
+        "current_value": 0.8,
+        "status": "Optimal",
+        "trend": "down",
+        "history": [
+            {"date": "Jan", "value": 2.4},
+            {"date": "Mar", "value": 1.8},
+            {"date": "May", "value": 1.2},
+            {"date": "Jul", "value": 0.9},
+            {"date": "Sep", "value": 0.8},
+        ],
+    },
+    {
+        "id": "bio_3",
+        "name": "Total Testosterone",
+        "category": "Hormones",
+        "unit": "ng/dL",
+        "description": "Primary male sex hormone, vital for muscle mass, density, and libido.",
+        "optimal_min": 600.0,
+        "optimal_max": 900.0,
+        "critical_min": 300.0,
+        "critical_max": 1200.0,
+        "current_value": 550.0,
+        "status": "Warning",
+        "trend": "stable",
+        "history": [
+            {"date": "Jan", "value": 480.0},
+            {"date": "Mar", "value": 510.0},
+            {"date": "May", "value": 530.0},
+            {"date": "Jul", "value": 545.0},
+            {"date": "Sep", "value": 550.0},
+        ],
+    },
+    {
+        "id": "bio_4",
+        "name": "HbA1c",
+        "category": "Metabolic",
+        "unit": "%",
+        "description": "Average blood sugar (glucose) levels over the past two to three months.",
+        "optimal_min": 4.0,
+        "optimal_max": 5.6,
+        "critical_min": 3.0,
+        "critical_max": 6.5,
+        "current_value": 5.2,
+        "status": "Optimal",
+        "trend": "stable",
+        "history": [
+            {"date": "Jan", "value": 5.4},
+            {"date": "Mar", "value": 5.3},
+            {"date": "May", "value": 5.3},
+            {"date": "Jul", "value": 5.2},
+            {"date": "Sep", "value": 5.2},
+        ],
+    },
+    {
+        "id": "bio_5",
+        "name": "Cortisol (AM)",
+        "category": "Hormones",
+        "unit": "mcg/dL",
+        "description": "Stress hormone. High levels can indicate chronic stress or adrenal issues.",
+        "optimal_min": 10.0,
+        "optimal_max": 20.0,
+        "critical_min": 5.0,
+        "critical_max": 25.0,
+        "current_value": 22.5,
+        "status": "Critical",
+        "trend": "up",
+        "history": [
+            {"date": "Jan", "value": 16.0},
+            {"date": "Mar", "value": 18.5},
+            {"date": "May", "value": 19.0},
+            {"date": "Jul", "value": 21.2},
+            {"date": "Sep", "value": 22.5},
+        ],
+    },
+]
+
+DEMO_PORTAL_TREATMENTS: list[dict] = [
+    {
+        "id": "t1",
+        "name": "Vitamin C IV Drip",
+        "frequency": "Weekly",
+        "duration": "45 mins",
+        "category": "IV Therapy",
+        "status": "Active",
+    },
+    {
+        "id": "t2",
+        "name": "Cryotherapy Session",
+        "frequency": "Bi-Weekly",
+        "duration": "10 mins",
+        "category": "Recovery",
+        "status": "Active",
+    },
+    {
+        "id": "t3",
+        "name": "Magnesium Supplementation",
+        "frequency": "Daily",
+        "duration": "Ongoing",
+        "category": "Supplements",
+        "status": "Active",
+    },
+]
+
+DEMO_PORTAL_APPOINTMENTS: list[dict] = [
+    {
+        "id": "a1",
+        "title": "IV Therapy Session",
+        "date": "Today",
+        "time": "2:00 PM",
+        "type": "Treatment",
+        "provider": "Nurse Jackie",
+    },
+    {
+        "id": "a2",
+        "title": "Physician Consultation",
+        "date": "Oct 24",
+        "time": "10:30 AM",
+        "type": "Consultation",
+        "provider": "Dr. Administrator",
+    },
+    {
+        "id": "a3",
+        "title": "Blood Panel Draw",
+        "date": "Nov 01",
+        "time": "8:15 AM",
+        "type": "Lab Work",
+        "provider": "Lab Tech",
+    },
+]
+
+
+# =============================================================================
+# Appointment State Demo Data
+# =============================================================================
+
+DEMO_APPOINTMENTS: list[dict] = [
+    {
+        "id": "APT001",
+        "title": "NAD+ IV Therapy",
+        "description": "Initial NAD+ infusion session - 4 hour treatment",
+        "date": "2025-01-16",
+        "time": "09:00",
+        "duration_minutes": 240,
+        "treatment_type": "IV Therapy",
+        "patient_id": "P001",
+        "patient_name": "Sarah Chen",
+        "provider": "Dr. Johnson",
+        "status": "confirmed",
+        "notes": "First session, monitor for any reactions",
+    },
+    {
+        "id": "APT002",
+        "title": "Hyperbaric Oxygen Session",
+        "description": "Standard HBOT treatment - 90 minutes at 1.5 ATA",
+        "date": "2025-01-16",
+        "time": "14:00",
+        "duration_minutes": 90,
+        "treatment_type": "HBOT",
+        "patient_id": "P002",
+        "patient_name": "Marcus Williams",
+        "provider": "Dr. Chen",
+        "status": "scheduled",
+        "notes": "",
+    },
+    {
+        "id": "APT003",
+        "title": "Biomarker Assessment",
+        "description": "Comprehensive longevity panel and consultation",
+        "date": "2025-01-17",
+        "time": "10:30",
+        "duration_minutes": 60,
+        "treatment_type": "Assessment",
+        "patient_id": "P003",
+        "patient_name": "Elena Rodriguez",
+        "provider": "Dr. Patel",
+        "status": "confirmed",
+        "notes": "Follow-up from previous treatment cycle",
+    },
+    {
+        "id": "APT004",
+        "title": "Stem Cell Consultation",
+        "description": "Initial consultation for stem cell therapy options",
+        "date": "2025-01-18",
+        "time": "11:00",
+        "duration_minutes": 45,
+        "treatment_type": "Consultation",
+        "patient_id": "P004",
+        "patient_name": "James Park",
+        "provider": "Dr. Johnson",
+        "status": "scheduled",
+        "notes": "New patient referral",
+    },
+    {
+        "id": "APT005",
+        "title": "Peptide Therapy Follow-up",
+        "description": "3-month progress review for BPC-157/TB-500 protocol",
+        "date": "2025-01-20",
+        "time": "15:30",
+        "duration_minutes": 30,
+        "treatment_type": "Follow-up",
+        "patient_id": "P001",
+        "patient_name": "Sarah Chen",
+        "provider": "Dr. Chen",
+        "status": "scheduled",
+        "notes": "Review healing progress",
+    },
+]
+
+TREATMENT_TYPES: list[str] = [
+    "NAD+ IV Therapy",
+    "Hyperbaric Oxygen (HBOT)",
+    "Stem Cell Therapy",
+    "Peptide Therapy",
+    "Ozone Therapy",
+    "Biomarker Assessment",
+    "Consultation",
+    "Follow-up",
+    "Lab Work",
+    "Other",
+]
+
+PROVIDERS: list[str] = ["Dr. Johnson", "Dr. Chen", "Dr. Patel", "Dr. Williams"]

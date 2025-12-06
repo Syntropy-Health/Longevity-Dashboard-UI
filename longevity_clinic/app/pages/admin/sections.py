@@ -18,7 +18,10 @@ def patient_management_section() -> rx.Component:
         ),
         rx.el.div(
             rx.el.div(
-                rx.icon("search", class_name="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"),
+                rx.icon(
+                    "search",
+                    class_name="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2",
+                ),
                 rx.el.input(
                     placeholder="Search patients...",
                     on_change=PatientState.set_search_query,

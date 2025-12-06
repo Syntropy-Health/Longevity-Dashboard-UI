@@ -10,16 +10,16 @@ This module contains larger section components for the appointments page:
 import reflex as rx
 
 from ...styles.constants import GlassStyles
-from .components import appointment_card, mini_calendar, status_badge
+from .components import appointment_card, mini_calendar
 from .modals import booking_modal
 
 
 def appointments_sidebar(state) -> rx.Component:
     """Sidebar with calendar and booking options.
-    
+
     Args:
         state: The AppointmentState
-        
+
     Returns:
         A sidebar component with calendar and booking button
     """
@@ -32,20 +32,32 @@ def appointments_sidebar(state) -> rx.Component:
             # Quick stats
             rx.box(
                 rx.vstack(
-                    rx.text("This Month", class_name="text-slate-400 text-xs font-medium mb-2"),
+                    rx.text(
+                        "This Month",
+                        class_name="text-slate-400 text-xs font-medium mb-2",
+                    ),
                     rx.hstack(
                         rx.vstack(
-                            rx.text(state.total_appointments_this_month, class_name="text-2xl font-bold text-white"),
+                            rx.text(
+                                state.total_appointments_this_month,
+                                class_name="text-2xl font-bold text-white",
+                            ),
                             rx.text("Total", class_name="text-slate-400 text-xs"),
                             align_items="center",
                         ),
                         rx.vstack(
-                            rx.text(state.upcoming_count, class_name="text-2xl font-bold text-teal-400"),
+                            rx.text(
+                                state.upcoming_count,
+                                class_name="text-2xl font-bold text-teal-400",
+                            ),
                             rx.text("Upcoming", class_name="text-slate-400 text-xs"),
                             align_items="center",
                         ),
                         rx.vstack(
-                            rx.text(state.completed_count, class_name="text-2xl font-bold text-emerald-400"),
+                            rx.text(
+                                state.completed_count,
+                                class_name="text-2xl font-bold text-emerald-400",
+                            ),
                             rx.text("Completed", class_name="text-slate-400 text-xs"),
                             align_items="center",
                         ),
@@ -66,10 +78,10 @@ def appointments_sidebar(state) -> rx.Component:
 
 def upcoming_appointments_list(state) -> rx.Component:
     """List of upcoming appointments.
-    
+
     Args:
         state: The AppointmentState containing appointments data
-        
+
     Returns:
         A list component showing upcoming appointments
     """
@@ -101,8 +113,12 @@ def upcoming_appointments_list(state) -> rx.Component:
                 rx.box(
                     rx.vstack(
                         rx.icon("calendar-x", class_name="text-slate-500 w-12 h-12"),
-                        rx.text("No upcoming appointments", class_name="text-slate-400"),
-                        rx.text("Book your next visit", class_name="text-slate-500 text-sm"),
+                        rx.text(
+                            "No upcoming appointments", class_name="text-slate-400"
+                        ),
+                        rx.text(
+                            "Book your next visit", class_name="text-slate-500 text-sm"
+                        ),
                         align_items="center",
                         spacing="2",
                     ),
@@ -118,10 +134,10 @@ def upcoming_appointments_list(state) -> rx.Component:
 
 def appointments_for_date_section(state) -> rx.Component:
     """Section showing appointments for the selected date.
-    
+
     Args:
         state: The AppointmentState
-        
+
     Returns:
         A section component showing appointments for selected date
     """
@@ -155,8 +171,13 @@ def appointments_for_date_section(state) -> rx.Component:
                 ),
                 rx.box(
                     rx.vstack(
-                        rx.icon("calendar-check", class_name="text-slate-500 w-10 h-10"),
-                        rx.text("No appointments on this date", class_name="text-slate-400 text-sm"),
+                        rx.icon(
+                            "calendar-check", class_name="text-slate-500 w-10 h-10"
+                        ),
+                        rx.text(
+                            "No appointments on this date",
+                            class_name="text-slate-400 text-sm",
+                        ),
                         align_items="center",
                         spacing="2",
                     ),
@@ -172,10 +193,10 @@ def appointments_for_date_section(state) -> rx.Component:
 
 def appointments_content(state) -> rx.Component:
     """Main content area for appointments.
-    
+
     Args:
         state: The AppointmentState
-        
+
     Returns:
         The main content component with appointments listings
     """
@@ -189,7 +210,9 @@ def appointments_content(state) -> rx.Component:
             rx.box(
                 rx.vstack(
                     rx.hstack(
-                        rx.text("Past Appointments", class_name="text-white font-semibold"),
+                        rx.text(
+                            "Past Appointments", class_name="text-white font-semibold"
+                        ),
                         rx.spacer(),
                         rx.button(
                             "View All",
@@ -205,14 +228,19 @@ def appointments_content(state) -> rx.Component:
                                 state.past_appointments_limited,  # Show only last 3
                                 lambda apt: appointment_card(
                                     apt,
-                                    on_click=lambda a=apt: state.view_appointment_details(a),
+                                    on_click=lambda a=apt: state.view_appointment_details(
+                                        a
+                                    ),
                                 ),
                             ),
                             spacing="3",
                             width="100%",
                         ),
                         rx.box(
-                            rx.text("No past appointments", class_name="text-slate-400 text-sm"),
+                            rx.text(
+                                "No past appointments",
+                                class_name="text-slate-400 text-sm",
+                            ),
                             class_name="py-4 text-center",
                         ),
                     ),

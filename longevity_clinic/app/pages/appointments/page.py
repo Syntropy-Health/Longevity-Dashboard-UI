@@ -6,7 +6,6 @@ This module contains the main page function for the appointments page.
 import reflex as rx
 
 from ...styles.constants import GlassStyles
-from ...states.auth_state import AuthState
 from ...components.layout import authenticated_layout
 from .sections import appointments_sidebar, appointments_content
 from .modals import details_modal
@@ -19,7 +18,7 @@ except ImportError:
     # Fallback state if appointment_state.py doesn't exist yet
     class AppointmentState(rx.State):
         """Appointment scheduling state."""
-        
+
         # Calendar state
         selected_date: int = 15
         current_month: int = 1
@@ -31,7 +30,7 @@ except ImportError:
             [19, 20, 21, 22, 23, 24, 25],
             [26, 27, 28, 29, 30, 31, 0],
         ]
-        
+
         # Booking form state
         show_booking_modal: bool = False
         booking_type: str = ""
@@ -39,7 +38,7 @@ except ImportError:
         booking_date: str = ""
         booking_time: str = ""
         booking_notes: str = ""
-        
+
         # Details modal state
         show_details_modal: bool = False
         selected_appointment_type: str = ""
@@ -48,74 +47,126 @@ except ImportError:
         selected_appointment_doctor: str = ""
         selected_appointment_status: str = ""
         selected_appointment_notes: str = ""
-        
+
         # Time selection
         selected_time: str = ""
-        
+
         # Appointments data
         appointments: list[dict] = [
-            {"id": 1, "type": "Consultation", "date": "Jan 18, 2025", "time": "10:00 AM", "doctor": "Chen", "status": "confirmed", "notes": ""},
-            {"id": 2, "type": "Follow-up", "date": "Jan 22, 2025", "time": "2:00 PM", "doctor": "Roberts", "status": "pending", "notes": "Discuss lab results"},
-            {"id": 3, "type": "Check-up", "date": "Jan 10, 2025", "time": "9:00 AM", "doctor": "Wong", "status": "completed", "notes": ""},
+            {
+                "id": 1,
+                "type": "Consultation",
+                "date": "Jan 18, 2025",
+                "time": "10:00 AM",
+                "doctor": "Chen",
+                "status": "confirmed",
+                "notes": "",
+            },
+            {
+                "id": 2,
+                "type": "Follow-up",
+                "date": "Jan 22, 2025",
+                "time": "2:00 PM",
+                "doctor": "Roberts",
+                "status": "pending",
+                "notes": "Discuss lab results",
+            },
+            {
+                "id": 3,
+                "type": "Check-up",
+                "date": "Jan 10, 2025",
+                "time": "9:00 AM",
+                "doctor": "Wong",
+                "status": "completed",
+                "notes": "",
+            },
         ]
-        
+
         @rx.var
         def current_month_year(self) -> str:
-            months = ["January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"]
+            months = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ]
             return f"{months[self.current_month - 1]} {self.current_year}"
-        
+
         @rx.var
         def formatted_selected_date(self) -> str:
-            months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            months = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            ]
             return f"{months[self.current_month - 1]} {self.selected_date}, {self.current_year}"
-        
+
         @rx.var
         def upcoming_appointments(self) -> list[dict]:
-            return [a for a in self.appointments if a.get("status") in ["confirmed", "pending"]]
-        
+            return [
+                a
+                for a in self.appointments
+                if a.get("status") in ["confirmed", "pending"]
+            ]
+
         @rx.var
         def past_appointments(self) -> list[dict]:
             return [a for a in self.appointments if a.get("status") == "completed"]
-        
+
         @rx.var
         def appointments_for_date(self) -> list[dict]:
             # Simple filter - in production would match actual dates
             return self.upcoming_appointments[:1] if self.selected_date == 18 else []
-        
+
         @rx.var
         def total_appointments_this_month(self) -> int:
             return len(self.appointments)
-        
+
         @rx.var
         def upcoming_count(self) -> int:
             return len(self.upcoming_appointments)
-        
+
         @rx.var
         def completed_count(self) -> int:
             return len(self.past_appointments)
-        
+
         def select_date(self, day: int):
             self.selected_date = day
-        
+
         def select_time(self, time: str):
             self.selected_time = time
-        
+
         def prev_month(self):
             if self.current_month == 1:
                 self.current_month = 12
                 self.current_year -= 1
             else:
                 self.current_month -= 1
-        
+
         def next_month(self):
             if self.current_month == 12:
                 self.current_month = 1
                 self.current_year += 1
             else:
                 self.current_month += 1
-        
+
         def view_appointment_details(self, appointment: dict):
             self.selected_appointment_type = appointment.get("type", "")
             self.selected_appointment_date = appointment.get("date", "")
@@ -124,7 +175,7 @@ except ImportError:
             self.selected_appointment_status = appointment.get("status", "")
             self.selected_appointment_notes = appointment.get("notes", "")
             self.show_details_modal = True
-        
+
         def book_appointment(self):
             # Add new appointment
             new_apt = {
@@ -144,16 +195,15 @@ except ImportError:
             self.booking_time = ""
             self.booking_notes = ""
             self.show_booking_modal = False
-        
+
         def cancel_selected_appointment(self):
             # In production, would update the appointment status
             self.show_details_modal = False
 
 
-@rx.page(route="/appointments", title="Appointments | Longevity Clinic")
 def appointments_page() -> rx.Component:
     """Appointments page with calendar and booking functionality.
-    
+
     Returns:
         The complete appointments page component
     """

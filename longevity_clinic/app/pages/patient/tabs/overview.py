@@ -17,14 +17,28 @@ def overview_tab() -> rx.Component:
     return rx.el.div(
         # Key Metrics Grid
         rx.el.div(
-            rx.el.h2("Health Metrics", class_name="text-lg font-semibold text-white mb-4"),
+            rx.el.h2(
+                "Health Metrics", class_name="text-lg font-semibold text-white mb-4"
+            ),
             rx.el.div(
-                static_metric_card("Nutrition Score", "82", "/100", "apple", "up", "+5 this week"),
-                static_metric_card("Med Adherence", "94", "%", "pill", "stable", "Consistent"),
-                static_metric_card("Active Conditions", "3", "", "heart-pulse", "down", "-1 resolved"),
-                static_metric_card("Symptom Score", "Low", "", "thermometer", "down", "Improving"),
-                static_metric_card("Data Sources", "6", "connected", "link", "stable", "All synced"),
-                static_metric_card("Check-ins", "5", "this week", "mic", "up", "+2 vs last week"),
+                static_metric_card(
+                    "Nutrition Score", "82", "/100", "apple", "up", "+5 this week"
+                ),
+                static_metric_card(
+                    "Med Adherence", "94", "%", "pill", "stable", "Consistent"
+                ),
+                static_metric_card(
+                    "Active Conditions", "3", "", "heart-pulse", "down", "-1 resolved"
+                ),
+                static_metric_card(
+                    "Symptom Score", "Low", "", "thermometer", "down", "Improving"
+                ),
+                static_metric_card(
+                    "Data Sources", "6", "connected", "link", "stable", "All synced"
+                ),
+                static_metric_card(
+                    "Check-ins", "5", "this week", "mic", "up", "+2 vs last week"
+                ),
                 class_name="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8",
             ),
         ),
@@ -50,9 +64,7 @@ def overview_tab() -> rx.Component:
                         class_name="text-lg font-semibold text-white mb-4",
                     ),
                     rx.el.div(
-                        rx.foreach(
-                            PatientBiomarkerState.my_treatments, treatment_card
-                        ),
+                        rx.foreach(PatientBiomarkerState.my_treatments, treatment_card),
                         class_name="space-y-3",
                     ),
                     class_name="col-span-1 lg:col-span-2",

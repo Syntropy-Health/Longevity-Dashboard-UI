@@ -27,10 +27,22 @@ TREATMENT_CATEGORIES: Final[list[str]] = _enum_values(TreatmentCategory)
 TREATMENT_CATEGORY_COLORS = {
     TreatmentCategory.IV_THERAPY.value: {"bg": "bg-blue-100", "text": "text-blue-800"},
     TreatmentCategory.CRYOTHERAPY.value: {"bg": "bg-cyan-100", "text": "text-cyan-800"},
-    TreatmentCategory.SUPPLEMENTS.value: {"bg": "bg-green-100", "text": "text-green-800"},
-    TreatmentCategory.HORMONE_THERAPY.value: {"bg": "bg-purple-100", "text": "text-purple-800"},
-    TreatmentCategory.PHYSICAL_THERAPY.value: {"bg": "bg-orange-100", "text": "text-orange-800"},
-    TreatmentCategory.SPA_SERVICES.value: {"bg": "bg-pink-100", "text": "text-pink-800"},
+    TreatmentCategory.SUPPLEMENTS.value: {
+        "bg": "bg-green-100",
+        "text": "text-green-800",
+    },
+    TreatmentCategory.HORMONE_THERAPY.value: {
+        "bg": "bg-purple-100",
+        "text": "text-purple-800",
+    },
+    TreatmentCategory.PHYSICAL_THERAPY.value: {
+        "bg": "bg-orange-100",
+        "text": "text-orange-800",
+    },
+    TreatmentCategory.SPA_SERVICES.value: {
+        "bg": "bg-pink-100",
+        "text": "text-pink-800",
+    },
 }
 
 

@@ -2,9 +2,9 @@
 
 import reflex as rx
 from ...states.patient_dashboard_state import PatientDashboardState
+from ...states.patient_checkin_state import PatientCheckinState
 from ...states.voice_transcription_state import VoiceTranscriptionState, audio_capture
 from ...styles.constants import GlassStyles
-from ...states.functions import get_recording_duration_display
 
 
 def _format_duration(seconds: float) -> str:
@@ -26,7 +26,7 @@ def voice_recording_button() -> rx.Component:
                     rx.cond(
                         audio_capture.is_recording,
                         "square",  # Stop icon when recording
-                        "mic",     # Mic icon when idle
+                        "mic",  # Mic icon when idle
                     ),
                     class_name=rx.cond(
                         audio_capture.is_recording,
@@ -70,8 +70,13 @@ def voice_recording_button() -> rx.Component:
                 VoiceTranscriptionState.processing,
                 rx.el.div(
                     rx.el.div(
-                        rx.icon("loader-circle", class_name="w-5 h-5 text-teal-400 animate-spin mr-2"),
-                        rx.el.span("Transcribing...", class_name="text-teal-400 text-sm"),
+                        rx.icon(
+                            "loader-circle",
+                            class_name="w-5 h-5 text-teal-400 animate-spin mr-2",
+                        ),
+                        rx.el.span(
+                            "Transcribing...", class_name="text-teal-400 text-sm"
+                        ),
                         class_name="flex items-center justify-center mb-2",
                     ),
                 ),
@@ -79,12 +84,19 @@ def voice_recording_button() -> rx.Component:
                     VoiceTranscriptionState.transcript != "",
                     rx.el.div(
                         rx.el.div(
-                            rx.icon("circle-check", class_name="w-5 h-5 text-teal-400 mr-2"),
-                            rx.el.span("Transcription complete", class_name="text-teal-400 text-sm"),
+                            rx.icon(
+                                "circle-check", class_name="w-5 h-5 text-teal-400 mr-2"
+                            ),
+                            rx.el.span(
+                                "Transcription complete",
+                                class_name="text-teal-400 text-sm",
+                            ),
                             class_name="flex items-center justify-center mb-2",
                         ),
                     ),
-                    rx.el.p("Tap to start recording", class_name="text-sm text-slate-400"),
+                    rx.el.p(
+                        "Tap to start recording", class_name="text-sm text-slate-400"
+                    ),
                 ),
             ),
         ),
@@ -110,7 +122,10 @@ def transcription_display() -> rx.Component:
         VoiceTranscriptionState.transcript != "",
         rx.el.div(
             rx.el.div(
-                rx.el.p("Transcription", class_name="text-xs text-slate-400 uppercase tracking-wider"),
+                rx.el.p(
+                    "Transcription",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider",
+                ),
                 rx.el.button(
                     rx.icon("trash-2", class_name="w-3 h-3"),
                     on_click=VoiceTranscriptionState.clear_transcript,
@@ -134,11 +149,11 @@ def transcription_display() -> rx.Component:
 def topic_button(topic: str, icon_name: str) -> rx.Component:
     """Topic selection button with toggle state."""
     # Use rx.match to check if topic is in selected_topics list
-    is_selected = PatientDashboardState.selected_topics.contains(topic)
+    is_selected = PatientCheckinState.selected_topics.contains(topic)
     return rx.el.button(
         rx.icon(icon_name, class_name="w-3 h-3 mr-1"),
         topic,
-        on_click=lambda: PatientDashboardState.toggle_topic(topic),
+        on_click=lambda: PatientCheckinState.toggle_topic(topic),
         class_name=rx.cond(
             is_selected,
             "px-3 py-1.5 rounded-full text-xs font-medium bg-teal-500/30 text-teal-200 border-2 border-teal-400/50 flex items-center transition-all shadow-[0_0_10px_rgba(20,184,166,0.3)]",
@@ -172,14 +187,19 @@ def checkin_modal() -> rx.Component:
                     ),
                     # Check-in type selector
                     rx.el.div(
-                        rx.el.p("Type", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Type",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.div(
                             rx.el.button(
                                 rx.icon("mic", class_name="w-5 h-5 mr-2"),
                                 "Voice",
-                                on_click=lambda: PatientDashboardState.set_checkin_type("voice"),
+                                on_click=lambda: PatientCheckinState.set_checkin_type(
+                                    "voice"
+                                ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.checkin_type == "voice",
+                                    PatientCheckinState.checkin_type == "voice",
                                     "flex-1 py-3 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center transition-all",
                                     "flex-1 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10 flex items-center justify-center transition-all",
                                 ),
@@ -187,9 +207,11 @@ def checkin_modal() -> rx.Component:
                             rx.el.button(
                                 rx.icon("message-square", class_name="w-5 h-5 mr-2"),
                                 "Text",
-                                on_click=lambda: PatientDashboardState.set_checkin_type("text"),
+                                on_click=lambda: PatientCheckinState.set_checkin_type(
+                                    "text"
+                                ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.checkin_type == "text",
+                                    PatientCheckinState.checkin_type == "text",
                                     "flex-1 py-3 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center transition-all",
                                     "flex-1 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10 flex items-center justify-center transition-all",
                                 ),
@@ -200,7 +222,7 @@ def checkin_modal() -> rx.Component:
                     ),
                     # Content area - Voice or Text
                     rx.cond(
-                        PatientDashboardState.checkin_type == "voice",
+                        PatientCheckinState.checkin_type == "voice",
                         rx.el.div(
                             voice_recording_button(),
                             transcription_display(),
@@ -208,15 +230,18 @@ def checkin_modal() -> rx.Component:
                         rx.el.div(
                             rx.el.textarea(
                                 placeholder="How are you feeling today? Any symptoms, concerns, or updates...",
-                                value=PatientDashboardState.checkin_text,
-                                on_change=PatientDashboardState.set_checkin_text,
+                                value=PatientCheckinState.checkin_text,
+                                on_change=PatientCheckinState.set_checkin_text,
                                 class_name="w-full h-40 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-500 resize-none focus:outline-none focus:border-teal-500/50 transition-all",
                             ),
                         ),
                     ),
                     # Topic tags
                     rx.el.div(
-                        rx.el.p("Topics (optional)", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Topics (optional)",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.div(
                             topic_button("Medication", "pill"),
                             topic_button("Symptoms", "thermometer"),
@@ -240,14 +265,18 @@ def checkin_modal() -> rx.Component:
                             rx.cond(
                                 VoiceTranscriptionState.processing,
                                 rx.fragment(
-                                    rx.icon("loader-circle", class_name="w-4 h-4 mr-2 animate-spin"),
+                                    rx.icon(
+                                        "loader-circle",
+                                        class_name="w-4 h-4 mr-2 animate-spin",
+                                    ),
                                     "Processing...",
                                 ),
                                 "Save Check-in",
                             ),
-                            on_click=PatientDashboardState.save_checkin_with_voice,
+                            on_click=PatientCheckinState.save_checkin_with_voice,
                             disabled=VoiceTranscriptionState.processing,
-                            class_name=GlassStyles.BUTTON_PRIMARY + " disabled:opacity-50 disabled:cursor-not-allowed",
+                            class_name=GlassStyles.BUTTON_PRIMARY
+                            + " disabled:opacity-50 disabled:cursor-not-allowed",
                         ),
                         class_name="flex justify-end gap-3",
                     ),
@@ -256,8 +285,8 @@ def checkin_modal() -> rx.Component:
                 class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg {GlassStyles.MODAL} z-50",
             ),
         ),
-        open=PatientDashboardState.show_checkin_modal,
-        on_open_change=PatientDashboardState.set_show_checkin_modal,
+        open=PatientCheckinState.show_checkin_modal,
+        on_open_change=PatientCheckinState.set_show_checkin_modal,
     )
 
 
@@ -273,7 +302,9 @@ def medication_modal() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.radix.primitives.dialog.title(
-                            PatientDashboardState.selected_medication.get("name", "Medication"),
+                            PatientDashboardState.selected_medication.get(
+                                "name", "Medication"
+                            ),
                             class_name="text-xl font-bold text-white",
                         ),
                         rx.radix.primitives.dialog.close(
@@ -287,31 +318,49 @@ def medication_modal() -> rx.Component:
                     # Medication details
                     rx.el.div(
                         rx.el.div(
-                            rx.el.p("Dosage", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
                             rx.el.p(
-                                PatientDashboardState.selected_medication.get("dosage", "N/A"),
+                                "Dosage",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
+                            rx.el.p(
+                                PatientDashboardState.selected_medication.get(
+                                    "dosage", "N/A"
+                                ),
                                 class_name="text-white font-medium",
                             ),
                             class_name="mb-4",
                         ),
                         rx.el.div(
-                            rx.el.p("Frequency", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
                             rx.el.p(
-                                PatientDashboardState.selected_medication.get("frequency", "N/A"),
+                                "Frequency",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
+                            rx.el.p(
+                                PatientDashboardState.selected_medication.get(
+                                    "frequency", "N/A"
+                                ),
                                 class_name="text-white font-medium",
                             ),
                             class_name="mb-4",
                         ),
                         rx.el.div(
-                            rx.el.p("Status", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                "Status",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
                             rx.el.span(
-                                PatientDashboardState.selected_medication.get("status", "active"),
+                                PatientDashboardState.selected_medication.get(
+                                    "status", "active"
+                                ),
                                 class_name="px-3 py-1 rounded-full text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20 capitalize",
                             ),
                             class_name="mb-4",
                         ),
                         rx.el.div(
-                            rx.el.p("Adherence Rate", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                "Adherence Rate",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
                             rx.el.div(
                                 rx.el.span(
                                     f"{PatientDashboardState.selected_medication.get('adherence_rate', 0):.0f}%",
@@ -360,7 +409,9 @@ def condition_modal() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.radix.primitives.dialog.title(
-                            PatientDashboardState.selected_condition.get("name", "Condition"),
+                            PatientDashboardState.selected_condition.get(
+                                "name", "Condition"
+                            ),
                             class_name="text-xl font-bold text-white",
                         ),
                         rx.radix.primitives.dialog.close(
@@ -374,33 +425,53 @@ def condition_modal() -> rx.Component:
                     # Condition details
                     rx.el.div(
                         rx.el.div(
-                            rx.el.p("ICD-10 Code", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
                             rx.el.p(
-                                PatientDashboardState.selected_condition.get("icd_code", "N/A"),
+                                "ICD-10 Code",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
+                            rx.el.p(
+                                PatientDashboardState.selected_condition.get(
+                                    "icd_code", "N/A"
+                                ),
                                 class_name="text-white font-medium",
                             ),
                             class_name="mb-4",
                         ),
                         rx.el.div(
-                            rx.el.p("Diagnosed", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
                             rx.el.p(
-                                PatientDashboardState.selected_condition.get("diagnosed_date", "N/A"),
+                                "Diagnosed",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
+                            rx.el.p(
+                                PatientDashboardState.selected_condition.get(
+                                    "diagnosed_date", "N/A"
+                                ),
                                 class_name="text-white font-medium",
                             ),
                             class_name="mb-4",
                         ),
                         rx.el.div(
-                            rx.el.p("Severity", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
                             rx.el.p(
-                                PatientDashboardState.selected_condition.get("severity", "N/A"),
+                                "Severity",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
+                            rx.el.p(
+                                PatientDashboardState.selected_condition.get(
+                                    "severity", "N/A"
+                                ),
                                 class_name="text-white font-medium capitalize",
                             ),
                             class_name="mb-4",
                         ),
                         rx.el.div(
-                            rx.el.p("Status", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                "Status",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
                             rx.el.span(
-                                PatientDashboardState.selected_condition.get("status", "active"),
+                                PatientDashboardState.selected_condition.get(
+                                    "status", "active"
+                                ),
                                 class_name="px-3 py-1 rounded-full text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20 capitalize",
                             ),
                         ),
@@ -408,9 +479,14 @@ def condition_modal() -> rx.Component:
                     ),
                     # Related treatments
                     rx.el.div(
-                        rx.el.p("Related Treatments", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
                         rx.el.p(
-                            PatientDashboardState.selected_condition.get("treatments", "No treatments linked"),
+                            "Related Treatments",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
+                        rx.el.p(
+                            PatientDashboardState.selected_condition.get(
+                                "treatments", "No treatments linked"
+                            ),
                             class_name="text-sm text-slate-300",
                         ),
                         class_name="mb-6",
@@ -460,7 +536,10 @@ def symptom_modal() -> rx.Component:
                     ),
                     # Severity slider
                     rx.el.div(
-                        rx.el.p("Severity", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Severity",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.div(
                             rx.el.span("1", class_name="text-sm text-slate-400"),
                             rx.el.div(
@@ -473,7 +552,10 @@ def symptom_modal() -> rx.Component:
                     ),
                     # Notes
                     rx.el.div(
-                        rx.el.p("Notes", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Notes",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.textarea(
                             placeholder="Any additional details about this symptom...",
                             class_name="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 resize-none focus:outline-none focus:border-teal-500/50",
@@ -530,13 +612,24 @@ def connect_source_modal() -> rx.Component:
                     ),
                     # Available sources
                     rx.el.div(
-                        rx.el.p("Available Connections", class_name="text-xs text-slate-400 uppercase tracking-wider mb-3"),
+                        rx.el.p(
+                            "Available Connections",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-3",
+                        ),
                         rx.el.div(
                             rx.el.div(
-                                rx.icon("watch", class_name="w-6 h-6 text-teal-400 mr-3"),
+                                rx.icon(
+                                    "watch", class_name="w-6 h-6 text-teal-400 mr-3"
+                                ),
                                 rx.el.div(
-                                    rx.el.p("Apple Watch", class_name="text-sm font-medium text-white"),
-                                    rx.el.p("Wearable device", class_name="text-xs text-slate-400"),
+                                    rx.el.p(
+                                        "Apple Watch",
+                                        class_name="text-sm font-medium text-white",
+                                    ),
+                                    rx.el.p(
+                                        "Wearable device",
+                                        class_name="text-xs text-slate-400",
+                                    ),
                                     class_name="flex-1",
                                 ),
                                 rx.el.button(
@@ -546,10 +639,19 @@ def connect_source_modal() -> rx.Component:
                                 class_name="flex items-center p-4 border-b border-white/5",
                             ),
                             rx.el.div(
-                                rx.icon("smartphone", class_name="w-6 h-6 text-purple-400 mr-3"),
+                                rx.icon(
+                                    "smartphone",
+                                    class_name="w-6 h-6 text-purple-400 mr-3",
+                                ),
                                 rx.el.div(
-                                    rx.el.p("Oura Ring", class_name="text-sm font-medium text-white"),
-                                    rx.el.p("Sleep & activity tracker", class_name="text-xs text-slate-400"),
+                                    rx.el.p(
+                                        "Oura Ring",
+                                        class_name="text-sm font-medium text-white",
+                                    ),
+                                    rx.el.p(
+                                        "Sleep & activity tracker",
+                                        class_name="text-xs text-slate-400",
+                                    ),
                                     class_name="flex-1",
                                 ),
                                 rx.el.button(
@@ -559,10 +661,19 @@ def connect_source_modal() -> rx.Component:
                                 class_name="flex items-center p-4 border-b border-white/5",
                             ),
                             rx.el.div(
-                                rx.icon("stethoscope", class_name="w-6 h-6 text-blue-400 mr-3"),
+                                rx.icon(
+                                    "stethoscope",
+                                    class_name="w-6 h-6 text-blue-400 mr-3",
+                                ),
                                 rx.el.div(
-                                    rx.el.p("Epic MyChart", class_name="text-sm font-medium text-white"),
-                                    rx.el.p("EHR Integration", class_name="text-xs text-slate-400"),
+                                    rx.el.p(
+                                        "Epic MyChart",
+                                        class_name="text-sm font-medium text-white",
+                                    ),
+                                    rx.el.p(
+                                        "EHR Integration",
+                                        class_name="text-xs text-slate-400",
+                                    ),
                                     class_name="flex-1",
                                 ),
                                 rx.el.button(
@@ -620,7 +731,10 @@ def add_food_modal() -> rx.Component:
                     ),
                     # Food name
                     rx.el.div(
-                        rx.el.p("Food Name", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Food Name",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.input(
                             placeholder="e.g., Grilled Chicken Salad",
                             value=PatientDashboardState.new_food_name,
@@ -631,20 +745,28 @@ def add_food_modal() -> rx.Component:
                     ),
                     # Meal type
                     rx.el.div(
-                        rx.el.p("Meal Type", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Meal Type",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.div(
                             rx.el.button(
                                 "Breakfast",
-                                on_click=lambda: PatientDashboardState.set_new_food_meal_type("breakfast"),
+                                on_click=lambda: PatientDashboardState.set_new_food_meal_type(
+                                    "breakfast"
+                                ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.new_food_meal_type == "breakfast",
+                                    PatientDashboardState.new_food_meal_type
+                                    == "breakfast",
                                     "flex-1 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                     "flex-1 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10",
                                 ),
                             ),
                             rx.el.button(
                                 "Lunch",
-                                on_click=lambda: PatientDashboardState.set_new_food_meal_type("lunch"),
+                                on_click=lambda: PatientDashboardState.set_new_food_meal_type(
+                                    "lunch"
+                                ),
                                 class_name=rx.cond(
                                     PatientDashboardState.new_food_meal_type == "lunch",
                                     "flex-1 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
@@ -653,16 +775,21 @@ def add_food_modal() -> rx.Component:
                             ),
                             rx.el.button(
                                 "Dinner",
-                                on_click=lambda: PatientDashboardState.set_new_food_meal_type("dinner"),
+                                on_click=lambda: PatientDashboardState.set_new_food_meal_type(
+                                    "dinner"
+                                ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.new_food_meal_type == "dinner",
+                                    PatientDashboardState.new_food_meal_type
+                                    == "dinner",
                                     "flex-1 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                     "flex-1 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10",
                                 ),
                             ),
                             rx.el.button(
                                 "Snack",
-                                on_click=lambda: PatientDashboardState.set_new_food_meal_type("snack"),
+                                on_click=lambda: PatientDashboardState.set_new_food_meal_type(
+                                    "snack"
+                                ),
                                 class_name=rx.cond(
                                     PatientDashboardState.new_food_meal_type == "snack",
                                     "flex-1 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
@@ -675,10 +802,15 @@ def add_food_modal() -> rx.Component:
                     ),
                     # Nutrition info grid
                     rx.el.div(
-                        rx.el.p("Nutrition Info", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Nutrition Info",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.div(
                             rx.el.div(
-                                rx.el.p("Calories", class_name="text-xs text-slate-400 mb-1"),
+                                rx.el.p(
+                                    "Calories", class_name="text-xs text-slate-400 mb-1"
+                                ),
                                 rx.el.input(
                                     placeholder="0",
                                     type="number",
@@ -688,7 +820,10 @@ def add_food_modal() -> rx.Component:
                                 ),
                             ),
                             rx.el.div(
-                                rx.el.p("Protein (g)", class_name="text-xs text-slate-400 mb-1"),
+                                rx.el.p(
+                                    "Protein (g)",
+                                    class_name="text-xs text-slate-400 mb-1",
+                                ),
                                 rx.el.input(
                                     placeholder="0",
                                     type="number",
@@ -698,7 +833,10 @@ def add_food_modal() -> rx.Component:
                                 ),
                             ),
                             rx.el.div(
-                                rx.el.p("Carbs (g)", class_name="text-xs text-slate-400 mb-1"),
+                                rx.el.p(
+                                    "Carbs (g)",
+                                    class_name="text-xs text-slate-400 mb-1",
+                                ),
                                 rx.el.input(
                                     placeholder="0",
                                     type="number",
@@ -708,7 +846,9 @@ def add_food_modal() -> rx.Component:
                                 ),
                             ),
                             rx.el.div(
-                                rx.el.p("Fat (g)", class_name="text-xs text-slate-400 mb-1"),
+                                rx.el.p(
+                                    "Fat (g)", class_name="text-xs text-slate-400 mb-1"
+                                ),
                                 rx.el.input(
                                     placeholder="0",
                                     type="number",
@@ -734,7 +874,8 @@ def add_food_modal() -> rx.Component:
                                 rx.icon("plus", class_name="w-4 h-4 mr-2"),
                                 "Add Food",
                                 on_click=PatientDashboardState.save_food_entry,
-                                class_name=GlassStyles.BUTTON_PRIMARY + " flex items-center",
+                                class_name=GlassStyles.BUTTON_PRIMARY
+                                + " flex items-center",
                             ),
                         ),
                         class_name="flex justify-end gap-3",
@@ -781,8 +922,14 @@ def suggest_integration_modal() -> rx.Component:
                         # Success state
                         rx.el.div(
                             rx.el.div(
-                                rx.icon("circle-check", class_name="w-12 h-12 text-teal-400 mb-4"),
-                                rx.el.h3("Thank you!", class_name="text-lg font-semibold text-white mb-2"),
+                                rx.icon(
+                                    "circle-check",
+                                    class_name="w-12 h-12 text-teal-400 mb-4",
+                                ),
+                                rx.el.h3(
+                                    "Thank you!",
+                                    class_name="text-lg font-semibold text-white mb-2",
+                                ),
                                 rx.el.p(
                                     "We've received your suggestion and will review it for future updates.",
                                     class_name="text-slate-400 text-sm text-center",
@@ -803,7 +950,10 @@ def suggest_integration_modal() -> rx.Component:
                         rx.el.div(
                             # Integration name
                             rx.el.div(
-                                rx.el.p("Device / Service Name", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                                rx.el.p(
+                                    "Device / Service Name",
+                                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                                ),
                                 rx.el.input(
                                     placeholder="e.g., Whoop, Levels, Eight Sleep",
                                     value=PatientDashboardState.suggested_integration_name,
@@ -814,7 +964,10 @@ def suggest_integration_modal() -> rx.Component:
                             ),
                             # Description
                             rx.el.div(
-                                rx.el.p("Why would this be helpful? (optional)", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                                rx.el.p(
+                                    "Why would this be helpful? (optional)",
+                                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                                ),
                                 rx.el.textarea(
                                     placeholder="Tell us how this integration would help you track your health...",
                                     value=PatientDashboardState.suggested_integration_description,

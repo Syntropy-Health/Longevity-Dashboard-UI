@@ -13,10 +13,10 @@ from ...data.demo import DEMO_PATIENTS
 
 def booking_modal(state) -> rx.Component:
     """Modal for booking a new appointment.
-    
+
     Args:
         state: The AppointmentState containing booking form data
-        
+
     Returns:
         A modal dialog component for scheduling appointments
     """
@@ -42,10 +42,16 @@ def booking_modal(state) -> rx.Component:
                     rx.hstack(
                         rx.vstack(
                             rx.radix.primitives.dialog.title(
-                                rx.text("Book Appointment", class_name="text-xl font-semibold text-white"),
+                                rx.text(
+                                    "Book Appointment",
+                                    class_name="text-xl font-semibold text-white",
+                                ),
                             ),
                             rx.radix.primitives.dialog.description(
-                                rx.text("Schedule your next visit", class_name="text-slate-400 text-sm"),
+                                rx.text(
+                                    "Schedule your next visit",
+                                    class_name="text-slate-400 text-sm",
+                                ),
                             ),
                             align_items="start",
                             spacing="1",
@@ -65,7 +71,10 @@ def booking_modal(state) -> rx.Component:
                         rx.vstack(
                             # Patient selection
                             rx.vstack(
-                                rx.text("Patient", class_name="text-slate-300 text-sm font-medium"),
+                                rx.text(
+                                    "Patient",
+                                    class_name="text-slate-300 text-sm font-medium",
+                                ),
                                 rx.select.root(
                                     rx.select.trigger(
                                         placeholder="Select patient",
@@ -73,7 +82,9 @@ def booking_modal(state) -> rx.Component:
                                     ),
                                     rx.select.content(
                                         *[
-                                            rx.select.item(patient["name"], value=patient["id"])
+                                            rx.select.item(
+                                                patient["name"], value=patient["id"]
+                                            )
                                             for patient in DEMO_PATIENTS
                                         ],
                                         class_name="bg-slate-800 border border-slate-700",
@@ -87,17 +98,24 @@ def booking_modal(state) -> rx.Component:
                             ),
                             # Appointment type
                             rx.vstack(
-                                rx.text("Appointment Type", class_name="text-slate-300 text-sm font-medium"),
+                                rx.text(
+                                    "Appointment Type",
+                                    class_name="text-slate-300 text-sm font-medium",
+                                ),
                                 rx.select.root(
                                     rx.select.trigger(
                                         placeholder="Select type",
                                         class_name="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg text-white",
                                     ),
                                     rx.select.content(
-                                        rx.select.item("Consultation", value="consultation"),
+                                        rx.select.item(
+                                            "Consultation", value="consultation"
+                                        ),
                                         rx.select.item("Follow-up", value="follow-up"),
                                         rx.select.item("Check-up", value="checkup"),
-                                        rx.select.item("Lab Review", value="lab-review"),
+                                        rx.select.item(
+                                            "Lab Review", value="lab-review"
+                                        ),
                                         class_name="bg-slate-800 border border-slate-700",
                                     ),
                                     value=state.booking_type,
@@ -109,7 +127,10 @@ def booking_modal(state) -> rx.Component:
                             ),
                             # Doctor selection
                             rx.vstack(
-                                rx.text("Doctor", class_name="text-slate-300 text-sm font-medium"),
+                                rx.text(
+                                    "Doctor",
+                                    class_name="text-slate-300 text-sm font-medium",
+                                ),
                                 rx.select.root(
                                     rx.select.trigger(
                                         placeholder="Select doctor",
@@ -117,9 +138,13 @@ def booking_modal(state) -> rx.Component:
                                     ),
                                     rx.select.content(
                                         rx.select.item("Dr. Sarah Chen", value="chen"),
-                                        rx.select.item("Dr. Michael Roberts", value="roberts"),
+                                        rx.select.item(
+                                            "Dr. Michael Roberts", value="roberts"
+                                        ),
                                         rx.select.item("Dr. Emily Wong", value="wong"),
-                                        rx.select.item("Dr. James Miller", value="miller"),
+                                        rx.select.item(
+                                            "Dr. James Miller", value="miller"
+                                        ),
                                         class_name="bg-slate-800 border border-slate-700",
                                     ),
                                     value=state.booking_doctor,
@@ -131,7 +156,10 @@ def booking_modal(state) -> rx.Component:
                             ),
                             # Date selection
                             rx.vstack(
-                                rx.text("Preferred Date", class_name="text-slate-300 text-sm font-medium"),
+                                rx.text(
+                                    "Preferred Date",
+                                    class_name="text-slate-300 text-sm font-medium",
+                                ),
                                 rx.input(
                                     type="date",
                                     value=state.booking_date,
@@ -144,7 +172,10 @@ def booking_modal(state) -> rx.Component:
                             ),
                             # Time selection
                             rx.vstack(
-                                rx.text("Preferred Time", class_name="text-slate-300 text-sm font-medium"),
+                                rx.text(
+                                    "Preferred Time",
+                                    class_name="text-slate-300 text-sm font-medium",
+                                ),
                                 rx.select.root(
                                     rx.select.trigger(
                                         placeholder="Select time",
@@ -168,7 +199,10 @@ def booking_modal(state) -> rx.Component:
                             ),
                             # Notes
                             rx.vstack(
-                                rx.text("Notes (optional)", class_name="text-slate-300 text-sm font-medium"),
+                                rx.text(
+                                    "Notes (optional)",
+                                    class_name="text-slate-300 text-sm font-medium",
+                                ),
                                 rx.text_area(
                                     placeholder="Any specific concerns or notes...",
                                     value=state.booking_notes,
@@ -207,7 +241,8 @@ def booking_modal(state) -> rx.Component:
                     spacing="4",
                     width="100%",
                 ),
-                class_name=GlassStyles.modal + " fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[450px] max-w-[90vw]",
+                class_name=GlassStyles.modal
+                + " fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[450px] max-w-[90vw]",
             ),
         ),
         open=state.show_booking_modal,
@@ -217,10 +252,10 @@ def booking_modal(state) -> rx.Component:
 
 def details_modal(state) -> rx.Component:
     """Modal for viewing appointment details.
-    
+
     Args:
         state: The AppointmentState containing selected appointment data
-        
+
     Returns:
         A modal dialog component for viewing appointment details
     """
@@ -235,10 +270,16 @@ def details_modal(state) -> rx.Component:
                     rx.hstack(
                         rx.vstack(
                             rx.radix.primitives.dialog.title(
-                                rx.text("Appointment Details", class_name="text-xl font-semibold text-white"),
+                                rx.text(
+                                    "Appointment Details",
+                                    class_name="text-xl font-semibold text-white",
+                                ),
                             ),
                             rx.radix.primitives.dialog.description(
-                                rx.text(state.selected_appointment_type, class_name="text-teal-400 text-sm"),
+                                rx.text(
+                                    state.selected_appointment_type,
+                                    class_name="text-teal-400 text-sm",
+                                ),
                             ),
                             align_items="start",
                             spacing="1",
@@ -259,11 +300,16 @@ def details_modal(state) -> rx.Component:
                             # Date & Time
                             rx.hstack(
                                 rx.box(
-                                    rx.icon("calendar", class_name="text-teal-400 w-5 h-5"),
+                                    rx.icon(
+                                        "calendar", class_name="text-teal-400 w-5 h-5"
+                                    ),
                                     class_name="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center",
                                 ),
                                 rx.vstack(
-                                    rx.text("Date & Time", class_name="text-slate-400 text-xs"),
+                                    rx.text(
+                                        "Date & Time",
+                                        class_name="text-slate-400 text-xs",
+                                    ),
                                     rx.text(
                                         f"{state.selected_appointment_date} at {state.selected_appointment_time}",
                                         class_name="text-white font-medium",
@@ -281,7 +327,9 @@ def details_modal(state) -> rx.Component:
                                     class_name="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center",
                                 ),
                                 rx.vstack(
-                                    rx.text("Doctor", class_name="text-slate-400 text-xs"),
+                                    rx.text(
+                                        "Doctor", class_name="text-slate-400 text-xs"
+                                    ),
                                     rx.text(
                                         f"Dr. {state.selected_appointment_doctor}",
                                         class_name="text-white font-medium",
@@ -295,11 +343,16 @@ def details_modal(state) -> rx.Component:
                             # Status
                             rx.hstack(
                                 rx.box(
-                                    rx.icon("circle-check", class_name="text-emerald-400 w-5 h-5"),
+                                    rx.icon(
+                                        "circle-check",
+                                        class_name="text-emerald-400 w-5 h-5",
+                                    ),
                                     class_name="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center",
                                 ),
                                 rx.vstack(
-                                    rx.text("Status", class_name="text-slate-400 text-xs"),
+                                    rx.text(
+                                        "Status", class_name="text-slate-400 text-xs"
+                                    ),
                                     rx.text(
                                         state.selected_appointment_status,
                                         class_name="text-white font-medium capitalize",
@@ -314,7 +367,10 @@ def details_modal(state) -> rx.Component:
                             rx.cond(
                                 state.selected_appointment_notes != "",
                                 rx.vstack(
-                                    rx.text("Notes", class_name="text-slate-400 text-xs font-medium"),
+                                    rx.text(
+                                        "Notes",
+                                        class_name="text-slate-400 text-xs font-medium",
+                                    ),
                                     rx.box(
                                         rx.text(
                                             state.selected_appointment_notes,
@@ -360,7 +416,8 @@ def details_modal(state) -> rx.Component:
                     spacing="4",
                     width="100%",
                 ),
-                class_name=GlassStyles.modal + " fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[450px] max-w-[90vw]",
+                class_name=GlassStyles.modal
+                + " fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[450px] max-w-[90vw]",
             ),
         ),
         open=state.show_details_modal,

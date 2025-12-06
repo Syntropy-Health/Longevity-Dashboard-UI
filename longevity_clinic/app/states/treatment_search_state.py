@@ -1,6 +1,6 @@
 import reflex as rx
 from typing import Optional
-from .treatment_state import TreatmentState, TreatmentProtocol
+from .treatment_state import TreatmentProtocol
 
 
 class TreatmentSearchState(rx.State):

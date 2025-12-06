@@ -1,7 +1,50 @@
 import os
+import logging
 from typing import Literal
+from pathlib import Path
 
 from pydantic import BaseModel, computed_field
+
+
+# =============================================================================
+# Centralized Logging Configuration
+# =============================================================================
+
+# Log file path - DISABLED to prevent Reflex hot-reload loops
+# LOG_FILE_PATH = Path(__file__).parent.parent.parent / "dev.logs"
+
+
+def get_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
+    """
+    Get a configured logger instance with DEBUG level and console output.
+
+    Args:
+        name: Logger name (e.g., 'longevity_clinic.call_logs')
+        level: Logging level (default: DEBUG)
+
+    Returns:
+        Configured logger instance
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    # Only add handlers if not already present to avoid duplicate logs
+    if not logger.handlers:
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+
+        # Console handler only (file handler disabled to prevent Reflex hot-reload loops)
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(level)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+    return logger
+
+
+# Create default app logger
+app_logger = get_logger("longevity_clinic")
 
 
 # Ensure OpenAI API key is loaded from environment
@@ -10,7 +53,9 @@ CALL_API_TOKEN = os.getenv("CALL_API_TOKEN", "")
 
 # Validate required API keys on startup
 if not OPENAI_API_KEY:
-    print("WARNING: OPENAI_API_KEY not set. Voice transcription and AI features will not work.")
+    print(
+        "WARNING: OPENAI_API_KEY not set. Voice transcription and AI features will not work."
+    )
 
 if not CALL_API_TOKEN:
     print("WARNING: CALL_API_TOKEN not set. Call log fetching will not work.")
@@ -53,12 +98,14 @@ class AppConfig(BaseModel):
     admin_role_name: str = os.getenv("ADMIN_ROLE_NAME", "Administrator")
     patient_role_name: str = os.getenv("PATIENT_ROLE_NAME", "Patient")
     theme_color: str = os.getenv("THEME_COLOR", "emerald")
-    
+
     # API Configuration
     openai_api_key: str = OPENAI_API_KEY
     call_api_token: str = CALL_API_TOKEN
-    call_logs_api_base: str = "https://directus-staging-ee94.up.railway.app/items/call_logs"
-    
+    call_logs_api_base: str = (
+        "https://directus-staging-ee94.up.railway.app/items/call_logs"
+    )
+
     # Glass UI Styles
     glass_bg_gradient: str = "bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-blue-50/30 via-white to-emerald-50/30"
     glass_panel_style: str = "bg-white/60 backdrop-blur-3xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] hover:bg-white/80 transition-all duration-500"

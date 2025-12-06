@@ -3,10 +3,8 @@
 import reflex as rx
 from ...states.patient_biomarker_state import (
     PatientBiomarkerState,
-    Biomarker,
-    PortalAppointment,
-    PortalTreatment,
 )
+from ...data.state_schemas import Biomarker, PortalAppointment, PortalTreatment
 from ...states.patient_dashboard_state import PatientDashboardState
 from ...components.charts import biomarker_history_chart
 from ...styles.constants import GlassStyles
@@ -183,7 +181,9 @@ def biomarker_detail_panel() -> rx.Component:
     )
 
 
-def sub_filter_button(label: str, filter_value: str, current_filter: str, set_filter) -> rx.Component:
+def sub_filter_button(
+    label: str, filter_value: str, current_filter: str, set_filter
+) -> rx.Component:
     """Sub-filter button for tab content."""
     return rx.el.button(
         label,
@@ -194,7 +194,8 @@ def sub_filter_button(label: str, filter_value: str, current_filter: str, set_fi
             "px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
         ),
     )
-    
+
+
 def treatment_card(treatment: PortalTreatment) -> rx.Component:
     """Treatment card with dark theme styling."""
     return rx.el.div(
@@ -247,7 +248,9 @@ def appointment_item(apt: PortalAppointment) -> rx.Component:
     )
 
 
-def static_metric_card(name: str, value: str, unit: str, icon: str, trend: str, trend_value: str) -> rx.Component:
+def static_metric_card(
+    name: str, value: str, unit: str, icon: str, trend: str, trend_value: str
+) -> rx.Component:
     """Static metric card for overview tab."""
     return rx.el.div(
         rx.el.div(
@@ -274,7 +277,9 @@ def static_metric_card(name: str, value: str, unit: str, icon: str, trend: str, 
         ),
         rx.el.div(
             rx.icon(
-                "trending-up" if trend == "up" else ("trending-down" if trend == "down" else "minus"),
+                "trending-up"
+                if trend == "up"
+                else ("trending-down" if trend == "down" else "minus"),
                 class_name=f"w-3 h-3 {'text-teal-400' if trend in ['up', 'down'] else 'text-slate-500'} mr-1",
             ),
             rx.el.span(
@@ -303,7 +308,7 @@ def tab_button(label: str, tab_id: str, icon: str) -> rx.Component:
 
 def patient_portal_tabs() -> rx.Component:
     """Patient dashboard tab navigation - main portal tabs only.
-    
+
     Shows: Dashboard (overview), Food Tracker, Medications, Conditions, Symptoms
     Check-ins and Settings are separate pages (no tabs shown on those pages).
     """
@@ -318,13 +323,3 @@ def patient_portal_tabs() -> rx.Component:
         ),
         class_name="mb-8",
     )
-
-
-def patient_sidebar_tabs() -> rx.Component:
-    """Patient dashboard tab navigation - legacy alias for patient_portal_tabs."""
-    return patient_portal_tabs()
-
-
-def dashboard_tabs() -> rx.Component:
-    """Main dashboard tab navigation - legacy, now aliased to patient_portal_tabs."""
-    return patient_portal_tabs()

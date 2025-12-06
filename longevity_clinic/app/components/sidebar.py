@@ -7,7 +7,9 @@ from ..styles.constants import GlassStyles
 demo_user = current_config.demo_user
 
 
-def sidebar_item(text: str, icon_name: str, href: str, is_active: bool = False) -> rx.Component:
+def sidebar_item(
+    text: str, icon_name: str, href: str, is_active: bool = False
+) -> rx.Component:
     """A single sidebar navigation item with dark theme styling."""
     return rx.el.a(
         rx.icon(
@@ -38,11 +40,15 @@ def sidebar_content() -> rx.Component:
             rx.icon("activity", class_name="w-8 h-8 text-teal-400 mr-3"),
             rx.el.div(
                 rx.el.span(
-                    current_config.app_name.split(" ")[0] if " " in current_config.app_name else current_config.app_name,
+                    current_config.app_name.split(" ")[0]
+                    if " " in current_config.app_name
+                    else current_config.app_name,
                     class_name="block font-bold text-lg tracking-tight text-white leading-none",
                 ),
                 rx.el.span(
-                    " ".join(current_config.app_name.split(" ")[1:]) if " " in current_config.app_name else "CLINIC",
+                    " ".join(current_config.app_name.split(" ")[1:])
+                    if " " in current_config.app_name
+                    else "CLINIC",
                     class_name="block text-xs text-teal-400 uppercase tracking-widest",
                 ),
             ),
@@ -60,6 +66,7 @@ def sidebar_content() -> rx.Component:
                     sidebar_item(
                         "Treatment Library", "stethoscope", "/admin/treatments"
                     ),
+                    sidebar_item("Check-ins", "mic", "/admin/checkins"),
                     class_name="flex flex-col px-3",
                 ),
                 rx.el.div(
@@ -161,6 +168,7 @@ def mobile_menu() -> rx.Component:
                         mobile_sidebar_item(
                             "Treatments", "stethoscope", "/admin/treatments"
                         ),
+                        mobile_sidebar_item("Check-ins", "mic", "/admin/checkins"),
                     ),
                     rx.fragment(
                         mobile_sidebar_item("Portal Home", "home", "/patient/portal"),
@@ -171,7 +179,9 @@ def mobile_menu() -> rx.Component:
                             "Treatment Search", "search", "/patient/treatment-search"
                         ),
                         mobile_sidebar_item("Check-ins", "mic", "/patient/checkins"),
-                        mobile_sidebar_item("Settings", "settings", "/patient/settings"),
+                        mobile_sidebar_item(
+                            "Settings", "settings", "/patient/settings"
+                        ),
                     ),
                 ),
                 class_name="flex-1 overflow-y-auto",

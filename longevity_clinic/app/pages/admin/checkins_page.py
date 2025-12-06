@@ -236,5 +236,4 @@ def admin_checkins_page() -> rx.Component:
             ),
             class_name=f"{GlassStyles.PANEL} p-6",
         ),
-        on_mount=[AdminCheckinsState.sync_call_logs_to_admin],
     )

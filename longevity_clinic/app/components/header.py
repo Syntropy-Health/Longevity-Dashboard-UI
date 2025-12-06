@@ -9,10 +9,9 @@ def notification_badge() -> rx.Component:
     return rx.cond(
         NotificationState.unread_count > 0,
         rx.box(
-            NotificationState.unread_count,
-            class_name=GlassStyles.NOTIFICATION_BADGE
+            NotificationState.unread_count, class_name=GlassStyles.NOTIFICATION_BADGE
         ),
-        rx.fragment()
+        rx.fragment(),
     )
 
 
@@ -33,7 +32,10 @@ def header() -> rx.Component:
         rx.el.div(
             # Notifications button with badge
             rx.el.button(
-                rx.icon("bell", class_name="w-5 h-5 text-slate-400 hover:text-teal-300 transition-colors"),
+                rx.icon(
+                    "bell",
+                    class_name="w-5 h-5 text-slate-400 hover:text-teal-300 transition-colors",
+                ),
                 notification_badge(),
                 on_click=rx.redirect("/notifications"),
                 class_name=f"{GlassStyles.ICON_BUTTON} mr-2",
@@ -41,7 +43,10 @@ def header() -> rx.Component:
             ),
             # Appointments button
             rx.el.button(
-                rx.icon("calendar-plus", class_name="w-5 h-5 text-slate-400 hover:text-teal-300 transition-colors"),
+                rx.icon(
+                    "calendar-plus",
+                    class_name="w-5 h-5 text-slate-400 hover:text-teal-300 transition-colors",
+                ),
                 on_click=rx.redirect("/appointments"),
                 class_name=f"{GlassStyles.ICON_BUTTON} mr-4 hidden sm:block",
                 title="Schedule Appointment",

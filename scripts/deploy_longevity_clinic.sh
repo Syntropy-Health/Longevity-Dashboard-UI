@@ -16,14 +16,25 @@ BACKEND_SERVICE="longevity-clinic-backend"
 FRONTEND_SERVICE="longevity-clinic"
 
 # App-specific environment variables to sync to Railway
-export APP_ENV_VARS="APP_NAME CLINIC_NAME ADMIN_ROLE_NAME PATIENT_ROLE_NAME THEME_COLOR"
+export APP_ENV_VARS="APP_NAME CLINIC_NAME ADMIN_ROLE_NAME PATIENT_ROLE_NAME THEME_COLOR APP_ENV"
 
-# Load app-specific .env if exists
-if [ -f ".env" ]; then
-    set -a; source ".env"; set +a
+# Determine which env file to load based on deployment environment
+if [ "$RAILWAY_ENVIRONMENT" == "prod" ] || [ "$RAILWAY_ENVIRONMENT" == "production" ]; then
+    ENV_FILE="envs/.env.prod"
+    export APP_ENV="prod"
+else
+    ENV_FILE="envs/.env.dev"
+    export APP_ENV="dev"
 fi
 
-# Set defaults if not in .env
+# Load hierarchical env files
+echo "Loading environment configuration..."
+[ -f "envs/.env.base" ] && { set -a; source "envs/.env.base"; set +a; echo "  ✓ Loaded: envs/.env.base"; }
+[ -f "$ENV_FILE" ] && { set -a; source "$ENV_FILE"; set +a; echo "  ✓ Loaded: $ENV_FILE"; }
+[ -f "envs/.env.secrets" ] && { set -a; source "envs/.env.secrets"; set +a; echo "  ✓ Loaded: envs/.env.secrets"; }
+[ -f ".env" ] && { set -a; source ".env"; set +a; echo "  ✓ Loaded: .env (override)"; }
+
+# Set defaults if not in env files
 export APP_NAME="${APP_NAME:-Vitality Clinic}"
 export CLINIC_NAME="${CLINIC_NAME:-Vitality Health}"
 export ADMIN_ROLE_NAME="${ADMIN_ROLE_NAME:-Administrator}"
@@ -34,7 +45,9 @@ echo "=========================================="
 echo "Longevity Clinic Deployment"
 echo "=========================================="
 echo "Environment: $RAILWAY_ENVIRONMENT"
+echo "App Env: $APP_ENV"
 echo "App Name: $APP_NAME"
+echo "Backend URL: ${REFLEX_API_URL:-localhost}"
 echo "=========================================="
 
 # Run the generic deployment script

@@ -11,7 +11,10 @@ def settings_tab() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.h2("Settings", class_name="text-xl font-bold text-white mb-2"),
-            rx.el.p("Manage your profile and preferences.", class_name="text-slate-400 text-sm"),
+            rx.el.p(
+                "Manage your profile and preferences.",
+                class_name="text-slate-400 text-sm",
+            ),
             class_name="mb-6",
         ),
         rx.el.div(
@@ -28,8 +31,13 @@ def settings_tab() -> rx.Component:
                             class_name="w-20 h-20 rounded-full bg-teal-900/50 flex items-center justify-center border border-teal-500/30",
                         ),
                         rx.el.div(
-                            rx.el.h4(AuthState.user_full_name, class_name="text-lg font-semibold text-white"),
-                            rx.el.p(AuthState.role_label, class_name="text-sm text-teal-400"),
+                            rx.el.h4(
+                                AuthState.user_full_name,
+                                class_name="text-lg font-semibold text-white",
+                            ),
+                            rx.el.p(
+                                AuthState.role_label, class_name="text-sm text-teal-400"
+                            ),
                             class_name="ml-4",
                         ),
                         class_name="flex items-center",
@@ -40,12 +48,19 @@ def settings_tab() -> rx.Component:
             ),
             # Notification Settings
             rx.el.div(
-                rx.el.h3("Notifications", class_name="text-lg font-semibold text-white mb-4"),
+                rx.el.h3(
+                    "Notifications", class_name="text-lg font-semibold text-white mb-4"
+                ),
                 rx.el.div(
                     rx.el.div(
                         rx.el.div(
-                            rx.el.p("Email Notifications", class_name="text-sm text-white"),
-                            rx.el.p("Receive updates via email", class_name="text-xs text-slate-400"),
+                            rx.el.p(
+                                "Email Notifications", class_name="text-sm text-white"
+                            ),
+                            rx.el.p(
+                                "Receive updates via email",
+                                class_name="text-xs text-slate-400",
+                            ),
                             class_name="flex-1",
                         ),
                         rx.el.button(
@@ -70,8 +85,13 @@ def settings_tab() -> rx.Component:
                     ),
                     rx.el.div(
                         rx.el.div(
-                            rx.el.p("Push Notifications", class_name="text-sm text-white"),
-                            rx.el.p("Receive push notifications", class_name="text-xs text-slate-400"),
+                            rx.el.p(
+                                "Push Notifications", class_name="text-sm text-white"
+                            ),
+                            rx.el.p(
+                                "Receive push notifications",
+                                class_name="text-xs text-slate-400",
+                            ),
                             class_name="flex-1",
                         ),
                         rx.el.button(

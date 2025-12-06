@@ -30,7 +30,9 @@ def data_source_card(source: dict) -> rx.Component:
                         "text-base font-semibold text-slate-400 mb-1",
                     ),
                 ),
-                rx.el.p(source["type"].capitalize(), class_name="text-xs text-slate-400"),
+                rx.el.p(
+                    source["type"].capitalize(), class_name="text-xs text-slate-400"
+                ),
                 rx.el.p(
                     rx.fragment("Last sync: ", source["last_sync"]),
                     class_name=rx.cond(
@@ -59,7 +61,9 @@ def data_source_card(source: dict) -> rx.Component:
                         "w-12 h-6 bg-slate-600 rounded-full p-0.5 flex items-center transition-colors duration-200",
                     ),
                 ),
-                on_click=lambda: PatientDashboardState.toggle_data_source_connection(source["id"]),
+                on_click=lambda: PatientDashboardState.toggle_data_source_connection(
+                    source["id"]
+                ),
                 class_name="focus:outline-none",
             ),
             rx.el.span(
@@ -86,8 +90,14 @@ def import_drop_zone() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.icon("cloud-upload", class_name="w-12 h-12 text-slate-400 mb-4"),
-                rx.el.h4("Drop files here to import", class_name="text-lg font-semibold text-white mb-2"),
-                rx.el.p("Supported formats: CSV, JSON, FHIR, HL7", class_name="text-sm text-slate-400 mb-4"),
+                rx.el.h4(
+                    "Drop files here to import",
+                    class_name="text-lg font-semibold text-white mb-2",
+                ),
+                rx.el.p(
+                    "Supported formats: CSV, JSON, FHIR, HL7",
+                    class_name="text-sm text-slate-400 mb-4",
+                ),
                 rx.el.div(
                     rx.el.span("or", class_name="text-slate-500 text-sm px-3"),
                     class_name="flex items-center mb-4",
@@ -102,26 +112,42 @@ def import_drop_zone() -> rx.Component:
             class_name="border-2 border-dashed border-slate-600 hover:border-teal-500/50 rounded-2xl bg-white/2 hover:bg-white/5 transition-all duration-300 cursor-pointer",
         ),
         rx.el.div(
-            rx.el.h4("Recent Imports", class_name="text-sm font-semibold text-white mb-3"),
+            rx.el.h4(
+                "Recent Imports", class_name="text-sm font-semibold text-white mb-3"
+            ),
             rx.el.div(
                 rx.el.div(
                     rx.icon("file-text", class_name="w-4 h-4 text-slate-400 mr-3"),
                     rx.el.div(
-                        rx.el.p("lab_results_nov2024.csv", class_name="text-sm text-white"),
-                        rx.el.p("Imported 3 days ago", class_name="text-xs text-slate-400"),
+                        rx.el.p(
+                            "lab_results_nov2024.csv", class_name="text-sm text-white"
+                        ),
+                        rx.el.p(
+                            "Imported 3 days ago", class_name="text-xs text-slate-400"
+                        ),
                         class_name="flex-1",
                     ),
-                    rx.el.span("Success", class_name="text-xs text-teal-400 bg-teal-500/10 px-2 py-1 rounded"),
+                    rx.el.span(
+                        "Success",
+                        class_name="text-xs text-teal-400 bg-teal-500/10 px-2 py-1 rounded",
+                    ),
                     class_name="flex items-center p-3 border-b border-white/5",
                 ),
                 rx.el.div(
                     rx.icon("file-text", class_name="w-4 h-4 text-slate-400 mr-3"),
                     rx.el.div(
-                        rx.el.p("medication_history.json", class_name="text-sm text-white"),
-                        rx.el.p("Imported 1 week ago", class_name="text-xs text-slate-400"),
+                        rx.el.p(
+                            "medication_history.json", class_name="text-sm text-white"
+                        ),
+                        rx.el.p(
+                            "Imported 1 week ago", class_name="text-xs text-slate-400"
+                        ),
                         class_name="flex-1",
                     ),
-                    rx.el.span("Success", class_name="text-xs text-teal-400 bg-teal-500/10 px-2 py-1 rounded"),
+                    rx.el.span(
+                        "Success",
+                        class_name="text-xs text-teal-400 bg-teal-500/10 px-2 py-1 rounded",
+                    ),
                     class_name="flex items-center p-3",
                 ),
                 class_name=f"{GlassStyles.PANEL}",
@@ -137,14 +163,19 @@ def data_sources_tab() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.h2("Data Sources", class_name="text-xl font-bold text-white mb-2"),
-            rx.el.p("Connect and manage your health data sources.", class_name="text-slate-400 text-sm"),
+            rx.el.p(
+                "Connect and manage your health data sources.",
+                class_name="text-slate-400 text-sm",
+            ),
             class_name="mb-6",
         ),
         # Sub-filters
         rx.el.div(
             rx.el.button(
                 "Devices & Wearables",
-                on_click=lambda: PatientDashboardState.set_data_sources_filter("devices"),
+                on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                    "devices"
+                ),
                 class_name=rx.cond(
                     PatientDashboardState.data_sources_filter == "devices",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
@@ -153,7 +184,9 @@ def data_sources_tab() -> rx.Component:
             ),
             rx.el.button(
                 "API Connections",
-                on_click=lambda: PatientDashboardState.set_data_sources_filter("api_connections"),
+                on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                    "api_connections"
+                ),
                 class_name=rx.cond(
                     PatientDashboardState.data_sources_filter == "api_connections",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
@@ -162,7 +195,9 @@ def data_sources_tab() -> rx.Component:
             ),
             rx.el.button(
                 "Import History",
-                on_click=lambda: PatientDashboardState.set_data_sources_filter("import_history"),
+                on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                    "import_history"
+                ),
                 class_name=rx.cond(
                     PatientDashboardState.data_sources_filter == "import_history",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
@@ -182,7 +217,10 @@ def data_sources_tab() -> rx.Component:
                         rx.icon("link", class_name="w-6 h-6 text-teal-400"),
                         class_name="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center mb-3 border border-teal-500/20",
                     ),
-                    rx.el.p("Connected Sources", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                    rx.el.p(
+                        "Connected Sources",
+                        class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                    ),
                     rx.el.span(
                         PatientDashboardState.connected_sources_count,
                         class_name="text-3xl font-bold text-white",
@@ -191,12 +229,16 @@ def data_sources_tab() -> rx.Component:
                 ),
                 # Sources List
                 rx.el.div(
-                    rx.foreach(PatientDashboardState.filtered_data_sources, data_source_card),
+                    rx.foreach(
+                        PatientDashboardState.filtered_data_sources, data_source_card
+                    ),
                     class_name="space-y-4",
                 ),
                 # "Not here?" link
                 rx.el.div(
-                    rx.el.span("Don't see your device? ", class_name="text-slate-500 text-sm"),
+                    rx.el.span(
+                        "Don't see your device? ", class_name="text-slate-500 text-sm"
+                    ),
                     rx.el.button(
                         "Suggest an integration",
                         on_click=PatientDashboardState.open_suggest_integration_modal,

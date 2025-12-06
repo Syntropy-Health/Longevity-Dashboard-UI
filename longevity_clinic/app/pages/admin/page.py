@@ -17,19 +17,20 @@ def admin_dashboard() -> rx.Component:
             rx.el.h1(
                 "Dashboard", class_name=f"text-2xl {GlassStyles.HEADING_LIGHT} mb-6"
             ),
-            
             # Tab navigation
             dashboard_tabs(),
-            
             # Tab content
             rx.match(
                 AdminDashboardState.active_tab,
                 ("overview", overview_tab()),
-                ("patients", rx.el.div(
-                    patient_management_section(),
-                    add_patient_modal(),
-                    view_patient_modal(),
-                )),
+                (
+                    "patients",
+                    rx.el.div(
+                        patient_management_section(),
+                        add_patient_modal(),
+                        view_patient_modal(),
+                    ),
+                ),
                 ("efficiency", efficiency_tab()),
                 overview_tab(),  # Default
             ),

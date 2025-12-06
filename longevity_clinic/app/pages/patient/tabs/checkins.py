@@ -1,7 +1,7 @@
 """Check-ins tab component for patient portal."""
 
 import reflex as rx
-from ....states.patient_dashboard_state import PatientDashboardState
+from ....states.patient_checkin_state import PatientCheckinState
 from ....styles.constants import GlassStyles
 
 
@@ -19,7 +19,7 @@ def checkin_card(checkin: dict) -> rx.Component:
     }
     icon = type_icons.get(checkin.get("type", "text"), "message-square")
     color = sentiment_colors.get(checkin.get("sentiment", "neutral"), "slate")
-    
+
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -28,11 +28,18 @@ def checkin_card(checkin: dict) -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    rx.el.span(checkin["type"].capitalize(), class_name="text-xs font-medium text-teal-400 mr-2"),
-                    rx.el.span(checkin["timestamp"], class_name="text-xs text-slate-400"),
+                    rx.el.span(
+                        checkin["type"].capitalize(),
+                        class_name="text-xs font-medium text-teal-400 mr-2",
+                    ),
+                    rx.el.span(
+                        checkin["timestamp"], class_name="text-xs text-slate-400"
+                    ),
                     class_name="flex items-center mb-1",
                 ),
-                rx.el.p(checkin["summary"], class_name="text-sm text-white line-clamp-2"),
+                rx.el.p(
+                    checkin["summary"], class_name="text-sm text-white line-clamp-2"
+                ),
                 rx.cond(
                     checkin["key_topics"].length() > 0,
                     rx.el.div(
@@ -74,7 +81,10 @@ def checkins_tab() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.h2("Self Check-ins", class_name="text-xl font-bold text-white mb-2"),
-            rx.el.p("Voice and text logs between visits.", class_name="text-slate-400 text-sm"),
+            rx.el.p(
+                "Voice and text logs between visits.",
+                class_name="text-slate-400 text-sm",
+            ),
             class_name="mb-6",
         ),
         # Quick action buttons
@@ -82,13 +92,13 @@ def checkins_tab() -> rx.Component:
             rx.el.button(
                 rx.icon("mic", class_name="w-5 h-5 mr-2"),
                 "Voice Check-in",
-                on_click=PatientDashboardState.open_checkin_modal,
+                on_click=PatientCheckinState.open_checkin_modal,
                 class_name=GlassStyles.BUTTON_PRIMARY,
             ),
             rx.el.button(
                 rx.icon("message-square", class_name="w-5 h-5 mr-2"),
                 "Text Note",
-                on_click=PatientDashboardState.open_checkin_modal,
+                on_click=PatientCheckinState.open_checkin_modal,
                 class_name=GlassStyles.BUTTON_SECONDARY,
             ),
             class_name="flex gap-3 mb-6",
@@ -97,24 +107,38 @@ def checkins_tab() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.icon("mic", class_name="w-6 h-6 text-teal-400 mb-2"),
-                rx.el.p("This Week", class_name="text-xs text-slate-400 uppercase tracking-wider"),
-                rx.el.span(PatientDashboardState.checkins.length(), class_name="text-2xl font-bold text-white"),
+                rx.el.p(
+                    "This Week",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider",
+                ),
+                rx.el.span(
+                    PatientCheckinState.checkins.length(),
+                    class_name="text-2xl font-bold text-white",
+                ),
                 rx.el.span(" check-ins", class_name="text-sm text-slate-400 ml-1"),
                 class_name=f"{GlassStyles.PANEL} p-4",
             ),
             rx.el.div(
                 rx.icon("clock", class_name="w-6 h-6 text-amber-400 mb-2"),
-                rx.el.p("Pending Review", class_name="text-xs text-slate-400 uppercase tracking-wider"),
-                rx.el.span(PatientDashboardState.unreviewed_checkins_count, class_name="text-2xl font-bold text-white"),
+                rx.el.p(
+                    "Pending Review",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider",
+                ),
+                rx.el.span(
+                    PatientCheckinState.unreviewed_checkins_count,
+                    class_name="text-2xl font-bold text-white",
+                ),
                 class_name=f"{GlassStyles.PANEL} p-4",
             ),
             class_name="grid grid-cols-2 gap-4 mb-6",
         ),
         # Check-ins List
         rx.el.div(
-            rx.el.h3("Recent Check-ins", class_name="text-lg font-semibold text-white mb-4"),
+            rx.el.h3(
+                "Recent Check-ins", class_name="text-lg font-semibold text-white mb-4"
+            ),
             rx.el.div(
-                rx.foreach(PatientDashboardState.checkins, checkin_card),
+                rx.foreach(PatientCheckinState.checkins, checkin_card),
                 class_name="space-y-4",
             ),
         ),

@@ -11,7 +11,7 @@ from ...styles.constants import GlassStyles
 
 def login_form() -> rx.Component:
     """Login form component with username/password fields.
-    
+
     Returns:
         The styled login form component
     """
@@ -124,7 +124,7 @@ def login_form() -> rx.Component:
 
 def auth_page() -> rx.Component:
     """Auth page component.
-    
+
     Returns:
         The login form page
     """

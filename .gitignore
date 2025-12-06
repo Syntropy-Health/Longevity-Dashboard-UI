@@ -16,3 +16,8 @@ wheels/
 
 # packages
 reflex-audio-capture/
+
+# Environment secrets (never commit)
+envs/.env.secrets
+.env.local
+.env.*.local

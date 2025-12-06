@@ -3,10 +3,9 @@
 import reflex as rx
 from ...components.layout import authenticated_layout
 from ...states.auth_state import AuthState
-from ...states.patient_biomarker_state import PatientBiomarkerState
 from ...states.patient_dashboard_state import PatientDashboardState
 from ...styles.constants import GlassStyles
-from .tabs import settings_tab, data_sources_tab, data_source_card, import_drop_zone
+from .tabs import data_source_card, import_drop_zone
 from .modals import connect_source_modal, suggest_integration_modal
 
 
@@ -26,12 +25,13 @@ def settings_page() -> rx.Component:
                 ),
                 class_name="mb-6",
             ),
-            
             # Settings Content
             rx.el.div(
                 # Profile Section
                 rx.el.div(
-                    rx.el.h3("Profile", class_name="text-lg font-semibold text-white mb-4"),
+                    rx.el.h3(
+                        "Profile", class_name="text-lg font-semibold text-white mb-4"
+                    ),
                     rx.el.div(
                         rx.el.div(
                             rx.el.div(
@@ -42,8 +42,14 @@ def settings_page() -> rx.Component:
                                 class_name="w-20 h-20 rounded-full bg-teal-900/50 flex items-center justify-center border border-teal-500/30",
                             ),
                             rx.el.div(
-                                rx.el.h4(AuthState.user_full_name, class_name="text-lg font-semibold text-white"),
-                                rx.el.p(AuthState.role_label, class_name="text-sm text-teal-400"),
+                                rx.el.h4(
+                                    AuthState.user_full_name,
+                                    class_name="text-lg font-semibold text-white",
+                                ),
+                                rx.el.p(
+                                    AuthState.role_label,
+                                    class_name="text-sm text-teal-400",
+                                ),
                                 class_name="ml-4",
                             ),
                             class_name="flex items-center",
@@ -54,12 +60,21 @@ def settings_page() -> rx.Component:
                 ),
                 # Notification Settings
                 rx.el.div(
-                    rx.el.h3("Notifications", class_name="text-lg font-semibold text-white mb-4"),
+                    rx.el.h3(
+                        "Notifications",
+                        class_name="text-lg font-semibold text-white mb-4",
+                    ),
                     rx.el.div(
                         rx.el.div(
                             rx.el.div(
-                                rx.el.p("Email Notifications", class_name="text-sm text-white"),
-                                rx.el.p("Receive updates via email", class_name="text-xs text-slate-400"),
+                                rx.el.p(
+                                    "Email Notifications",
+                                    class_name="text-sm text-white",
+                                ),
+                                rx.el.p(
+                                    "Receive updates via email",
+                                    class_name="text-xs text-slate-400",
+                                ),
                                 class_name="flex-1",
                             ),
                             rx.el.button(
@@ -84,8 +99,14 @@ def settings_page() -> rx.Component:
                         ),
                         rx.el.div(
                             rx.el.div(
-                                rx.el.p("Push Notifications", class_name="text-sm text-white"),
-                                rx.el.p("Receive push notifications", class_name="text-xs text-slate-400"),
+                                rx.el.p(
+                                    "Push Notifications",
+                                    class_name="text-sm text-white",
+                                ),
+                                rx.el.p(
+                                    "Receive push notifications",
+                                    class_name="text-xs text-slate-400",
+                                ),
                                 class_name="flex-1",
                             ),
                             rx.el.button(
@@ -114,13 +135,21 @@ def settings_page() -> rx.Component:
                 ),
                 # Data Sources Section
                 rx.el.div(
-                    rx.el.h3("Data Sources", class_name="text-lg font-semibold text-white mb-4"),
-                    rx.el.p("Connect and manage your health data sources.", class_name="text-slate-400 text-sm mb-6"),
+                    rx.el.h3(
+                        "Data Sources",
+                        class_name="text-lg font-semibold text-white mb-4",
+                    ),
+                    rx.el.p(
+                        "Connect and manage your health data sources.",
+                        class_name="text-slate-400 text-sm mb-6",
+                    ),
                     # Sub-filters
                     rx.el.div(
                         rx.el.button(
                             "Devices & Wearables",
-                            on_click=lambda: PatientDashboardState.set_data_sources_filter("devices"),
+                            on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                                "devices"
+                            ),
                             class_name=rx.cond(
                                 PatientDashboardState.data_sources_filter == "devices",
                                 "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
@@ -129,18 +158,24 @@ def settings_page() -> rx.Component:
                         ),
                         rx.el.button(
                             "API Connections",
-                            on_click=lambda: PatientDashboardState.set_data_sources_filter("api_connections"),
+                            on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                                "api_connections"
+                            ),
                             class_name=rx.cond(
-                                PatientDashboardState.data_sources_filter == "api_connections",
+                                PatientDashboardState.data_sources_filter
+                                == "api_connections",
                                 "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                 "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                             ),
                         ),
                         rx.el.button(
                             "Import History",
-                            on_click=lambda: PatientDashboardState.set_data_sources_filter("import_history"),
+                            on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                                "import_history"
+                            ),
                             class_name=rx.cond(
-                                PatientDashboardState.data_sources_filter == "import_history",
+                                PatientDashboardState.data_sources_filter
+                                == "import_history",
                                 "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                 "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                             ),
@@ -158,7 +193,10 @@ def settings_page() -> rx.Component:
                                     rx.icon("link", class_name="w-6 h-6 text-teal-400"),
                                     class_name="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center mb-3 border border-teal-500/20",
                                 ),
-                                rx.el.p("Connected Sources", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                                rx.el.p(
+                                    "Connected Sources",
+                                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                                ),
                                 rx.el.span(
                                     PatientDashboardState.connected_sources_count,
                                     class_name="text-3xl font-bold text-white",
@@ -167,12 +205,18 @@ def settings_page() -> rx.Component:
                             ),
                             # Sources List
                             rx.el.div(
-                                rx.foreach(PatientDashboardState.filtered_data_sources, data_source_card),
+                                rx.foreach(
+                                    PatientDashboardState.filtered_data_sources,
+                                    data_source_card,
+                                ),
                                 class_name="space-y-4",
                             ),
                             # "Not here?" link
                             rx.el.div(
-                                rx.el.span("Don't see your device? ", class_name="text-slate-500 text-sm"),
+                                rx.el.span(
+                                    "Don't see your device? ",
+                                    class_name="text-slate-500 text-sm",
+                                ),
                                 rx.el.button(
                                     "Suggest an integration",
                                     on_click=PatientDashboardState.open_suggest_integration_modal,
@@ -184,13 +228,12 @@ def settings_page() -> rx.Component:
                     ),
                 ),
             ),
-            
             # Modals
             connect_source_modal(),
             suggest_integration_modal(),
             on_mount=[
-                PatientBiomarkerState.load_biomarkers,
-                PatientDashboardState.load_dashboard_data,
+                # PatientBiomarkerState.load_biomarkers,
+                # PatientDashboardState.load_dashboard_data,
             ],
         )
     )

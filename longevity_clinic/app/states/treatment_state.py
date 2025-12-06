@@ -1,22 +1,11 @@
 import logging
 import random
-from typing import Optional, TypedDict
+from typing import Optional
 
 import reflex as rx
 
 from .patient_state import PatientState
-from ..data import TREATMENT_CATEGORIES, TREATMENT_FREQUENCIES, TREATMENT_STATUSES
-
-
-class TreatmentProtocol(TypedDict):
-    id: str
-    name: str
-    category: str
-    description: str
-    duration: str
-    frequency: str
-    cost: float
-    status: str
+from ..data.state_schemas import TreatmentProtocol
 
 
 class TreatmentState(rx.State):

@@ -3,7 +3,6 @@
 import reflex as rx
 from ...components.layout import authenticated_layout
 from ...states.auth_state import AuthState
-from ...states.patient_biomarker_state import PatientBiomarkerState
 from ...states.patient_dashboard_state import PatientDashboardState
 from ...styles.constants import GlassStyles
 from .components import patient_portal_tabs
@@ -44,12 +43,10 @@ def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
                 ),
                 class_name="mb-6",
             ),
-            
             # Main Layout: Sidebar + Content
             rx.el.div(
                 # Tab Navigation (horizontal for now, could be sidebar later)
                 patient_portal_tabs(),
-                
                 # Tab Content
                 rx.match(
                     PatientDashboardState.active_tab,
@@ -61,7 +58,6 @@ def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
                     overview_tab(),  # Default
                 ),
             ),
-            
             # Modals
             checkin_modal(),
             medication_modal(),
@@ -70,8 +66,8 @@ def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
             connect_source_modal(),
             add_food_modal(),
             on_mount=[
-                PatientBiomarkerState.load_biomarkers,
-                PatientDashboardState.load_dashboard_data,
+                # PatientBiomarkerState.load_biomarkers,
+                # PatientDashboardState.load_dashboard_data,
                 lambda: PatientDashboardState.set_active_tab(initial_tab),
             ],
         )

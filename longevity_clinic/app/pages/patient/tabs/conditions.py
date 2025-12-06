@@ -19,9 +19,18 @@ def condition_card(condition: dict) -> rx.Component:
                 class_name="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center mr-4 border border-rose-500/20",
             ),
             rx.el.div(
-                rx.el.h4(condition["name"], class_name="text-base font-semibold text-white mb-1"),
-                rx.el.p(f"ICD-10: {condition['icd_code']}", class_name="text-xs text-slate-400"),
-                rx.el.p(f"Diagnosed: {condition['diagnosed_date']}", class_name="text-xs text-slate-400 mt-1"),
+                rx.el.h4(
+                    condition["name"],
+                    class_name="text-base font-semibold text-white mb-1",
+                ),
+                rx.el.p(
+                    f"ICD-10: {condition['icd_code']}",
+                    class_name="text-xs text-slate-400",
+                ),
+                rx.el.p(
+                    f"Diagnosed: {condition['diagnosed_date']}",
+                    class_name="text-xs text-slate-400 mt-1",
+                ),
             ),
             class_name="flex items-start flex-1",
         ),
@@ -30,7 +39,10 @@ def condition_card(condition: dict) -> rx.Component:
                 condition["status"].capitalize(),
                 class_name=f"px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border {status_styles.get(condition['status'], status_styles['active'])}",
             ),
-            rx.el.p(condition["severity"].capitalize(), class_name="text-xs text-slate-400 mt-2"),
+            rx.el.p(
+                condition["severity"].capitalize(),
+                class_name="text-xs text-slate-400 mt-2",
+            ),
             class_name="flex flex-col items-end",
         ),
         on_click=lambda: PatientDashboardState.open_condition_modal(condition),
@@ -42,8 +54,13 @@ def conditions_tab() -> rx.Component:
     """Conditions tab content."""
     return rx.el.div(
         rx.el.div(
-            rx.el.h2("Health Conditions", class_name="text-xl font-bold text-white mb-2"),
-            rx.el.p("Track and manage your health conditions.", class_name="text-slate-400 text-sm"),
+            rx.el.h2(
+                "Health Conditions", class_name="text-xl font-bold text-white mb-2"
+            ),
+            rx.el.p(
+                "Track and manage your health conditions.",
+                class_name="text-slate-400 text-sm",
+            ),
             class_name="mb-6",
         ),
         # Filter buttons
@@ -77,7 +94,9 @@ def conditions_tab() -> rx.Component:
             ),
             rx.el.button(
                 f"Resolved ({PatientDashboardState.resolved_conditions_count})",
-                on_click=lambda: PatientDashboardState.set_conditions_filter("resolved"),
+                on_click=lambda: PatientDashboardState.set_conditions_filter(
+                    "resolved"
+                ),
                 class_name=rx.cond(
                     PatientDashboardState.conditions_filter == "resolved",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-slate-500/20 text-slate-300 border border-slate-500/30",

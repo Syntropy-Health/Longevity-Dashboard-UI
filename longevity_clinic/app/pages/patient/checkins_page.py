@@ -3,13 +3,10 @@
 import reflex as rx
 from ...components.layout import authenticated_layout
 from ...states.auth_state import AuthState
-from ...states.patient_biomarker_state import PatientBiomarkerState
-from ...states.patient_dashboard_state import PatientDashboardState
-from ...states.patient_state import PatientState
-from ...states.voice_transcription_state import VoiceTranscriptionState
+from ...states.patient_checkin_state import PatientCheckinState
 from ...states.admin_checkins_state import AdminCheckinsState
 from ...styles.constants import GlassStyles
-from .tabs import checkins_tab, checkin_card
+from .tabs import checkin_card
 from .modals import checkin_modal
 
 
@@ -21,7 +18,9 @@ def call_log_card(call_summary: dict) -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     rx.icon("phone", class_name="w-4 h-4 text-purple-400 mr-2"),
-                    rx.el.span("Voice Call", class_name="text-sm font-medium text-white"),
+                    rx.el.span(
+                        "Voice Call", class_name="text-sm font-medium text-white"
+                    ),
                     class_name="flex items-center",
                 ),
                 rx.el.span(
@@ -39,7 +38,10 @@ def call_log_card(call_summary: dict) -> rx.Component:
             rx.cond(
                 call_summary["summary"] != "",
                 rx.el.div(
-                    rx.el.p("Original Summary", class_name="text-xs text-slate-500 uppercase tracking-wider mb-1"),
+                    rx.el.p(
+                        "Original Summary",
+                        class_name="text-xs text-slate-500 uppercase tracking-wider mb-1",
+                    ),
                     rx.el.p(
                         call_summary["summary"],
                         class_name="text-xs text-slate-400 line-clamp-2",
@@ -67,9 +69,24 @@ def admin_checkin_card(checkin: dict) -> rx.Component:
                     rx.el.span(
                         rx.match(
                             checkin["type"],
-                            ("voice", rx.icon("mic", class_name="w-3 h-3 ml-2 inline text-teal-400")),
-                            ("call", rx.icon("phone", class_name="w-3 h-3 ml-2 inline text-purple-400")),
-                            rx.icon("message-square", class_name="w-3 h-3 ml-2 inline text-blue-400"),
+                            (
+                                "voice",
+                                rx.icon(
+                                    "mic",
+                                    class_name="w-3 h-3 ml-2 inline text-teal-400",
+                                ),
+                            ),
+                            (
+                                "call",
+                                rx.icon(
+                                    "phone",
+                                    class_name="w-3 h-3 ml-2 inline text-purple-400",
+                                ),
+                            ),
+                            rx.icon(
+                                "message-square",
+                                class_name="w-3 h-3 ml-2 inline text-blue-400",
+                            ),
                         ),
                     ),
                     class_name="flex items-center",
@@ -141,10 +158,16 @@ def admin_checkin_detail_modal() -> rx.Component:
                             rx.el.span(
                                 AdminCheckinsState.selected_checkin.get("status", ""),
                                 class_name=rx.cond(
-                                    AdminCheckinsState.selected_checkin.get("status", "") == "pending",
+                                    AdminCheckinsState.selected_checkin.get(
+                                        "status", ""
+                                    )
+                                    == "pending",
                                     "ml-3 px-2 py-0.5 rounded-full text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 capitalize",
                                     rx.cond(
-                                        AdminCheckinsState.selected_checkin.get("status", "") == "flagged",
+                                        AdminCheckinsState.selected_checkin.get(
+                                            "status", ""
+                                        )
+                                        == "flagged",
                                         "ml-3 px-2 py-0.5 rounded-full text-xs bg-red-500/10 text-red-400 border border-red-500/20 capitalize",
                                         "ml-3 px-2 py-0.5 rounded-full text-xs bg-teal-500/10 text-teal-400 border border-teal-500/20 capitalize",
                                     ),
@@ -163,31 +186,51 @@ def admin_checkin_detail_modal() -> rx.Component:
                     # Patient info
                     rx.el.div(
                         rx.el.div(
-                            rx.el.p("Patient", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
                             rx.el.p(
-                                AdminCheckinsState.selected_checkin.get("patient_name", ""),
+                                "Patient",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
+                            rx.el.p(
+                                AdminCheckinsState.selected_checkin.get(
+                                    "patient_name", ""
+                                ),
                                 class_name="text-white font-medium",
                             ),
                         ),
                         rx.el.div(
-                            rx.el.p("Submitted", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
                             rx.el.p(
-                                AdminCheckinsState.selected_checkin.get("timestamp", ""),
+                                "Submitted",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
+                            rx.el.p(
+                                AdminCheckinsState.selected_checkin.get(
+                                    "timestamp", ""
+                                ),
                                 class_name="text-white",
                             ),
                         ),
                         rx.el.div(
-                            rx.el.p("Type", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                            rx.el.p(
+                                "Type",
+                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                            ),
                             rx.el.div(
                                 rx.cond(
-                                    AdminCheckinsState.selected_checkin.get("type", "") == "voice",
+                                    AdminCheckinsState.selected_checkin.get("type", "")
+                                    == "voice",
                                     rx.el.div(
-                                        rx.icon("mic", class_name="w-4 h-4 text-teal-400 mr-1"),
+                                        rx.icon(
+                                            "mic",
+                                            class_name="w-4 h-4 text-teal-400 mr-1",
+                                        ),
                                         "Voice",
                                         class_name="flex items-center text-white",
                                     ),
                                     rx.el.div(
-                                        rx.icon("message-square", class_name="w-4 h-4 text-blue-400 mr-1"),
+                                        rx.icon(
+                                            "message-square",
+                                            class_name="w-4 h-4 text-blue-400 mr-1",
+                                        ),
                                         "Text",
                                         class_name="flex items-center text-white",
                                     ),
@@ -198,7 +241,10 @@ def admin_checkin_detail_modal() -> rx.Component:
                     ),
                     # Content
                     rx.el.div(
-                        rx.el.p("Check-in Content", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Check-in Content",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.p(
                             AdminCheckinsState.selected_checkin.get("summary", ""),
                             class_name="text-sm text-white leading-relaxed",
@@ -207,10 +253,15 @@ def admin_checkin_detail_modal() -> rx.Component:
                     ),
                     # Topics
                     rx.el.div(
-                        rx.el.p("Topics", class_name="text-xs text-slate-400 uppercase tracking-wider mb-2"),
+                        rx.el.p(
+                            "Topics",
+                            class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                        ),
                         rx.el.div(
                             rx.foreach(
-                                AdminCheckinsState.selected_checkin.get("key_topics", []),
+                                AdminCheckinsState.selected_checkin.get(
+                                    "key_topics", []
+                                ),
                                 lambda topic: rx.el.span(
                                     topic,
                                     class_name="px-3 py-1 rounded-full text-xs bg-teal-500/10 text-teal-300 border border-teal-500/20",
@@ -229,13 +280,16 @@ def admin_checkin_detail_modal() -> rx.Component:
                             ),
                         ),
                         rx.cond(
-                            AdminCheckinsState.selected_checkin.get("status", "") == "pending",
+                            AdminCheckinsState.selected_checkin.get("status", "")
+                            == "pending",
                             rx.el.div(
                                 rx.el.button(
                                     rx.icon("flag", class_name="w-4 h-4 mr-2"),
                                     "Flag for Follow-up",
                                     on_click=lambda: AdminCheckinsState.flag_checkin(
-                                        AdminCheckinsState.selected_checkin.get("id", "")
+                                        AdminCheckinsState.selected_checkin.get(
+                                            "id", ""
+                                        )
                                     ),
                                     class_name="px-4 py-2 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center",
                                 ),
@@ -243,9 +297,12 @@ def admin_checkin_detail_modal() -> rx.Component:
                                     rx.icon("check", class_name="w-4 h-4 mr-2"),
                                     "Mark as Reviewed",
                                     on_click=lambda: AdminCheckinsState.mark_as_reviewed(
-                                        AdminCheckinsState.selected_checkin.get("id", "")
+                                        AdminCheckinsState.selected_checkin.get(
+                                            "id", ""
+                                        )
                                     ),
-                                    class_name=GlassStyles.BUTTON_PRIMARY + " flex items-center",
+                                    class_name=GlassStyles.BUTTON_PRIMARY
+                                    + " flex items-center",
                                 ),
                                 class_name="flex gap-3",
                             ),
@@ -278,11 +335,13 @@ def admin_checkins_view() -> rx.Component:
             ),
             class_name="mb-6",
         ),
-        
         # Search Bar
         rx.el.div(
             rx.el.div(
-                rx.icon("search", class_name="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"),
+                rx.icon(
+                    "search",
+                    class_name="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2",
+                ),
                 rx.el.input(
                     placeholder="Search by patient name, topic, or content...",
                     value=AdminCheckinsState.search_query,
@@ -293,7 +352,6 @@ def admin_checkins_view() -> rx.Component:
             ),
             class_name="mb-6",
         ),
-        
         # Status Tabs
         rx.el.div(
             rx.el.button(
@@ -350,13 +408,14 @@ def admin_checkins_view() -> rx.Component:
             ),
             class_name="flex gap-2 mb-6",
         ),
-        
         # Check-ins List
         rx.el.div(
             rx.cond(
                 AdminCheckinsState.filtered_checkins.length() > 0,
                 rx.el.div(
-                    rx.foreach(AdminCheckinsState.filtered_checkins, admin_checkin_card),
+                    rx.foreach(
+                        AdminCheckinsState.filtered_checkins, admin_checkin_card
+                    ),
                     class_name="space-y-4",
                 ),
                 rx.el.div(
@@ -366,7 +425,6 @@ def admin_checkins_view() -> rx.Component:
                 ),
             ),
         ),
-        
         # Detail Modal
         admin_checkin_detail_modal(),
     )
@@ -377,17 +435,34 @@ def patient_checkins_view() -> rx.Component:
     return rx.el.div(
         # Page Header
         rx.el.div(
-            rx.el.h1(
-                "Self Check-ins",
-                class_name=f"text-2xl {GlassStyles.HEADING_LIGHT} mb-2",
+            rx.el.div(
+                rx.el.h1(
+                    "Self Check-ins",
+                    class_name=f"text-2xl {GlassStyles.HEADING_LIGHT} mb-2",
+                ),
+                rx.el.p(
+                    rx.el.span("Voice and text logs between visits"),
+                    class_name="text-slate-400 text-sm",
+                ),
             ),
-            rx.el.p(
-                rx.el.span("Voice and text logs between visits"),
-                class_name="text-slate-400 text-sm",
+            # Refresh Button - using rx.button for proper event binding
+            rx.button(
+                rx.cond(
+                    PatientCheckinState.call_logs_syncing,
+                    rx.icon("loader-circle", class_name="w-4 h-4 animate-spin mr-2"),
+                    rx.icon("refresh-cw", class_name="w-4 h-4 mr-2"),
+                ),
+                rx.cond(
+                    PatientCheckinState.call_logs_syncing,
+                    "Syncing...",
+                    "Refresh",
+                ),
+                on_click=PatientCheckinState.refresh_call_logs,
+                disabled=PatientCheckinState.call_logs_syncing,
+                class_name=GlassStyles.BUTTON_SECONDARY + " flex items-center text-sm",
             ),
-            class_name="mb-6",
+            class_name="flex justify-between items-start mb-6",
         ),
-        
         # Check-ins Content
         rx.el.div(
             # Single Check-in Now button
@@ -395,7 +470,7 @@ def patient_checkins_view() -> rx.Component:
                 rx.el.button(
                     rx.icon("circle-plus", class_name="w-5 h-5 mr-2"),
                     "Check-in Now",
-                    on_click=PatientDashboardState.open_checkin_modal,
+                    on_click=PatientCheckinState.open_checkin_modal,
                     class_name=GlassStyles.BUTTON_PRIMARY + " flex items-center",
                 ),
                 class_name="flex gap-3 mb-6",
@@ -404,81 +479,100 @@ def patient_checkins_view() -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     rx.icon("mic", class_name="w-6 h-6 text-teal-400 mb-2"),
-                    rx.el.p("This Week", class_name="text-xs text-slate-400 uppercase tracking-wider"),
-                    rx.el.span(PatientDashboardState.checkins.length(), class_name="text-2xl font-bold text-white"),
+                    rx.el.p(
+                        "This Week",
+                        class_name="text-xs text-slate-400 uppercase tracking-wider",
+                    ),
+                    rx.el.span(
+                        PatientCheckinState.checkins.length(),
+                        class_name="text-2xl font-bold text-white",
+                    ),
                     rx.el.span(" check-ins", class_name="text-sm text-slate-400 ml-1"),
                     class_name=f"{GlassStyles.PANEL} p-4",
                 ),
                 rx.el.div(
                     rx.icon("phone", class_name="w-6 h-6 text-purple-400 mb-2"),
-                    rx.el.p("Voice Calls", class_name="text-xs text-slate-400 uppercase tracking-wider"),
-                    rx.el.span(PatientState.transcript_summaries_list.length(), class_name="text-2xl font-bold text-white"),
+                    rx.el.p(
+                        "Voice Calls",
+                        class_name="text-xs text-slate-400 uppercase tracking-wider",
+                    ),
+                    rx.el.span(
+                        PatientCheckinState.voice_call_checkins_count,
+                        class_name="text-2xl font-bold text-white",
+                    ),
                     rx.el.span(" logged", class_name="text-sm text-slate-400 ml-1"),
                     class_name=f"{GlassStyles.PANEL} p-4",
                 ),
                 rx.el.div(
                     rx.icon("clock", class_name="w-6 h-6 text-amber-400 mb-2"),
-                    rx.el.p("Pending Review", class_name="text-xs text-slate-400 uppercase tracking-wider"),
-                    rx.el.span(PatientDashboardState.unreviewed_checkins_count, class_name="text-2xl font-bold text-white"),
+                    rx.el.p(
+                        "Pending Review",
+                        class_name="text-xs text-slate-400 uppercase tracking-wider",
+                    ),
+                    rx.el.span(
+                        PatientCheckinState.unreviewed_checkins_count,
+                        class_name="text-2xl font-bold text-white",
+                    ),
                     class_name=f"{GlassStyles.PANEL} p-4",
                 ),
                 class_name="grid grid-cols-3 gap-4 mb-6",
             ),
-            
             # Loading indicator for call logs
             rx.cond(
-                PatientState.call_logs_loading,
+                PatientCheckinState.call_logs_syncing,
                 rx.el.div(
-                    rx.icon("loader-circle", class_name="w-5 h-5 text-teal-400 animate-spin mr-2"),
-                    rx.el.span("Fetching call logs...", class_name="text-sm text-slate-400"),
+                    rx.icon(
+                        "loader-circle",
+                        class_name="w-5 h-5 text-teal-400 animate-spin mr-2",
+                    ),
+                    rx.el.span(
+                        "Fetching call logs...", class_name="text-sm text-slate-400"
+                    ),
                     class_name="flex items-center mb-4",
                 ),
                 rx.fragment(),
             ),
-            
-            # Last fetch time
+            # Error display
             rx.cond(
-                PatientState.last_fetch_time != "",
+                PatientCheckinState.call_logs_sync_error != "",
+                rx.el.div(
+                    rx.icon("circle-alert", class_name="w-4 h-4 text-red-400 mr-2"),
+                    rx.el.span(
+                        PatientCheckinState.call_logs_sync_error,
+                        class_name="text-sm text-red-400",
+                    ),
+                    class_name="flex items-center mb-4 p-2 bg-red-500/10 rounded-lg",
+                ),
+                rx.fragment(),
+            ),
+            # Last sync time
+            rx.cond(
+                PatientCheckinState.last_sync_time != "",
                 rx.el.p(
-                    rx.el.span("Last updated: ", class_name="text-slate-500"),
-                    rx.el.span(PatientState.last_fetch_time, class_name="text-slate-400"),
+                    rx.el.span("Last synced: ", class_name="text-slate-500"),
+                    rx.el.span(
+                        PatientCheckinState.last_sync_time,
+                        class_name="text-slate-400",
+                    ),
                     class_name="text-xs mb-4",
                 ),
                 rx.fragment(),
             ),
-            
-            # Voice Calls Section
-            rx.cond(
-                PatientState.transcript_summaries_list.length() > 0,
-                rx.el.div(
-                    rx.el.h3(
-                        rx.icon("phone", class_name="w-5 h-5 text-purple-400 mr-2 inline"),
-                        "Voice Calls",
-                        class_name="text-lg font-semibold text-white mb-4 flex items-center",
-                    ),
-                    rx.el.div(
-                        rx.foreach(PatientState.transcript_summaries_list, call_log_card),
-                        class_name="space-y-4",
-                    ),
-                    class_name="mb-8",
-                ),
-                rx.fragment(),
-            ),
-            
-            # Check-ins List
+            # Check-ins List (includes voice calls integrated)
             rx.el.div(
                 rx.el.h3(
-                    rx.icon("message-square", class_name="w-5 h-5 text-teal-400 mr-2 inline"),
+                    rx.icon(
+                        "message-square", class_name="w-5 h-5 text-teal-400 mr-2 inline"
+                    ),
                     "Recent Check-ins",
                     class_name="text-lg font-semibold text-white mb-4 flex items-center",
                 ),
                 rx.el.div(
-                    rx.foreach(PatientDashboardState.checkins, checkin_card),
+                    rx.foreach(PatientCheckinState.checkins, checkin_card),
                     class_name="space-y-4",
                 ),
             ),
         ),
-        
         # Modal
         checkin_modal(),
     )
@@ -486,6 +580,9 @@ def patient_checkins_view() -> rx.Component:
 
 def checkins_page() -> rx.Component:
     """Standalone Check-ins page - shows admin or patient view based on role."""
+    print("[DEBUG] checkins_page() function called - building component", flush=True)
+
+    # on_load is handled via app.add_page() in app.py
     return authenticated_layout(
         rx.el.div(
             rx.cond(
@@ -493,11 +590,5 @@ def checkins_page() -> rx.Component:
                 admin_checkins_view(),
                 patient_checkins_view(),
             ),
-            on_mount=[
-                PatientBiomarkerState.load_biomarkers,
-                PatientDashboardState.load_dashboard_data,
-                PatientState.fetch_call_logs_once,
-                PatientState.start_call_logs_fetching,
-            ],
         )
     )

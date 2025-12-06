@@ -23,7 +23,9 @@ def food_entry_card(entry: dict) -> rx.Component:
             class_name="flex items-center flex-1",
         ),
         rx.el.div(
-            rx.el.span(f"{entry['calories']}", class_name="text-lg font-bold text-white"),
+            rx.el.span(
+                f"{entry['calories']}", class_name="text-lg font-bold text-white"
+            ),
             rx.el.span(" kcal", class_name="text-xs text-slate-400 ml-1"),
             class_name="flex items-baseline",
         ),
@@ -35,8 +37,13 @@ def food_tracker_tab() -> rx.Component:
     """Food tracker tab content."""
     return rx.el.div(
         rx.el.div(
-            rx.el.h2("Today's Nutrition", class_name="text-xl font-bold text-white mb-2"),
-            rx.el.p("Track your daily food intake and nutrition goals.", class_name="text-slate-400 text-sm"),
+            rx.el.h2(
+                "Today's Nutrition", class_name="text-xl font-bold text-white mb-2"
+            ),
+            rx.el.p(
+                "Track your daily food intake and nutrition goals.",
+                class_name="text-slate-400 text-sm",
+            ),
             class_name="mb-6",
         ),
         # Nutrition Summary Cards
@@ -46,7 +53,10 @@ def food_tracker_tab() -> rx.Component:
                     rx.icon("flame", class_name="w-6 h-6 text-orange-400"),
                     class_name="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center mb-3 border border-orange-500/20",
                 ),
-                rx.el.p("Calories", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                rx.el.p(
+                    "Calories",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                ),
                 rx.el.div(
                     rx.el.span(
                         PatientDashboardState.nutrition_summary["total_calories"],
@@ -64,7 +74,10 @@ def food_tracker_tab() -> rx.Component:
                     rx.icon("beef", class_name="w-6 h-6 text-red-400"),
                     class_name="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-3 border border-red-500/20",
                 ),
-                rx.el.p("Protein", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                rx.el.p(
+                    "Protein",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                ),
                 rx.el.div(
                     rx.el.span(
                         f"{PatientDashboardState.nutrition_summary['total_protein']:.0f}",
@@ -79,7 +92,10 @@ def food_tracker_tab() -> rx.Component:
                     rx.icon("wheat", class_name="w-6 h-6 text-amber-400"),
                     class_name="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3 border border-amber-500/20",
                 ),
-                rx.el.p("Carbs", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                rx.el.p(
+                    "Carbs",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                ),
                 rx.el.div(
                     rx.el.span(
                         f"{PatientDashboardState.nutrition_summary['total_carbs']:.0f}",
@@ -94,7 +110,10 @@ def food_tracker_tab() -> rx.Component:
                     rx.icon("droplet", class_name="w-6 h-6 text-blue-400"),
                     class_name="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3 border border-blue-500/20",
                 ),
-                rx.el.p("Water", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                rx.el.p(
+                    "Water",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                ),
                 rx.el.div(
                     rx.el.span(
                         f"{PatientDashboardState.nutrition_summary['water_intake']:.1f}",
@@ -109,7 +128,9 @@ def food_tracker_tab() -> rx.Component:
         # Food Entries
         rx.el.div(
             rx.el.div(
-                rx.el.h3("Today's Meals", class_name="text-lg font-semibold text-white"),
+                rx.el.h3(
+                    "Today's Meals", class_name="text-lg font-semibold text-white"
+                ),
                 rx.el.button(
                     rx.icon("plus", class_name="w-4 h-4 mr-2"),
                     "Add Food",

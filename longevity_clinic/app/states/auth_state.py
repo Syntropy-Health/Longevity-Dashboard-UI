@@ -1,14 +1,8 @@
 import reflex as rx
 import asyncio
-from typing import TypedDict, Optional
+from typing import Optional
 
-
-class User(TypedDict):
-    id: str
-    username: str
-    email: str
-    role: str
-    full_name: str
+from ..data.state_schemas import User
 
 
 class AuthState(rx.State):

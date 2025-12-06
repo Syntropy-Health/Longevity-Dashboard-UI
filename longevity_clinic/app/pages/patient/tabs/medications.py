@@ -14,7 +14,9 @@ def medication_card(med: dict) -> rx.Component:
                 class_name="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mr-4 border border-purple-500/20",
             ),
             rx.el.div(
-                rx.el.h4(med["name"], class_name="text-base font-semibold text-white mb-1"),
+                rx.el.h4(
+                    med["name"], class_name="text-base font-semibold text-white mb-1"
+                ),
                 rx.el.p(med["dosage"], class_name="text-sm text-slate-300"),
                 rx.el.p(med["frequency"], class_name="text-xs text-slate-400 mt-1"),
             ),
@@ -22,7 +24,10 @@ def medication_card(med: dict) -> rx.Component:
         ),
         rx.el.div(
             rx.el.div(
-                rx.el.span("Adherence", class_name="text-[10px] text-slate-400 uppercase tracking-wider"),
+                rx.el.span(
+                    "Adherence",
+                    class_name="text-[10px] text-slate-400 uppercase tracking-wider",
+                ),
                 rx.el.span(
                     f"{med['adherence_rate']:.0f}%",
                     class_name=rx.cond(
@@ -53,7 +58,10 @@ def medications_tab() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.h2("Medications", class_name="text-xl font-bold text-white mb-2"),
-            rx.el.p("Manage your medications and track adherence.", class_name="text-slate-400 text-sm"),
+            rx.el.p(
+                "Manage your medications and track adherence.",
+                class_name="text-slate-400 text-sm",
+            ),
             class_name="mb-6",
         ),
         # Medication Summary
@@ -63,7 +71,10 @@ def medications_tab() -> rx.Component:
                     rx.icon("chart-line", class_name="w-6 h-6 text-teal-400"),
                     class_name="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center mb-3 border border-teal-500/20",
                 ),
-                rx.el.p("Overall Adherence", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                rx.el.p(
+                    "Overall Adherence",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                ),
                 rx.el.span(
                     f"{PatientDashboardState.total_medication_adherence:.0f}%",
                     class_name="text-3xl font-bold text-teal-400",
@@ -75,7 +86,10 @@ def medications_tab() -> rx.Component:
                     rx.icon("pill", class_name="w-6 h-6 text-purple-400"),
                     class_name="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-3 border border-purple-500/20",
                 ),
-                rx.el.p("Active Medications", class_name="text-xs text-slate-400 uppercase tracking-wider mb-1"),
+                rx.el.p(
+                    "Active Medications",
+                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
+                ),
                 rx.el.span(
                     PatientDashboardState.medications.length(),
                     class_name="text-3xl font-bold text-white",

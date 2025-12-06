@@ -1,14 +1,15 @@
-"""Patient dashboard state management."""
+"""Patient dashboard state management.
+
+Handles patient dashboard data including nutrition, medications, conditions,
+symptoms, and data sources. Check-in functionality has been moved to 
+PatientCheckinState for better separation of concerns.
+"""
 
 import reflex as rx
-import asyncio
-from typing import List, Dict, Any, TYPE_CHECKING
-
+from typing import List, Dict, Any
 from datetime import datetime
 import uuid
 
-# voice transcription check-in
-from .voice_transcription_state import VoiceTranscriptionState
 from ..config import get_logger
 
 logger = get_logger("longevity_clinic.dashboard")
@@ -23,14 +24,9 @@ from ..data.state_schemas import (
     Reminder,
     SymptomTrend,
     DataSource,
-    CheckIn,
 )
 
-# Import extracted functions
-from .functions.patients import extract_checkin_from_text
-from .functions import fetch_and_process_call_logs
 from ..data.demo import (
-    DEMO_PHONE_NUMBER,
     DEMO_NUTRITION_SUMMARY,
     DEMO_FOOD_ENTRIES,
     DEMO_MEDICATIONS,
@@ -40,15 +36,14 @@ from ..data.demo import (
     DEMO_REMINDERS,
     DEMO_SYMPTOM_TRENDS,
     DEMO_DATA_SOURCES,
-    DEMO_CHECKINS,
 )
-
-if TYPE_CHECKING:
-    from .voice_transcription_state import VoiceTranscriptionState
 
 
 class PatientDashboardState(rx.State):
-    """State management for patient dashboard.""" ""
+    """State management for patient dashboard.
+    
+    Note: Check-in related state has been moved to PatientCheckinState.
+    """
 
     # Active tab
     active_tab: str = "overview"
@@ -58,22 +53,7 @@ class PatientDashboardState(rx.State):
     symptoms_filter: str = "timeline"
     data_sources_filter: str = "devices"
 
-    # Check-in modal state
-    show_checkin_modal: bool = False
-    checkin_type: str = "voice"
-    checkin_text: str = ""
-    selected_topics: List[str] = []
-
-    # Voice recording state
-    is_recording: bool = False
-    recording_session_id: str = ""
-    recording_duration: float = 0.0
-    transcribed_text: str = ""
-    transcription_status: str = (
-        ""  # 'idle', 'recording', 'transcribing', 'done', 'error'
-    )
-
-    # Other modal states
+    # Modal states (non-checkin related)
     show_medication_modal: bool = False
     show_condition_modal: bool = False
     show_symptom_modal: bool = False
@@ -113,7 +93,10 @@ class PatientDashboardState(rx.State):
     reminders: List[Reminder] = DEMO_REMINDERS
     symptom_trends: List[SymptomTrend] = DEMO_SYMPTOM_TRENDS
     data_sources: List[DataSource] = DEMO_DATA_SOURCES
-    checkins: List[CheckIn] = DEMO_CHECKINS
+
+    # =========================================================================
+    # Computed Variables
+    # =========================================================================
 
     @rx.var
     def total_medication_adherence(self) -> float:
@@ -163,15 +146,9 @@ class PatientDashboardState(rx.State):
             return self.data_sources
         return [s for s in self.data_sources if s["type"] in types]
 
-    @rx.var
-    def unreviewed_checkins_count(self) -> int:
-        """Count unreviewed check-ins."""
-        return len([c for c in self.checkins if not c["provider_reviewed"]])
-
-    @rx.var
-    def voice_call_checkins_count(self) -> int:
-        """Count check-ins created from voice calls."""
-        return len([c for c in self.checkins if c.get("type") == "call"])
+    # =========================================================================
+    # Tab and Filter Methods
+    # =========================================================================
 
     def set_active_tab(self, tab: str):
         """Set the active tab."""
@@ -188,6 +165,10 @@ class PatientDashboardState(rx.State):
     def set_data_sources_filter(self, filter_value: str):
         """Set data sources filter."""
         self.data_sources_filter = filter_value
+
+    # =========================================================================
+    # Data Source Methods
+    # =========================================================================
 
     def toggle_data_source_connection(self, source_id: str):
         """Toggle a data source connection on/off."""
@@ -207,24 +188,9 @@ class PatientDashboardState(rx.State):
                 updated_sources.append(source)
         self.data_sources = updated_sources
 
-    @rx.event
-    async def set_checkin_type(self, checkin_type: str):
-        """Set check-in type."""
-        self.checkin_type = checkin_type
-        # Reset recording state when switching types
-        self.is_recording = False
-        self.recording_duration = 0.0
-        self.transcribed_text = ""
-        self.transcription_status = "idle"
-
-        voice_state = await self.get_state(VoiceTranscriptionState)
-        voice_state.transcript = ""
-        voice_state.has_error = False
-        voice_state.error_message = ""
-
-    def set_checkin_text(self, text: str):
-        """Set the check-in text content."""
-        self.checkin_text = text
+    # =========================================================================
+    # Settings Methods
+    # =========================================================================
 
     def toggle_email_notifications(self):
         """Toggle email notifications."""
@@ -234,97 +200,9 @@ class PatientDashboardState(rx.State):
         """Toggle push notifications."""
         self.push_notifications = not self.push_notifications
 
-    def toggle_topic(self, topic: str):
-        """Toggle a topic selection."""
-        if topic in self.selected_topics:
-            self.selected_topics = [t for t in self.selected_topics if t != topic]
-        else:
-            self.selected_topics = [*self.selected_topics, topic]
-
-    def is_topic_selected(self, topic: str) -> bool:
-        """Check if a topic is selected."""
-        return topic in self.selected_topics
-
-    @rx.event
-    async def start_recording(self):
-        """Start voice recording."""
-        self.is_recording = True
-        self.transcription_status = "recording"
-        self.recording_duration = 0.0
-        self.recording_session_id = f"rec_{uuid.uuid4().hex[:8]}"
-
-    @rx.event
-    async def stop_recording(self):
-        """Stop voice recording - transcript comes from VoiceTranscriptionState."""
-        self.is_recording = False
-        self.transcription_status = "done"
-
-    @rx.event
-    async def toggle_recording(self):
-        """Toggle voice recording on/off."""
-        if not self.is_recording:
-            # Start recording
-            yield PatientDashboardState.start_recording
-            # Start duration timer in background
-            yield PatientDashboardState.increment_recording_duration
-        else:
-            # Stop recording
-            yield PatientDashboardState.stop_recording
-
-    @rx.event(background=True)
-    async def increment_recording_duration(self):
-        """Increment the recording duration timer."""
-        async with self:
-            # Check initial state
-            if not self.is_recording:
-                return
-
-        while True:
-            await asyncio.sleep(1)
-            async with self:
-                # Check if still recording before incrementing
-                if not self.is_recording:
-                    return
-                self.recording_duration += 1.0
-
-    @rx.event
-    async def open_checkin_modal(self):
-        """Open check-in modal."""
-        logger.info("open_checkin_modal called - setting show_checkin_modal=True")
-        self.show_checkin_modal = True
-        # Reset local state
-        self.checkin_type = "voice"
-        self.checkin_text = ""
-        self.selected_topics = []
-        self.is_recording = False
-        self.recording_duration = 0.0
-        self.transcribed_text = ""
-        self.transcription_status = "idle"
-
-        # Clear voice transcription state directly
-        logger.debug("Clearing VoiceTranscriptionState")
-        from .voice_transcription_state import VoiceTranscriptionState
-
-        voice_state = await self.get_state(VoiceTranscriptionState)
-        voice_state.transcript = ""
-        voice_state.has_error = False
-        voice_state.error_message = ""
-        logger.info("open_checkin_modal completed")
-
-    @rx.event
-    async def close_checkin_modal(self):
-        """Close check-in modal."""
-        self.show_checkin_modal = False
-        self.is_recording = False
-        self.transcription_status = "idle"
-
-        # Clear voice transcription state directly
-        from .voice_transcription_state import VoiceTranscriptionState
-
-        voice_state = await self.get_state(VoiceTranscriptionState)
-        voice_state.transcript = ""
-        voice_state.has_error = False
-        voice_state.error_message = ""
+    # =========================================================================
+    # Medication Modal
+    # =========================================================================
 
     def open_medication_modal(self, medication: Dict[str, Any]):
         """Open medication modal with selected medication."""
@@ -336,6 +214,20 @@ class PatientDashboardState(rx.State):
         self.show_medication_modal = False
         self.selected_medication = {}
 
+    def set_show_medication_modal(self, value: bool):
+        """Set show medication modal state."""
+        self.show_medication_modal = value
+
+    @rx.event
+    async def log_dose(self, medication_id: str):
+        """Log a medication dose."""
+        # In production, this would update adherence tracking
+        self.show_medication_modal = False
+
+    # =========================================================================
+    # Condition Modal
+    # =========================================================================
+
     def open_condition_modal(self, condition: Dict[str, Any]):
         """Open condition modal with selected condition."""
         self.selected_condition = condition
@@ -345,6 +237,14 @@ class PatientDashboardState(rx.State):
         """Close condition modal."""
         self.show_condition_modal = False
         self.selected_condition = {}
+
+    def set_show_condition_modal(self, value: bool):
+        """Set show condition modal state."""
+        self.show_condition_modal = value
+
+    # =========================================================================
+    # Symptom Modal
+    # =========================================================================
 
     def open_symptom_modal(self, symptom: Dict[str, Any]):
         """Open symptom modal with selected symptom."""
@@ -356,6 +256,29 @@ class PatientDashboardState(rx.State):
         self.show_symptom_modal = False
         self.selected_symptom = {}
 
+    def set_show_symptom_modal(self, value: bool):
+        """Set show symptom modal state."""
+        self.show_symptom_modal = value
+
+    @rx.event
+    async def save_symptom_log(self):
+        """Save a symptom log entry."""
+        if self.selected_symptom:
+            new_log: SymptomLog = {
+                "id": f"sym_{uuid.uuid4().hex[:8]}",
+                "symptom_name": self.selected_symptom.get("name", "Unknown"),
+                "severity": 5,
+                "notes": "",
+                "timestamp": datetime.now().strftime("Today, %I:%M %p"),
+            }
+            self.symptom_logs = [new_log, *self.symptom_logs]
+
+        self.show_symptom_modal = False
+
+    # =========================================================================
+    # Connect Data Source Modal
+    # =========================================================================
+
     def open_connect_modal(self):
         """Open connect data source modal."""
         self.show_connect_modal = True
@@ -363,6 +286,14 @@ class PatientDashboardState(rx.State):
     def close_connect_modal(self):
         """Close connect data source modal."""
         self.show_connect_modal = False
+
+    def set_show_connect_modal(self, value: bool):
+        """Set show connect modal state."""
+        self.show_connect_modal = value
+
+    # =========================================================================
+    # Add Food Modal
+    # =========================================================================
 
     def open_add_food_modal(self):
         """Open add food modal."""
@@ -379,33 +310,9 @@ class PatientDashboardState(rx.State):
         """Close add food modal."""
         self.show_add_food_modal = False
 
-    def open_suggest_integration_modal(self):
-        """Open suggest integration modal."""
-        self.show_suggest_integration_modal = True
-        self.suggested_integration_name = ""
-        self.suggested_integration_description = ""
-        self.integration_suggestion_submitted = False
-
-    def close_suggest_integration_modal(self):
-        """Close suggest integration modal."""
-        self.show_suggest_integration_modal = False
-
-    def set_show_suggest_integration_modal(self, value: bool):
-        """Set suggest integration modal visibility."""
-        self.show_suggest_integration_modal = value
-
-    def set_suggested_integration_name(self, value: str):
-        """Set suggested integration name."""
-        self.suggested_integration_name = value
-
-    def set_suggested_integration_description(self, value: str):
-        """Set suggested integration description."""
-        self.suggested_integration_description = value
-
-    def submit_integration_suggestion(self):
-        """Submit integration suggestion."""
-        # In a real app, this would send the suggestion to the backend
-        self.integration_suggestion_submitted = True
+    def set_show_add_food_modal(self, value: bool):
+        """Set show add food modal state."""
+        self.show_add_food_modal = value
 
     def set_new_food_name(self, value: str):
         """Set new food name."""
@@ -430,30 +337,6 @@ class PatientDashboardState(rx.State):
     def set_new_food_meal_type(self, value: str):
         """Set new food meal type."""
         self.new_food_meal_type = value
-
-    def set_show_checkin_modal(self, value: bool):
-        """Set show checkin modal state."""
-        self.show_checkin_modal = value
-
-    def set_show_medication_modal(self, value: bool):
-        """Set show medication modal state."""
-        self.show_medication_modal = value
-
-    def set_show_condition_modal(self, value: bool):
-        """Set show condition modal state."""
-        self.show_condition_modal = value
-
-    def set_show_symptom_modal(self, value: bool):
-        """Set show symptom modal state."""
-        self.show_symptom_modal = value
-
-    def set_show_connect_modal(self, value: bool):
-        """Set show connect modal state."""
-        self.show_connect_modal = value
-
-    def set_show_add_food_modal(self, value: bool):
-        """Set show add food modal state."""
-        self.show_add_food_modal = value
 
     def save_food_entry(self):
         """Save a new food entry."""
@@ -486,164 +369,44 @@ class PatientDashboardState(rx.State):
         # Close modal
         self.show_add_food_modal = False
 
-    @rx.event
-    async def save_checkin(self):
-        """Save a new check-in using LLM for structured extraction."""
-        content = (
-            self.transcribed_text
-            if self.checkin_type == "voice"
-            else self.checkin_text.strip()
-        )
+    # =========================================================================
+    # Suggest Integration Modal
+    # =========================================================================
 
-        if len(content) < 10:
-            return
+    def open_suggest_integration_modal(self):
+        """Open suggest integration modal."""
+        self.show_suggest_integration_modal = True
+        self.suggested_integration_name = ""
+        self.suggested_integration_description = ""
+        self.integration_suggestion_submitted = False
 
-        checkin_model = await extract_checkin_from_text(content, self.checkin_type)
-        self.checkins = [checkin_model.to_dict(), *self.checkins]
+    def close_suggest_integration_modal(self):
+        """Close suggest integration modal."""
+        self.show_suggest_integration_modal = False
 
-        self.show_checkin_modal = False
-        self._reset_checkin_state()
+    def set_show_suggest_integration_modal(self, value: bool):
+        """Set suggest integration modal visibility."""
+        self.show_suggest_integration_modal = value
 
-    @rx.event
-    async def save_checkin_with_voice(self):
-        """Save a new check-in via voice"""
+    def set_suggested_integration_name(self, value: str):
+        """Set suggested integration name."""
+        self.suggested_integration_name = value
 
-        voice_state = await self.get_state(VoiceTranscriptionState)
-        content = (
-            voice_state.transcript
-            if self.checkin_type == "voice"
-            else self.checkin_text.strip()
-        )
+    def set_suggested_integration_description(self, value: str):
+        """Set suggested integration description."""
+        self.suggested_integration_description = value
 
-        if not content.strip():
-            return
+    def submit_integration_suggestion(self):
+        """Submit integration suggestion."""
+        # In a real app, this would send the suggestion to the backend
+        self.integration_suggestion_submitted = True
 
-        checkin_model = await extract_checkin_from_text(content, self.checkin_type)
-        self.checkins = [checkin_model.to_dict(), *self.checkins]
-
-        self.show_checkin_modal = False
-        self._reset_checkin_state()
-
-        # Clear voice state
-        voice_state.transcript = ""
-        voice_state.has_error = False
-        voice_state.error_message = ""
-
-    def _reset_checkin_state(self):
-        """Reset check-in modal state."""
-        self.is_recording = False
-        self.recording_duration = 0.0
-        self.transcribed_text = ""
-        self.checkin_text = ""
-        self.selected_topics = []
-        self.transcription_status = "idle"
-
-    @rx.event
-    async def save_symptom_log(self):
-        """Save a symptom log entry."""
-        if self.selected_symptom:
-            new_log: SymptomLog = {
-                "id": f"sym_{uuid.uuid4().hex[:8]}",
-                "symptom_name": self.selected_symptom.get("name", "Unknown"),
-                "severity": 5,
-                "notes": "",
-                "timestamp": datetime.now().strftime("Today, %I:%M %p"),
-            }
-            self.symptom_logs = [new_log, *self.symptom_logs]
-
-        self.show_symptom_modal = False
-
-    @rx.event
-    async def log_dose(self, medication_id: str):
-        """Log a medication dose."""
-        # In production, this would update adherence tracking
-        self.show_medication_modal = False
+    # =========================================================================
+    # Dashboard Load
+    # =========================================================================
 
     @rx.event
     def load_dashboard_data(self):
         """Load dashboard data on mount."""
         print("[DEBUG] load_dashboard_data: CALLED", flush=True)
         logger.info("load_dashboard_data: Called")
-
-    # =========================================================================
-    # Call Logs / Check-ins Sync
-    # =========================================================================
-
-    call_logs_syncing: bool = False
-    call_logs_sync_error: str = ""
-    last_sync_time: str = ""
-    _processed_call_ids: List[
-        str
-    ] = []  # Track processed call IDs (List for Reflex compatibility)
-
-    @rx.event(background=True)
-    async def refresh_call_logs(self):
-        """Fetch call logs and sync to checkins (background task).
-
-        Background task pattern per https://reflex.dev/docs/events/background-events:
-        - Minimize time inside `async with self` (state lock)
-        - Do heavy I/O outside the lock
-        - Use on_load (not on_mount) so task terminates on navigation
-        """
-        print("[DEBUG] refresh_call_logs: ENTERED", flush=True)
-        logger.info("refresh_call_logs: Starting")
-
-        # 1. Quick lock to set syncing flag and copy needed state
-        print("[DEBUG] refresh_call_logs: Acquiring lock for setup...", flush=True)
-        async with self:
-            self.call_logs_syncing = True
-            self.call_logs_sync_error = ""
-            processed_ids = set(self._processed_call_ids)
-            current_checkins = list(self.checkins)  # Copy current checkins
-        print("[DEBUG] refresh_call_logs: Lock released, starting fetch...", flush=True)
-
-        try:
-            # 2. Heavy I/O OUTSIDE the lock
-            print(
-                "[DEBUG] refresh_call_logs: Calling fetch_and_process_call_logs...",
-                flush=True,
-            )
-            new_count, new_checkins, new_summaries = await fetch_and_process_call_logs(
-                phone_number=DEMO_PHONE_NUMBER,
-                processed_ids=processed_ids,
-                use_llm_summary=False,
-            )
-            print(
-                f"[DEBUG] refresh_call_logs: Fetch complete, {new_count} new logs",
-                flush=True,
-            )
-            logger.info("refresh_call_logs: Processed %d new logs", new_count)
-
-            # 3. Process results OUTSIDE the lock
-            existing_ids = {c["id"] for c in current_checkins}
-            to_add = [c for c in new_checkins if c["id"] not in existing_ids]
-            if to_add:
-                sorted_new = sorted(
-                    to_add, key=lambda x: x.get("timestamp", ""), reverse=True
-                )
-            else:
-                sorted_new = []
-
-            # 4. Quick lock to update state
-            print(
-                "[DEBUG] refresh_call_logs: Acquiring lock to save results...",
-                flush=True,
-            )
-            async with self:
-                if sorted_new:
-                    self.checkins = sorted_new + list(self.checkins)
-                    logger.info("refresh_call_logs: Added %d checkins", len(sorted_new))
-
-                self._processed_call_ids = list(
-                    processed_ids | set(new_summaries.keys())
-                )
-                self.last_sync_time = datetime.now().strftime("%I:%M %p")
-                self.call_logs_syncing = False
-            print("[DEBUG] refresh_call_logs: COMPLETED successfully", flush=True)
-
-        except Exception as e:
-            print(f"[DEBUG] refresh_call_logs: FAILED - {e}", flush=True)
-            logger.error("refresh_call_logs: Failed - %s", e)
-            async with self:
-                self.call_logs_sync_error = str(e)
-                self.call_logs_syncing = False

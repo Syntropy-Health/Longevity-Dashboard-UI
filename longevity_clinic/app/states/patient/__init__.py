@@ -5,7 +5,6 @@ from .patient_analytics_state import PatientAnalyticsState
 from .treatment_state import TreatmentState
 from .treatment_search_state import TreatmentSearchState
 from .patient_dashboard_state import PatientDashboardState
-from .patient_checkin_state import PatientCheckinState
 from .notification_state import NotificationState
 from .appointment_state import AppointmentState
 from .voice_transcription_state import (
@@ -23,7 +22,6 @@ __all__ = [
     "TreatmentState",
     "TreatmentSearchState",
     "PatientDashboardState",
-    "PatientCheckinState",
     "NotificationState",
     "AppointmentState",
     "VoiceTranscriptionState",

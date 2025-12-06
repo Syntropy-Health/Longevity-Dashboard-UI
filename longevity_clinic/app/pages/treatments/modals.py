@@ -15,9 +15,7 @@ def treatment_editor_modal() -> rx.Component:
     """Modal for creating and editing treatment protocols."""
     return rx.radix.primitives.dialog.root(
         rx.radix.primitives.dialog.portal(
-            rx.radix.primitives.dialog.overlay(
-                class_name=GlassStyles.MODAL_OVERLAY
-            ),
+            rx.radix.primitives.dialog.overlay(class_name=GlassStyles.MODAL_OVERLAY),
             rx.radix.primitives.dialog.content(
                 rx.el.div(
                     # Header
@@ -56,7 +54,10 @@ def treatment_editor_modal() -> rx.Component:
                             rx.el.div(
                                 rx.el.label("Category", class_name=GlassStyles.LABEL),
                                 rx.el.select(
-                                    *[rx.el.option(cat, value=cat) for cat in TREATMENT_CATEGORIES],
+                                    *[
+                                        rx.el.option(cat, value=cat)
+                                        for cat in TREATMENT_CATEGORIES
+                                    ],
                                     value=TreatmentState.form_category,
                                     on_change=TreatmentState.set_form_category,
                                     class_name=GlassStyles.MODAL_SELECT,
@@ -65,7 +66,10 @@ def treatment_editor_modal() -> rx.Component:
                             rx.el.div(
                                 rx.el.label("Status", class_name=GlassStyles.LABEL),
                                 rx.el.select(
-                                    *[rx.el.option(status, value=status) for status in TREATMENT_STATUSES],
+                                    *[
+                                        rx.el.option(status, value=status)
+                                        for status in TREATMENT_STATUSES
+                                    ],
                                     value=TreatmentState.form_status,
                                     on_change=TreatmentState.set_form_status,
                                     class_name=GlassStyles.MODAL_SELECT,
@@ -99,7 +103,10 @@ def treatment_editor_modal() -> rx.Component:
                             rx.el.div(
                                 rx.el.label("Frequency", class_name=GlassStyles.LABEL),
                                 rx.el.select(
-                                    *[rx.el.option(freq, value=freq) for freq in TREATMENT_FREQUENCIES],
+                                    *[
+                                        rx.el.option(freq, value=freq)
+                                        for freq in TREATMENT_FREQUENCIES
+                                    ],
                                     value=TreatmentState.form_frequency,
                                     on_change=TreatmentState.set_form_frequency,
                                     class_name=GlassStyles.MODAL_SELECT,
@@ -147,9 +154,7 @@ def assignment_modal() -> rx.Component:
     """Modal for assigning treatment protocols to patients."""
     return rx.radix.primitives.dialog.root(
         rx.radix.primitives.dialog.portal(
-            rx.radix.primitives.dialog.overlay(
-                class_name=GlassStyles.MODAL_OVERLAY
-            ),
+            rx.radix.primitives.dialog.overlay(class_name=GlassStyles.MODAL_OVERLAY),
             rx.radix.primitives.dialog.content(
                 rx.cond(
                     TreatmentState.protocol_to_assign,
@@ -186,7 +191,9 @@ def assignment_modal() -> rx.Component:
                                 rx.el.option("Select a patient...", value=""),
                                 rx.foreach(
                                     PatientState.patients,
-                                    lambda p: rx.el.option(p["full_name"], value=p["id"]),
+                                    lambda p: rx.el.option(
+                                        p["full_name"], value=p["id"]
+                                    ),
                                 ),
                                 value=TreatmentState.selected_patient_id_for_assignment,
                                 on_change=TreatmentState.set_selected_patient_id_for_assignment,
@@ -206,7 +213,8 @@ def assignment_modal() -> rx.Component:
                             rx.el.button(
                                 "Confirm Assignment",
                                 on_click=TreatmentState.confirm_assignment,
-                                disabled=TreatmentState.selected_patient_id_for_assignment == "",
+                                disabled=TreatmentState.selected_patient_id_for_assignment
+                                == "",
                                 class_name=f"{GlassStyles.BUTTON_PRIMARY} disabled:opacity-50 disabled:cursor-not-allowed",
                             ),
                             class_name=GlassStyles.MODAL_FOOTER,

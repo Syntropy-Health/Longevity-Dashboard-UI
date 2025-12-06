@@ -3,7 +3,6 @@
 import reflex as rx
 from ...states.patient_state import PatientState, Patient
 from ...styles import GlassStyles
-from ...config import current_config
 from .state import AdminDashboardState
 
 
@@ -14,7 +13,9 @@ def stat_card(
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.el.p(title, class_name="text-sm font-medium text-slate-400 truncate"),
+                rx.el.p(
+                    title, class_name="text-sm font-medium text-slate-400 truncate"
+                ),
                 rx.el.p(
                     value,
                     class_name="mt-1 text-3xl font-bold text-white tracking-tight",
@@ -53,10 +54,13 @@ def efficiency_stat_card(
         "amber": "text-amber-400 bg-amber-500/10 border-amber-500/20",
         "emerald": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     }
-    
+
     return rx.el.div(
         rx.el.div(
-            rx.icon(icon, class_name=f"w-5 h-5 {color_classes.get(color, color_classes['teal']).split()[0]}"),
+            rx.icon(
+                icon,
+                class_name=f"w-5 h-5 {color_classes.get(color, color_classes['teal']).split()[0]}",
+            ),
             class_name=f"p-2.5 rounded-xl border {color_classes.get(color, color_classes['teal'])}",
         ),
         rx.el.div(
@@ -158,7 +162,7 @@ def dashboard_tabs() -> rx.Component:
             class_name=rx.cond(
                 AdminDashboardState.active_tab == "overview",
                 "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center bg-teal-500/20 text-teal-300 border border-teal-500/30",
-                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent"
+                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent",
             ),
         ),
         rx.el.button(
@@ -168,7 +172,7 @@ def dashboard_tabs() -> rx.Component:
             class_name=rx.cond(
                 AdminDashboardState.active_tab == "patients",
                 "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center bg-teal-500/20 text-teal-300 border border-teal-500/30",
-                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent"
+                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent",
             ),
         ),
         rx.el.button(
@@ -178,7 +182,7 @@ def dashboard_tabs() -> rx.Component:
             class_name=rx.cond(
                 AdminDashboardState.active_tab == "efficiency",
                 "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center bg-teal-500/20 text-teal-300 border border-teal-500/30",
-                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent"
+                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent",
             ),
         ),
         class_name="flex gap-2 p-1.5 bg-slate-800/30 backdrop-blur-sm rounded-2xl border border-slate-700/50 mb-6",

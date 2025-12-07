@@ -16,7 +16,7 @@ BACKEND_SERVICE="longevity-clinic-backend"
 FRONTEND_SERVICE="longevity-clinic"
 
 # App-specific environment variables to sync to Railway
-export APP_ENV_VARS="APP_NAME CLINIC_NAME ADMIN_ROLE_NAME PATIENT_ROLE_NAME THEME_COLOR APP_ENV"
+export APP_ENV_VARS="APP_NAME CLINIC_NAME ADMIN_ROLE_NAME PATIENT_ROLE_NAME THEME_COLOR APP_ENV OPENAI_API_KEY CALL_API_TOKEN"
 
 # Determine which env file to load based on deployment environment
 if [ "$RAILWAY_ENVIRONMENT" == "prod" ] || [ "$RAILWAY_ENVIRONMENT" == "production" ]; then

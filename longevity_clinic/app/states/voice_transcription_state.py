@@ -1,10 +1,10 @@
 """Voice transcription state using OpenAI Whisper."""
 
+import os
 from urllib.request import urlopen
 from pathlib import Path
 
 import reflex as rx
-from openai import AsyncOpenAI
 
 # Add the custom component path
 import sys
@@ -20,8 +20,20 @@ if custom_component_path not in sys.path:
 from reflex_audio_capture import AudioRecorderPolyfill, get_codec, strip_codec_part
 
 
-# Initialize OpenAI client
-client = AsyncOpenAI()
+# Lazy-initialize OpenAI client to avoid import-time errors when API key is missing
+_openai_client = None
+
+def get_openai_client():
+    """Get or create the OpenAI client lazily."""
+    global _openai_client
+    if _openai_client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("WARNING: OPENAI_API_KEY not set. Voice transcription will not work.")
+            return None
+        from openai import AsyncOpenAI
+        _openai_client = AsyncOpenAI(api_key=api_key)
+    return _openai_client
 
 # Unique reference for the audio recorder
 AUDIO_REF = "checkin_audio"
@@ -57,6 +69,11 @@ class VoiceTranscriptionState(rx.State):
                     self.processing = True
                     self.has_error = False
                     self.error_message = ""
+
+                # Get OpenAI client (lazy initialization)
+                client = get_openai_client()
+                if client is None:
+                    raise Exception("OpenAI API key not configured. Voice transcription is unavailable.")
 
                 # Transcribe using OpenAI Whisper
                 transcription = await client.audio.transcriptions.create(

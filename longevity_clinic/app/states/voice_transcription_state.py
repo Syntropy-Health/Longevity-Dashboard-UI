@@ -23,6 +23,7 @@ from reflex_audio_capture import AudioRecorderPolyfill, get_codec, strip_codec_p
 # Lazy-initialize OpenAI client to avoid import-time errors when API key is missing
 _openai_client = None
 
+
 def get_openai_client():
     """Get or create the OpenAI client lazily."""
     global _openai_client
@@ -32,8 +33,10 @@ def get_openai_client():
             print("WARNING: OPENAI_API_KEY not set. Voice transcription will not work.")
             return None
         from openai import AsyncOpenAI
+
         _openai_client = AsyncOpenAI(api_key=api_key)
     return _openai_client
+
 
 # Unique reference for the audio recorder
 AUDIO_REF = "checkin_audio"
@@ -73,7 +76,9 @@ class VoiceTranscriptionState(rx.State):
                 # Get OpenAI client (lazy initialization)
                 client = get_openai_client()
                 if client is None:
-                    raise Exception("OpenAI API key not configured. Voice transcription is unavailable.")
+                    raise Exception(
+                        "OpenAI API key not configured. Voice transcription is unavailable."
+                    )
 
                 # Transcribe using OpenAI Whisper
                 transcription = await client.audio.transcriptions.create(

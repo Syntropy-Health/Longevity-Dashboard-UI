@@ -6,12 +6,12 @@ Extracted from PatientDashboardState for better separation of concerns.
 
 import reflex as rx
 import asyncio
-from typing import List, Dict, Any, Set
+from typing import List
 from datetime import datetime
 import uuid
 
 from .voice_transcription_state import VoiceTranscriptionState
-from ..config import get_logger
+from longevity_clinic.app.config import get_logger
 
 logger = get_logger("longevity_clinic.checkins")
 
@@ -25,7 +25,7 @@ from ..data.demo import DEMO_PHONE_NUMBER, DEMO_CHECKINS
 
 class PatientCheckinState(rx.State):
     """State management for patient check-ins.
-    
+
     Handles:
     - Check-in modal state and operations
     - Voice recording for check-ins
@@ -52,7 +52,9 @@ class PatientCheckinState(rx.State):
     recording_session_id: str = ""
     recording_duration: float = 0.0
     transcribed_text: str = ""
-    transcription_status: str = ""  # 'idle', 'recording', 'transcribing', 'done', 'error'
+    transcription_status: str = (
+        ""  # 'idle', 'recording', 'transcribing', 'done', 'error'
+    )
 
     # =========================================================================
     # Call Logs Sync State
@@ -60,12 +62,14 @@ class PatientCheckinState(rx.State):
     call_logs_syncing: bool = False
     call_logs_sync_error: str = ""
     last_sync_time: str = ""
-    _processed_call_ids: List[str] = []  # Track processed call IDs (List for Reflex compatibility)
+    _processed_call_ids: List[
+        str
+    ] = []  # Track processed call IDs (List for Reflex compatibility)
 
     # =========================================================================
     # Computed Variables
     # =========================================================================
-    
+
     @rx.var
     def unreviewed_checkins_count(self) -> int:
         """Count unreviewed check-ins."""

@@ -6,7 +6,7 @@ biomarker panels, health scores, and trend analysis.
 
 from typing import List, Dict, Any, Optional
 
-from ....config import get_logger
+from longevity_clinic.app.config import get_logger
 
 logger = get_logger("longevity_clinic.analytics")
 

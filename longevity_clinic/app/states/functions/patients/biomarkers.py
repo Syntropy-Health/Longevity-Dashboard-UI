@@ -196,3 +196,66 @@ def format_biomarker_value(
         Formatted string like "125.5 mg/dL"
     """
     return f"{value:.{precision}f} {unit}"
+
+
+async def load_all_biomarker_data(
+    patient_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Load all biomarker-related data for a patient dashboard.
+
+    This is a convenience function that fetches biomarkers, treatments,
+    and appointments in one call.
+
+    Args:
+        patient_id: Patient ID (None = current patient)
+
+    Returns:
+        Dict with keys: 'biomarkers', 'treatments', 'appointments'
+    """
+    logger.info("Loading all biomarker data for patient: %s", patient_id or "current")
+
+    # In production, these could be parallelized with asyncio.gather
+    # For now, they return empty lists (demo data loaded from state defaults)
+    biomarkers = await fetch_biomarkers(patient_id)
+    treatments = await fetch_treatments(patient_id)
+    appointments = await fetch_appointments(patient_id)
+
+    return {
+        "biomarkers": biomarkers,
+        "treatments": treatments,
+        "appointments": appointments,
+    }
+
+
+def get_biomarker_by_name(
+    biomarkers: List[Biomarker],
+    name: str,
+) -> Optional[Biomarker]:
+    """Find a biomarker by name.
+
+    Args:
+        biomarkers: List of biomarker records
+        name: Biomarker name to find
+
+    Returns:
+        Biomarker dict or None if not found
+    """
+    for biomarker in biomarkers:
+        if biomarker.get("name", "").lower() == name.lower():
+            return biomarker
+    return None
+
+
+def get_biomarker_optimal_range(biomarker: Biomarker) -> Dict[str, float]:
+    """Extract optimal range from biomarker.
+
+    Args:
+        biomarker: Biomarker dict
+
+    Returns:
+        Dict with 'min' and 'max' keys
+    """
+    return {
+        "min": biomarker.get("optimal_min", 0),
+        "max": biomarker.get("optimal_max", 0),
+    }

@@ -10,7 +10,7 @@ import asyncio
 from ...data.state_schemas import AdminCheckIn
 from ...data.demo import DEMO_ADMIN_CHECKINS
 from ..patient_state import PatientState
-from ...config import get_logger
+from longevity_clinic.app.config import get_logger
 from ..functions.admins import (
     transform_call_log_to_admin_checkin,
     filter_checkins,

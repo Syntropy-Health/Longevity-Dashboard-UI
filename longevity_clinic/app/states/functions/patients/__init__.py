@@ -21,6 +21,9 @@ from .biomarkers import (
     calculate_biomarker_status,
     calculate_biomarker_trend,
     format_biomarker_value,
+    load_all_biomarker_data,
+    get_biomarker_by_name,
+    get_biomarker_optimal_range,
 )
 from .analytics import (
     fetch_analytics_summary,
@@ -67,6 +70,9 @@ __all__ = [
     "calculate_biomarker_status",
     "calculate_biomarker_trend",
     "format_biomarker_value",
+    "load_all_biomarker_data",
+    "get_biomarker_by_name",
+    "get_biomarker_optimal_range",
     # Analytics
     "fetch_analytics_summary",
     "fetch_biomarker_panels",

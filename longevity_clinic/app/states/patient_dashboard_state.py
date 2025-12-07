@@ -1,7 +1,7 @@
 """Patient dashboard state management.
 
 Handles patient dashboard data including nutrition, medications, conditions,
-symptoms, and data sources. Check-in functionality has been moved to 
+symptoms, and data sources. Check-in functionality has been moved to
 PatientCheckinState for better separation of concerns.
 """
 
@@ -41,7 +41,7 @@ from ..data.demo import (
 
 class PatientDashboardState(rx.State):
     """State management for patient dashboard.
-    
+
     Note: Check-in related state has been moved to PatientCheckinState.
     """
 

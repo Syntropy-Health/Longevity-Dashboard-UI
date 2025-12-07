@@ -8,7 +8,7 @@ import os
 from typing import Optional, Tuple
 from urllib.request import urlopen
 
-from ....config import get_logger
+from longevity_clinic.app.config import get_logger
 
 logger = get_logger("longevity_clinic.voice")
 

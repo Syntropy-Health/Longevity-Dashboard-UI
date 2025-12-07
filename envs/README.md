@@ -48,7 +48,7 @@ The deploy script automatically sets APP_ENV based on the deployment target:
 | Variable | Description | Dev Default | Prod Default |
 |----------|-------------|-------------|--------------|
 | `REFLEX_API_URL` | Backend API URL | (empty = localhost:8000) | Railway backend URL |
-| `FRONTEND_DEPLOY_URL` | Frontend URL for CORS | (empty = localhost:3000) | Railway frontend URL |
+| `REFLEX_DEPLOY_URL` | Frontend URL for CORS | (empty = localhost:3000) | Railway frontend URL |
 | `APP_ENV` | Environment name | dev | prod |
 | `LOGLEVEL` | Logging level | debug | info |
 

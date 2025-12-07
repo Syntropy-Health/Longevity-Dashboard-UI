@@ -48,18 +48,19 @@ def load_hierarchical_env():
 load_hierarchical_env()
 
 # Get deployment URLs from environment
-# Empty string means use Reflex defaults (localhost)
-frontend_url = os.getenv("FRONTEND_DEPLOY_URL", "")
+# Per Reflex docs: REFLEX_API_URL sets api_url, REFLEX_DEPLOY_URL sets deploy_url
+# Empty/None means use Reflex defaults (localhost)
 backend_url = os.getenv("REFLEX_API_URL", "")
+frontend_url = os.getenv("REFLEX_DEPLOY_URL", "")
 
 # Log the effective URLs
 if backend_url:
-    print(f"📡 Backend URL: {backend_url}")
+    print(f"📡 Backend URL (REFLEX_API_URL): {backend_url}")
 else:
     print("📡 Backend URL: http://localhost:8000 (default)")
 
 if frontend_url:
-    print(f"🌐 Frontend URL: {frontend_url}")
+    print(f"🌐 Frontend URL (REFLEX_DEPLOY_URL): {frontend_url}")
 else:
     print("🌐 Frontend URL: http://localhost:3000 (default)")
 
@@ -79,8 +80,12 @@ config = rx.Config(
         rx.plugins.SitemapPlugin(),
         rx.plugins.TailwindV4Plugin(),
     ],
+    # Deployment URLs - Reflex auto-reads REFLEX_API_URL and REFLEX_DEPLOY_URL
+    # We explicitly set them here for clarity and CORS configuration
+    api_url=backend_url if backend_url else None,
+    deploy_url=frontend_url if frontend_url else None,
     # Database - use REFLEX_DB_URL (Railway sets this from Postgres service)
-    db_url=os.getenv("REFLEX_DB_URL", "dev.db"),
+    db_url=os.getenv("REFLEX_DB_URL", "sqlite:///reflex.db"),
     # Additional frontend packages
     frontend_packages=["react-icons"],
     show_built_with_reflex=False,

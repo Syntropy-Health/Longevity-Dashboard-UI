@@ -4,7 +4,7 @@ import reflex as rx
 from ...components.layout import authenticated_layout
 from ...states.auth_state import AuthState
 from ...states.patient_checkin_state import PatientCheckinState
-from ...states.admin_checkins_state import AdminCheckinsState
+from ...states.admin.checkins_state import AdminCheckinsState
 from ...styles.constants import GlassStyles
 from .tabs import checkin_card
 from .modals import checkin_modal

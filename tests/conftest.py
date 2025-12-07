@@ -4,13 +4,24 @@ import pytest
 import os
 from pathlib import Path
 
-# Load environment variables from .env file
+# Load environment variables using hierarchical env loading
 try:
     from dotenv import load_dotenv
 
-    env_path = Path(__file__).parent.parent / ".env"
-    if env_path.exists():
-        load_dotenv(env_path)
+    base_dir = Path(__file__).parent.parent
+    envs_dir = base_dir / "envs"
+    
+    # Load in order: .env.base -> .env.dev -> .env.secrets
+    for env_file in [".env.base", ".env.dev", ".env.secrets"]:
+        env_path = envs_dir / env_file
+        if env_path.exists():
+            load_dotenv(env_path, override=True)
+            print(f"Loaded environment from {env_path}")
+    
+    # Also check for legacy .env in root
+    legacy_env = base_dir / ".env"
+    if legacy_env.exists():
+        load_dotenv(legacy_env, override=True)
 except ImportError:
     pass
 

@@ -9,7 +9,6 @@ from pathlib import Path
 #   1. .env.base (shared config)
 #   2. .env.{APP_ENV} (environment-specific: dev, test, prod)
 #   3. .env.secrets (API keys - gitignored)
-#   4. .env (legacy/override - optional)
 #
 # Set APP_ENV to control which environment config is loaded:
 #   - APP_ENV=dev (default) - local development, backend on localhost
@@ -36,7 +35,6 @@ def load_hierarchical_env():
         envs_path / ".env.base",      # Shared config
         envs_path / f".env.{app_env}", # Environment-specific
         envs_path / ".env.secrets",    # Secrets (gitignored)
-        base_path / ".env",            # Legacy override (optional)
     ]
     
     for env_file in env_files:

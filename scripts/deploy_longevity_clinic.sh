@@ -1,59 +1,46 @@
 #!/bin/bash
-# deploy_longevity_clinic.sh - App-specific deployment script for Longevity Clinic
-# 
+# deploy_longevity_clinic.sh - Deploy Longevity Clinic to Railway
 # Usage: ./scripts/deploy_longevity_clinic.sh [ENVIRONMENT]
-# 
-# This script wraps the generic Railway deployment with app-specific configuration.
 
 set -e
 
-# App-specific configuration
+# === CONFIG ===
 RAILWAY_PROJECT="syntropy"
-RAILWAY_ENVIRONMENT="${1:-test}"  # Default to 'test', can be overridden by first argument
-
-# Service naming convention: <app>-<service>-<environment> or <app>-<environment>
+RAILWAY_ENVIRONMENT="${1:-test}"
 BACKEND_SERVICE="longevity-clinic-backend"
 FRONTEND_SERVICE="longevity-clinic"
 
-# App-specific environment variables to sync to Railway
+# Variables to sync to Railway (APP_ENV_VARS used by deploy.sh)
 export APP_ENV_VARS="APP_NAME CLINIC_NAME ADMIN_ROLE_NAME PATIENT_ROLE_NAME THEME_COLOR APP_ENV OPENAI_API_KEY CALL_API_TOKEN"
 
-# Determine which env file to load based on deployment environment
-if [ "$RAILWAY_ENVIRONMENT" == "prod" ] || [ "$RAILWAY_ENVIRONMENT" == "production" ]; then
-    ENV_FILE="envs/.env.prod"
-    export APP_ENV="prod"
-else
-    ENV_FILE="envs/.env.dev"
-    export APP_ENV="dev"
-fi
+# === LOAD ENVIRONMENT ===
+echo "Loading environment..."
+load_env() { [ -f "$1" ] && { set -a; source "$1"; set +a; echo "  ✓ $1"; }; }
 
-# Load hierarchical env files
-echo "Loading environment configuration..."
-[ -f "envs/.env.base" ] && { set -a; source "envs/.env.base"; set +a; echo "  ✓ Loaded: envs/.env.base"; }
-[ -f "$ENV_FILE" ] && { set -a; source "$ENV_FILE"; set +a; echo "  ✓ Loaded: $ENV_FILE"; }
-[ -f "envs/.env.secrets" ] && { set -a; source "envs/.env.secrets"; set +a; echo "  ✓ Loaded: envs/.env.secrets"; }
-[ -f ".env" ] && { set -a; source ".env"; set +a; echo "  ✓ Loaded: .env (override)"; }
+# Determine env file based on target
+[ "$RAILWAY_ENVIRONMENT" = "prod" ] || [ "$RAILWAY_ENVIRONMENT" = "production" ] && export APP_ENV="prod" || export APP_ENV="dev"
 
-# Set defaults if not in env files
+load_env "envs/.env.base"
+load_env "envs/.env.${APP_ENV}"
+load_env "envs/.env.secrets"
+load_env ".env"
+
+# Defaults
 export APP_NAME="${APP_NAME:-Vitality Clinic}"
 export CLINIC_NAME="${CLINIC_NAME:-Vitality Health}"
 export ADMIN_ROLE_NAME="${ADMIN_ROLE_NAME:-Administrator}"
 export PATIENT_ROLE_NAME="${PATIENT_ROLE_NAME:-Patient}"
 export THEME_COLOR="${THEME_COLOR:-emerald}"
 
-echo "=========================================="
-echo "Longevity Clinic Deployment"
-echo "=========================================="
-echo "Environment: $RAILWAY_ENVIRONMENT"
-echo "App Env: $APP_ENV"
-echo "App Name: $APP_NAME"
-echo "Backend URL: ${REFLEX_API_URL:-localhost}"
-echo "=========================================="
+echo ""
+echo "=== Longevity Clinic Deployment ==="
+echo "Target: $RAILWAY_ENVIRONMENT | App Env: $APP_ENV"
+echo "Backend: $BACKEND_SERVICE | Frontend: $FRONTEND_SERVICE"
+echo ""
 
-# Run the generic deployment script
+# === DEPLOY ===
 ./reflex-railway-deploy/deploy.sh \
     -p "$RAILWAY_PROJECT" \
     -e "$RAILWAY_ENVIRONMENT" \
     -b "$BACKEND_SERVICE" \
-    -f "$FRONTEND_SERVICE" \
-    --env-file ".env"
+    -f "$FRONTEND_SERVICE"

@@ -3,7 +3,7 @@
 import reflex as rx
 from ...components.layout import authenticated_layout
 from ...styles import GlassStyles
-from ...states.admin_checkins_state import AdminCheckinsState
+from ...states.admin.checkins_state import AdminCheckinsState
 from ...config import get_logger
 
 logger = get_logger("longevity_clinic.admin_checkins")

@@ -99,7 +99,7 @@ def transform_call_log_to_admin_checkin(
     """
     phone = summary.get("patient_phone", "")
     name = get_patient_name_from_phone(phone)
-    ai_summary = summary.get("ai_summary", "") or summary.get("summary", "")
+    ai_summary = summary.get("ai_summary", "<AI Summary Not Available>") or summary.get("summary", "")
     topics = extract_health_topics(ai_summary)
 
     return {

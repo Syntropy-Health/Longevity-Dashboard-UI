@@ -4,21 +4,20 @@ import random
 from datetime import datetime, timedelta
 
 from ..config import get_logger
-from ..data.demo import (
-    DEMO_PATIENTS_STATE,
-    DEMO_TREND_DATA,
-    DEMO_TREATMENT_DATA,
-    DEMO_BIOMARKER_DATA,
-)
 from ..data.state_schemas import Patient
+from .functions.patients.patients import load_all_patient_data
 
 logger = get_logger("longevity_clinic.patient_state")
 
 
 class PatientState(rx.State):
-    """State for patient management (CRUD operations)."""
+    """State for patient management (CRUD operations).
 
-    patients: list[Patient] = DEMO_PATIENTS_STATE
+    Data is loaded via load_patients() which respects the IS_DEMO
+    environment variable.
+    """
+
+    patients: list[Patient] = []
     search_query: str = ""
     status_filter: str = "All"
     sort_key: str = "name"
@@ -31,9 +30,13 @@ class PatientState(rx.State):
     new_patient_age: str = ""
     new_patient_gender: str = ""
     new_patient_history: str = ""
-    trend_data: list[dict] = DEMO_TREND_DATA
-    treatment_data: list[dict] = DEMO_TREATMENT_DATA
-    biomarker_data: list[dict] = DEMO_BIOMARKER_DATA
+    trend_data: list[dict] = []
+    treatment_data: list[dict] = []
+    biomarker_data: list[dict] = []
+
+    # Loading state
+    is_loading: bool = False
+    _data_loaded: bool = False
 
     @rx.var
     def filtered_patients(self) -> list[Patient]:
@@ -58,6 +61,40 @@ class PatientState(rx.State):
                 patients, key=lambda x: x["biomarker_score"], reverse=True
             )
         return patients
+
+    @rx.event(background=True)
+    async def load_patients(self):
+        """Load patient data.
+
+        Respects IS_DEMO env var: when True, returns demo data;
+        when False, calls the API.
+        """
+        # Prevent duplicate loads
+        async with self:
+            if self._data_loaded:
+                logger.debug("load_patients: Data already loaded, skipping")
+                return
+            self.is_loading = True
+
+        logger.info("load_patients: Starting")
+
+        try:
+            # Fetch data using extracted function (respects IS_DEMO config)
+            data = await load_all_patient_data()
+
+            async with self:
+                self.patients = data["patients"]
+                self.trend_data = data["trend_data"]
+                self.treatment_data = data["treatment_data"]
+                self.biomarker_data = data["biomarker_data"]
+                self.is_loading = False
+                self._data_loaded = True
+
+            logger.info("load_patients: Complete (%d patients)", len(data["patients"]))
+        except Exception as e:
+            logger.error("load_patients: Failed - %s", e)
+            async with self:
+                self.is_loading = False
 
     @rx.event
     def set_search_query(self, query: str):

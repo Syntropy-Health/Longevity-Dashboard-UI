@@ -1,33 +1,47 @@
 """Biomarker data fetching and processing functions.
 
 This module contains functions for fetching and processing biomarker data.
-Currently uses demo data but provides placeholders for API integration.
+When is_demo=True, returns demo data. Otherwise calls the API.
 """
 
 from typing import List, Dict, Any, Optional
 
-from ....config import get_logger
+from ....config import get_logger, current_config
 from ....data.state_schemas import Biomarker, BiomarkerDataPoint
+from ....data.demo import (
+    DEMO_PORTAL_BIOMARKERS,
+    DEMO_PORTAL_TREATMENTS,
+    DEMO_PORTAL_APPOINTMENTS,
+)
 
 logger = get_logger("longevity_clinic.biomarkers")
 
 
 async def fetch_biomarkers(
     patient_id: Optional[str] = None,
+    is_demo: Optional[bool] = None,
 ) -> List[Biomarker]:
     """Fetch biomarker data for a patient.
 
     Args:
         patient_id: Patient ID to fetch biomarkers for (None = current patient)
+        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         List of biomarker records
-
-    Note:
-        Currently returns demo data. In production, this would call
-        the biomarker API endpoint.
     """
-    logger.info("Fetching biomarkers for patient: %s", patient_id or "current")
+    if is_demo is None:
+        is_demo = current_config.is_demo
+
+    logger.info(
+        "Fetching biomarkers for patient: %s (demo=%s)",
+        patient_id or "current",
+        is_demo,
+    )
+
+    if is_demo:
+        logger.debug("fetch_biomarkers: Returning demo data")
+        return DEMO_PORTAL_BIOMARKERS
 
     # TODO: Implement API call to fetch biomarkers
     # Example API call structure:
@@ -38,8 +52,7 @@ async def fetch_biomarkers(
     #     )
     #     return response.json()["data"]
 
-    # For now, return empty (demo data loaded from state default)
-    logger.debug("fetch_biomarkers: Using demo data (API not implemented)")
+    logger.warning("fetch_biomarkers: API not implemented, returning empty list")
     return []
 
 
@@ -47,6 +60,7 @@ async def fetch_biomarker_history(
     biomarker_id: str,
     patient_id: Optional[str] = None,
     days: int = 365,
+    is_demo: Optional[bool] = None,
 ) -> List[BiomarkerDataPoint]:
     """Fetch historical data points for a specific biomarker.
 
@@ -54,16 +68,31 @@ async def fetch_biomarker_history(
         biomarker_id: The biomarker to fetch history for
         patient_id: Patient ID (None = current patient)
         days: Number of days of history to fetch
+        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         List of biomarker data points with dates and values
     """
+    if is_demo is None:
+        is_demo = current_config.is_demo
+
     logger.info(
-        "Fetching biomarker history: %s for patient %s (%d days)",
+        "Fetching biomarker history: %s for patient %s (%d days, demo=%s)",
         biomarker_id,
         patient_id or "current",
         days,
+        is_demo,
     )
+
+    if is_demo:
+        # Find the biomarker in demo data and return its history
+        for biomarker in DEMO_PORTAL_BIOMARKERS:
+            if (
+                biomarker.get("id") == biomarker_id
+                or biomarker.get("name") == biomarker_id
+            ):
+                return biomarker.get("history", [])
+        return []
 
     # TODO: Implement API call
     # async with httpx.AsyncClient() as client:
@@ -73,49 +102,72 @@ async def fetch_biomarker_history(
     #     )
     #     return response.json()["data"]
 
-    logger.debug("fetch_biomarker_history: Using demo data (API not implemented)")
+    logger.warning("fetch_biomarker_history: API not implemented, returning empty list")
     return []
 
 
 async def fetch_treatments(
     patient_id: Optional[str] = None,
+    is_demo: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch treatments assigned to a patient.
 
     Args:
         patient_id: Patient ID (None = current patient)
+        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         List of treatment records
     """
-    logger.info("Fetching treatments for patient: %s", patient_id or "current")
+    if is_demo is None:
+        is_demo = current_config.is_demo
+
+    logger.info(
+        "Fetching treatments for patient: %s (demo=%s)",
+        patient_id or "current",
+        is_demo,
+    )
+
+    if is_demo:
+        logger.debug("fetch_treatments: Returning demo data")
+        return DEMO_PORTAL_TREATMENTS
 
     # TODO: Implement API call
-    logger.debug("fetch_treatments: Using demo data (API not implemented)")
+    logger.warning("fetch_treatments: API not implemented, returning empty list")
     return []
 
 
 async def fetch_appointments(
     patient_id: Optional[str] = None,
     upcoming_only: bool = True,
+    is_demo: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch appointments for a patient.
 
     Args:
         patient_id: Patient ID (None = current patient)
         upcoming_only: If True, only return future appointments
+        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         List of appointment records
     """
+    if is_demo is None:
+        is_demo = current_config.is_demo
+
     logger.info(
-        "Fetching appointments for patient: %s (upcoming=%s)",
+        "Fetching appointments for patient: %s (upcoming=%s, demo=%s)",
         patient_id or "current",
         upcoming_only,
+        is_demo,
     )
 
+    if is_demo:
+        logger.debug("fetch_appointments: Returning demo data")
+        return DEMO_PORTAL_APPOINTMENTS
+
     # TODO: Implement API call
-    logger.debug("fetch_appointments: Using demo data (API not implemented)")
+    logger.warning("fetch_appointments: API not implemented, returning empty list")
     return []
 
 
@@ -200,6 +252,7 @@ def format_biomarker_value(
 
 async def load_all_biomarker_data(
     patient_id: Optional[str] = None,
+    is_demo: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Load all biomarker-related data for a patient dashboard.
 
@@ -208,17 +261,24 @@ async def load_all_biomarker_data(
 
     Args:
         patient_id: Patient ID (None = current patient)
+        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         Dict with keys: 'biomarkers', 'treatments', 'appointments'
     """
-    logger.info("Loading all biomarker data for patient: %s", patient_id or "current")
+    if is_demo is None:
+        is_demo = current_config.is_demo
 
-    # In production, these could be parallelized with asyncio.gather
-    # For now, they return empty lists (demo data loaded from state defaults)
-    biomarkers = await fetch_biomarkers(patient_id)
-    treatments = await fetch_treatments(patient_id)
-    appointments = await fetch_appointments(patient_id)
+    logger.info(
+        "Loading all biomarker data for patient: %s (demo=%s)",
+        patient_id or "current",
+        is_demo,
+    )
+
+    # Fetch all data with the same is_demo setting
+    biomarkers = await fetch_biomarkers(patient_id, is_demo=is_demo)
+    treatments = await fetch_treatments(patient_id, is_demo=is_demo)
+    appointments = await fetch_appointments(patient_id, is_demo=is_demo)
 
     return {
         "biomarkers": biomarkers,

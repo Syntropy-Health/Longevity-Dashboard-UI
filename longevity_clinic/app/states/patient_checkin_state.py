@@ -4,23 +4,21 @@ Handles check-in modal, voice recording, and call log sync functionality.
 Extracted from PatientDashboardState for better separation of concerns.
 """
 
-import reflex as rx
 import asyncio
-from typing import List
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import List
 
+import reflex as rx
+
+from ..config import get_logger
+from ..data.demo import DEMO_CHECKINS, DEMO_PHONE_NUMBER
+from ..data.state_schemas import CheckIn
+from .functions import fetch_and_process_call_logs
+from .functions.patients import extract_checkin_from_text
 from .voice_transcription_state import VoiceTranscriptionState
-from longevity_clinic.app.config import get_logger
 
 logger = get_logger("longevity_clinic.checkins")
-
-from ..data.state_schemas import CheckIn
-
-# Import extracted functions
-from .functions.patients import extract_checkin_from_text
-from .functions import fetch_and_process_call_logs
-from ..data.demo import DEMO_PHONE_NUMBER, DEMO_CHECKINS
 
 
 class PatientCheckinState(rx.State):

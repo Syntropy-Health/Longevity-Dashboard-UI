@@ -5,44 +5,35 @@ symptoms, and data sources. Check-in functionality has been moved to
 PatientCheckinState for better separation of concerns.
 """
 
-import reflex as rx
-from typing import List, Dict, Any
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Any, Dict, List
+
+import reflex as rx
 
 from ..config import get_logger
-
-logger = get_logger("longevity_clinic.dashboard")
-
 from ..data.state_schemas import (
-    NutritionSummary,
+    Condition,
+    DataSource,
     FoodEntry,
     Medication,
-    Condition,
+    NutritionSummary,
+    Reminder,
     Symptom,
     SymptomLog,
-    Reminder,
     SymptomTrend,
-    DataSource,
 )
+from .functions.patients.dashboard import load_all_dashboard_data
 
-from ..data.demo import (
-    DEMO_NUTRITION_SUMMARY,
-    DEMO_FOOD_ENTRIES,
-    DEMO_MEDICATIONS,
-    DEMO_CONDITIONS,
-    DEMO_SYMPTOMS,
-    DEMO_SYMPTOM_LOGS,
-    DEMO_REMINDERS,
-    DEMO_SYMPTOM_TRENDS,
-    DEMO_DATA_SOURCES,
-)
+logger = get_logger("longevity_clinic.dashboard")
 
 
 class PatientDashboardState(rx.State):
     """State management for patient dashboard.
 
     Note: Check-in related state has been moved to PatientCheckinState.
+    Data is loaded via load_dashboard_data() which respects the IS_DEMO
+    environment variable.
     """
 
     # Active tab
@@ -83,16 +74,20 @@ class PatientDashboardState(rx.State):
     email_notifications: bool = True
     push_notifications: bool = True
 
-    # Data - initialized from demo module
-    nutrition_summary: NutritionSummary = DEMO_NUTRITION_SUMMARY
-    food_entries: List[FoodEntry] = DEMO_FOOD_ENTRIES
-    medications: List[Medication] = DEMO_MEDICATIONS
-    conditions: List[Condition] = DEMO_CONDITIONS
-    symptoms: List[Symptom] = DEMO_SYMPTOMS
-    symptom_logs: List[SymptomLog] = DEMO_SYMPTOM_LOGS
-    reminders: List[Reminder] = DEMO_REMINDERS
-    symptom_trends: List[SymptomTrend] = DEMO_SYMPTOM_TRENDS
-    data_sources: List[DataSource] = DEMO_DATA_SOURCES
+    # Data - initialized empty, loaded via load_dashboard_data()
+    nutrition_summary: NutritionSummary = {}
+    food_entries: List[FoodEntry] = []
+    medications: List[Medication] = []
+    conditions: List[Condition] = []
+    symptoms: List[Symptom] = []
+    symptom_logs: List[SymptomLog] = []
+    reminders: List[Reminder] = []
+    symptom_trends: List[SymptomTrend] = []
+    data_sources: List[DataSource] = []
+
+    # Loading state
+    is_loading: bool = False
+    _data_loaded: bool = False
 
     # =========================================================================
     # Computed Variables
@@ -145,6 +140,49 @@ class PatientDashboardState(rx.State):
         if not types:
             return self.data_sources
         return [s for s in self.data_sources if s["type"] in types]
+
+    # =========================================================================
+    # Data Loading
+    # =========================================================================
+
+    @rx.event(background=True)
+    async def load_dashboard_data(self):
+        """Load dashboard data.
+
+        Respects IS_DEMO env var: when True, returns demo data;
+        when False, calls the API.
+        """
+        # Prevent duplicate loads
+        async with self:
+            if self._data_loaded:
+                logger.debug("load_dashboard_data: Data already loaded, skipping")
+                return
+            self.is_loading = True
+
+        logger.info("load_dashboard_data: Starting")
+
+        try:
+            # Fetch data using extracted function (respects IS_DEMO config)
+            data = await load_all_dashboard_data()
+
+            async with self:
+                self.nutrition_summary = data["nutrition_summary"]
+                self.food_entries = data["food_entries"]
+                self.medications = data["medications"]
+                self.conditions = data["conditions"]
+                self.symptoms = data["symptoms"]
+                self.symptom_logs = data["symptom_logs"]
+                self.symptom_trends = data["symptom_trends"]
+                self.reminders = data["reminders"]
+                self.data_sources = data["data_sources"]
+                self.is_loading = False
+                self._data_loaded = True
+
+            logger.info("load_dashboard_data: Complete")
+        except Exception as e:
+            logger.error("load_dashboard_data: Failed - %s", e)
+            async with self:
+                self.is_loading = False
 
     # =========================================================================
     # Tab and Filter Methods
@@ -400,13 +438,3 @@ class PatientDashboardState(rx.State):
         """Submit integration suggestion."""
         # In a real app, this would send the suggestion to the backend
         self.integration_suggestion_submitted = True
-
-    # =========================================================================
-    # Dashboard Load
-    # =========================================================================
-
-    @rx.event
-    def load_dashboard_data(self):
-        """Load dashboard data on mount."""
-        print("[DEBUG] load_dashboard_data: CALLED", flush=True)
-        logger.info("load_dashboard_data: Called")

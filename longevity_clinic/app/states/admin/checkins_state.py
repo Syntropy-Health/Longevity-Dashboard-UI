@@ -1,6 +1,8 @@
 """Admin check-ins state management.
 
-Refactored to use functions from functions/admins/checkins.py
+Refactored to use functions from functions/admins/checkins.py.
+Data is loaded via load_admin_checkins() which respects the IS_DEMO
+environment variable.
 """
 
 import reflex as rx
@@ -8,27 +10,35 @@ from typing import List
 import asyncio
 
 from ...data.state_schemas import AdminCheckIn
-from ...data.demo import DEMO_ADMIN_CHECKINS
 from ..patient_state import PatientState
 from longevity_clinic.app.config import get_logger
 from ..functions.admins import (
     transform_call_log_to_admin_checkin,
     filter_checkins,
     count_checkins_by_status,
+    fetch_all_checkins,
 )
 
 logger = get_logger("longevity_clinic.admin_state")
 
 
 class AdminCheckinsState(rx.State):
-    """State management for admin check-ins view."""
+    """State management for admin check-ins view.
+
+    Data is loaded via load_admin_checkins() which respects the IS_DEMO
+    environment variable.
+    """
 
     active_status_tab: str = "pending"
     search_query: str = ""
-    all_checkins: List[AdminCheckIn] = DEMO_ADMIN_CHECKINS
+    all_checkins: List[AdminCheckIn] = []
     call_log_checkins: List[AdminCheckIn] = []
     selected_checkin: AdminCheckIn = {}
     show_checkin_detail_modal: bool = False
+
+    # Loading state
+    is_loading: bool = False
+    _data_loaded: bool = False
 
     # =========================================================================
     # Computed Variables
@@ -69,14 +79,71 @@ class AdminCheckinsState(rx.State):
         return len(self.combined_checkins)
 
     # =========================================================================
+    # Data Loading
+    # =========================================================================
+
+    @rx.event(background=True)
+    async def load_admin_checkins(self):
+        """Load admin check-ins data.
+
+        Respects IS_DEMO env var: when True, returns demo data;
+        when False, calls the API.
+        """
+        # Prevent duplicate loads
+        async with self:
+            if self._data_loaded:
+                logger.debug("load_admin_checkins: Data already loaded, skipping")
+                return
+            self.is_loading = True
+
+        logger.info("load_admin_checkins: Starting")
+
+        try:
+            # Fetch data using extracted function (respects IS_DEMO config)
+            checkins = await fetch_all_checkins()
+
+            async with self:
+                self.all_checkins = checkins
+                self.is_loading = False
+                self._data_loaded = True
+
+            logger.info("load_admin_checkins: Complete (%d checkins)", len(checkins))
+        except Exception as e:
+            logger.error("load_admin_checkins: Failed - %s", e)
+            async with self:
+                self.is_loading = False
+
+    # =========================================================================
     # Sync Call Logs
     # =========================================================================
 
     @rx.event(background=True)
     async def sync_call_logs_to_admin(self):
-        """Sync call logs from PatientState to admin view."""
+        """Sync call logs from PatientState to admin view.
+
+        Also loads demo data if not already loaded.
+        """
         print("[DEBUG] sync_call_logs_to_admin ENTERED", flush=True)
         logger.info("sync_call_logs_to_admin: Starting sync (background)")
+
+        # Load demo data if not already loaded
+        async with self:
+            if not self._data_loaded:
+                self.is_loading = True
+
+        if not self._data_loaded:
+            try:
+                checkins = await fetch_all_checkins()
+                async with self:
+                    self.all_checkins = checkins
+                    self._data_loaded = True
+                logger.info(
+                    "sync_call_logs_to_admin: Loaded %d demo checkins", len(checkins)
+                )
+            except Exception as e:
+                logger.error(
+                    "sync_call_logs_to_admin: Failed to load demo data - %s", e
+                )
 
         # Small delay to allow UI to render
         await asyncio.sleep(1)
@@ -86,6 +153,7 @@ class AdminCheckinsState(rx.State):
         # Get existing IDs
         async with self:
             existing_ids = {c["id"] for c in self.call_log_checkins}
+            self.is_loading = False
 
         # Transform call logs to admin check-ins
         new_checkins = []

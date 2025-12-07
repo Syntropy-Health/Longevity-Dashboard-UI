@@ -81,9 +81,9 @@ config = rx.Config(
         rx.plugins.TailwindV4Plugin(),
     ],
     # Deployment URLs - Reflex auto-reads REFLEX_API_URL and REFLEX_DEPLOY_URL
-    # We explicitly set them here for clarity and CORS configuration
-    api_url=backend_url if backend_url else None,
-    deploy_url=frontend_url if frontend_url else None,
+    # Only set api_url/deploy_url if they have values, otherwise let Reflex use defaults
+    **({"api_url": backend_url} if backend_url else {}),
+    **({"deploy_url": frontend_url} if frontend_url else {}),
     # Database - use REFLEX_DB_URL (Railway sets this from Postgres service)
     db_url=os.getenv("REFLEX_DB_URL", "sqlite:///reflex.db"),
     # Additional frontend packages

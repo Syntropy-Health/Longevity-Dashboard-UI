@@ -1,12 +1,14 @@
 """Admin check-in functions.
 
 Functions for processing and managing admin check-in data.
+When is_demo=True, returns demo data. Otherwise calls the API.
 """
 
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from ....config import get_logger
+from ....config import get_logger, current_config
+from ....data.demo import DEMO_ADMIN_CHECKINS
 
 logger = get_logger("longevity_clinic.admin_functions")
 
@@ -99,7 +101,9 @@ def transform_call_log_to_admin_checkin(
     """
     phone = summary.get("patient_phone", "")
     name = get_patient_name_from_phone(phone)
-    ai_summary = summary.get("ai_summary", "<AI Summary Not Available>") or summary.get("summary", "")
+    ai_summary = summary.get("ai_summary", "<AI Summary Not Available>") or summary.get(
+        "summary", ""
+    )
     topics = extract_health_topics(ai_summary)
 
     return {
@@ -122,20 +126,37 @@ def transform_call_log_to_admin_checkin(
 async def fetch_all_checkins(
     status_filter: Optional[str] = None,
     limit: int = 100,
+    is_demo: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch all check-ins for admin view.
 
     Args:
         status_filter: Filter by status ('pending', 'reviewed', 'flagged')
         limit: Maximum number of check-ins to return
+        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         List of admin check-in records
     """
-    logger.info("Fetching admin checkins (status=%s, limit=%d)", status_filter, limit)
+    if is_demo is None:
+        is_demo = current_config.is_demo
+
+    logger.info(
+        "Fetching admin checkins (status=%s, limit=%d, demo=%s)",
+        status_filter,
+        limit,
+        is_demo,
+    )
+
+    if is_demo:
+        logger.debug("fetch_all_checkins: Returning demo data")
+        checkins = DEMO_ADMIN_CHECKINS[:limit]
+        if status_filter:
+            checkins = [c for c in checkins if c.get("status") == status_filter]
+        return checkins
 
     # TODO: Implement API call
-    logger.debug("fetch_all_checkins: Using demo data (API not implemented)")
+    logger.warning("fetch_all_checkins: API not implemented, returning empty list")
     return []
 
 

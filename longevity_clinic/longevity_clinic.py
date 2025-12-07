@@ -9,7 +9,6 @@ from .app.pages.notifications import notifications_page
 from .app.pages.appointments import appointments_page
 from .app.states.patient_biomarker_state import PatientBiomarkerState
 from .app.states.patient_dashboard_state import PatientDashboardState
-from .app.states.patient_checkin_state import PatientCheckinState
 
 app = rx.App(
     theme=rx.theme(appearance="light"),

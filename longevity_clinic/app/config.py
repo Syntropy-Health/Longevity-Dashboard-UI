@@ -1,7 +1,6 @@
 import os
 import logging
 from typing import Literal
-from pathlib import Path
 
 from pydantic import BaseModel, computed_field
 
@@ -51,13 +50,17 @@ app_logger = get_logger("longevity_clinic")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 CALL_API_TOKEN = os.getenv("CALL_API_TOKEN", "")
 
-# Validate required API keys on startup
-if not OPENAI_API_KEY:
+# Demo mode - when True, states use demo data instead of API calls
+# Default to True for development
+IS_DEMO = os.getenv("IS_DEMO", "true").lower() in ("true", "1", "yes")
+
+# Validate required API keys on startup (only warn if not in demo mode)
+if not OPENAI_API_KEY and not IS_DEMO:
     print(
         "WARNING: OPENAI_API_KEY not set. Voice transcription and AI features will not work."
     )
 
-if not CALL_API_TOKEN:
+if not CALL_API_TOKEN and not IS_DEMO:
     print("WARNING: CALL_API_TOKEN not set. Call log fetching will not work.")
 
 
@@ -98,6 +101,9 @@ class AppConfig(BaseModel):
     admin_role_name: str = os.getenv("ADMIN_ROLE_NAME", "Administrator")
     patient_role_name: str = os.getenv("PATIENT_ROLE_NAME", "Patient")
     theme_color: str = os.getenv("THEME_COLOR", "emerald")
+
+    # Demo mode - uses static demo data instead of API calls
+    is_demo: bool = IS_DEMO
 
     # API Configuration
     openai_api_key: str = OPENAI_API_KEY

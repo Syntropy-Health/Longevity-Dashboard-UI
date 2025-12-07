@@ -41,5 +41,9 @@ app.add_page(settings_page, route="/patient/settings")
 app.add_page(treatments_page, route="/admin/treatments")
 app.add_page(analytics_page, route="/patient/analytics")
 app.add_page(treatment_search_page, route="/patient/treatment-search")
-app.add_page(notifications_page, route="/notifications", title="Notifications - Longevity Clinic")
-app.add_page(appointments_page, route="/appointments", title="Appointments | Longevity Clinic")
+app.add_page(
+    notifications_page, route="/notifications", title="Notifications - Longevity Clinic"
+)
+app.add_page(
+    appointments_page, route="/appointments", title="Appointments | Longevity Clinic"
+)

@@ -39,10 +39,20 @@ from .dashboard import (
     fetch_conditions,
     fetch_symptoms,
     fetch_data_sources,
+    fetch_food_entries,
+    fetch_reminders,
+    load_all_dashboard_data,
     sync_data_source,
     calculate_medication_adherence,
     categorize_conditions,
     calculate_symptom_trends,
+)
+from .patients import (
+    fetch_patients,
+    fetch_trend_data,
+    fetch_treatment_data,
+    fetch_biomarker_analytics_data,
+    load_all_patient_data,
 )
 
 # Re-export fetch_call_logs from utils for convenience
@@ -86,8 +96,17 @@ __all__ = [
     "fetch_conditions",
     "fetch_symptoms",
     "fetch_data_sources",
+    "fetch_food_entries",
+    "fetch_reminders",
+    "load_all_dashboard_data",
     "sync_data_source",
     "calculate_medication_adherence",
     "categorize_conditions",
     "calculate_symptom_trends",
+    # Patients
+    "fetch_patients",
+    "fetch_trend_data",
+    "fetch_treatment_data",
+    "fetch_biomarker_analytics_data",
+    "load_all_patient_data",
 ]

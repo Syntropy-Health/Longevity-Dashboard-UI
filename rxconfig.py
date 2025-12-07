@@ -79,8 +79,8 @@ config = rx.Config(
         rx.plugins.SitemapPlugin(),
         rx.plugins.TailwindV4Plugin(),
     ],
-    # Database - Railway provides DATABASE_URL, we also check DB_URL
-    db_url=os.getenv("DB_URL", os.getenv("DATABASE_URL", "dev.db")),
+    # Database - use REFLEX_DB_URL (Railway sets this from Postgres service)
+    db_url=os.getenv("REFLEX_DB_URL", "dev.db"),
     # Additional frontend packages
     frontend_packages=["react-icons"],
     show_built_with_reflex=False,

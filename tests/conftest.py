@@ -30,11 +30,8 @@ except ImportError:
 def db_url():
     """Get the database URL from environment."""
     return os.getenv(
-        "DB_URL",
-        os.getenv(
-            "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost:5432/longevity_clinic",
-        ),
+        "REFLEX_DB_URL",
+        "postgresql://postgres:postgres@localhost:5432/longevity_clinic",
     )
 
 

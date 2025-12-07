@@ -15,7 +15,7 @@ export APP_ENV_VARS="APP_NAME CLINIC_NAME ADMIN_ROLE_NAME PATIENT_ROLE_NAME THEM
 
 # === LOAD ENVIRONMENT ===
 echo "Loading environment..."
-load_env() { [ -f "$1" ] && { set -a; source "$1"; set +a; echo "  ✓ $1"; }; }
+load_env() { [ -f "$1" ] && { set -a; source "$1"; set +a; echo "  ✓ $1"; } || true; }
 
 # Determine env file based on target
 [ "$RAILWAY_ENVIRONMENT" = "prod" ] || [ "$RAILWAY_ENVIRONMENT" = "production" ] && export APP_ENV="prod" || export APP_ENV="dev"

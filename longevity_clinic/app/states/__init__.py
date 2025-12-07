@@ -1,3 +1,15 @@
+"""State modules for the Longevity Clinic application.
+
+This package contains Reflex state classes organized by functionality:
+- Patient states: Dashboard, biomarkers, check-ins, analytics
+- Admin states: Check-in management
+- Shared states: Auth, voice transcription
+- Treatment states: Search, management
+
+Functions are extracted to the functions/ subpackage for better
+separation of concerns and testability.
+"""
+
 from .auth_state import AuthState
 from .patient_state import PatientState
 from .patient_biomarker_state import PatientBiomarkerState
@@ -13,21 +25,29 @@ from .voice_transcription_state import (
     audio_capture,
     voice_recorder_component,
 )
-from .admin_checkins_state import AdminCheckinsState
+
+# Admin states - use refactored version from admin/
+from .admin.checkins_state import AdminCheckinsState
 
 __all__ = [
+    # Auth
     "AuthState",
+    # Patient states
     "PatientState",
     "PatientBiomarkerState",
     "PatientAnalyticsState",
-    "TreatmentState",
-    "TreatmentSearchState",
     "PatientDashboardState",
     "PatientCheckinState",
+    # Treatment states
+    "TreatmentState",
+    "TreatmentSearchState",
+    # Notification & Appointment
     "NotificationState",
     "AppointmentState",
+    # Voice
     "VoiceTranscriptionState",
     "audio_capture",
     "voice_recorder_component",
+    # Admin
     "AdminCheckinsState",
 ]

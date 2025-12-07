@@ -31,6 +31,60 @@ def get_patient_name(phone: str) -> str:
     return PHONE_TO_PATIENT_NAME.get(phone, "Unknown Patient")
 
 
+def _get_best_summary(api_summary: str, full_transcript: str) -> str:
+    """Determine the best summary text from API summary or transcript.
+    
+    Priority:
+    1. API summary if present and meaningful (>20 chars, not just AI greeting)
+    2. Extract user content from transcript if meaningful
+    3. Fallback placeholder for short/incomplete calls
+    
+    Args:
+        api_summary: Summary from API (may be empty)
+        full_transcript: Full transcript text
+        
+    Returns:
+        Best summary string to display
+    """
+    # 1. Use API summary if meaningful
+    if api_summary and len(api_summary.strip()) > 20:
+        return api_summary.strip()
+    
+    # 2. Try to extract meaningful content from transcript
+    if full_transcript:
+        transcript = full_transcript.strip()
+        
+        # Extract user portions from transcript (look for "User:" lines)
+        user_lines = []
+        for line in transcript.split('\n'):
+            line = line.strip()
+            if line.lower().startswith('user:'):
+                user_content = line[5:].strip()  # Remove "User:" prefix
+                if user_content:
+                    user_lines.append(user_content)
+        
+        # If we have user content, use that
+        if user_lines:
+            user_summary = ' '.join(user_lines)
+            if len(user_summary) > 200:
+                return user_summary[:200] + "..."
+            return user_summary
+        
+        # If no user content extracted, check if transcript is meaningful
+        # (not just AI greeting)
+        if len(transcript) > 100 and not transcript.lower().startswith('ai:'):
+            if len(transcript) > 300:
+                return transcript[:300] + "..."
+            return transcript
+        
+        # Short transcript - likely incomplete/cutoff call
+        if len(transcript) < 100:
+            return "Brief call - conversation incomplete"
+    
+    # 3. Fallback
+    return "Voice call check-in"
+
+
 async def summarize_transcript(
     full_transcript: str,
     call_id: str = "",
@@ -106,7 +160,7 @@ async def process_call_logs(
         else:
             patient_phone = raw_phone
 
-        api_summary = log.get("summary", "")
+        api_summary = log.get("summary", "") or ""  # Ensure string, not None
 
         if use_llm_summary:
             checkin_model = await summarize_transcript(
@@ -117,15 +171,12 @@ async def process_call_logs(
         else:
             patient_name = get_patient_name(patient_phone)
             timestamp_text = format_timestamp(call_date)
-            summary_text = (
-                api_summary
-                or (
-                    full_transcript[:500] + "..."
-                    if len(full_transcript) > 500
-                    else full_transcript
-                )
-                or "Voice call check-in"
-            )
+            
+            # Determine the best summary to use:
+            # 1. Prefer API summary if it exists and is meaningful
+            # 2. Fall back to transcript extract if no summary
+            # 3. Use placeholder for very short/meaningless calls
+            summary_text = _get_best_summary(api_summary, full_transcript)
             ai_summary_text = summary_text
 
             checkin_model = CheckInModel(

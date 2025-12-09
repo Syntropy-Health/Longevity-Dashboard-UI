@@ -1,14 +1,8 @@
 import reflex as rx
 import asyncio
-from typing import TypedDict, Optional
+from typing import Optional
 
-
-class User(TypedDict):
-    id: str
-    username: str
-    email: str
-    role: str
-    full_name: str
+from ...data.state_schemas import User
 
 
 class AuthState(rx.State):
@@ -68,6 +62,12 @@ class AuthState(rx.State):
         return rx.redirect("/")
 
     @rx.event
+    def check_auth(self):
+        """Check if user is authenticated and redirect to login if not."""
+        if not self.is_authenticated:
+            return rx.redirect("/login")
+
+    @rx.event
     async def register(self, form_data: dict):
         self.is_loading = True
         self.register_error = ""
@@ -87,6 +87,13 @@ class AuthState(rx.State):
         return self.user["full_name"][:2].upper()
 
     @rx.var
+    def user_first_name(self) -> str:
+        if not self.user:
+            return "Guest"
+        name_parts = self.user["full_name"].split(" ")
+        return name_parts[0] if name_parts else "Guest"
+
+    @rx.var
     def is_admin(self) -> bool:
         return self.user is not None and self.user["role"] in ["admin", "staff"]
 
@@ -95,3 +102,10 @@ class AuthState(rx.State):
         if not self.user:
             return ""
         return self.user["role"].capitalize()
+
+    @rx.var
+    def user_full_name(self) -> str:
+        """Get user's full name safely."""
+        if not self.user:
+            return ""
+        return self.user.get("full_name", "")

@@ -1,6 +1,6 @@
 import reflex as rx
 
-from ..data import BiomarkerCategory, get_biomarker_panels
+from ...data import BiomarkerCategory, get_biomarker_panels
 
 
 class PatientAnalyticsState(rx.State):

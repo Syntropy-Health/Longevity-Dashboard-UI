@@ -1,9 +1,20 @@
+"""Auth page main entry point.
+
+This module contains the login form and auth page components.
+"""
+
 import reflex as rx
-from ..states.auth_state import AuthState
-from ..styles.constants import GlassStyles
+
+from ...states import AuthState
+from ...styles.constants import GlassStyles
 
 
 def login_form() -> rx.Component:
+    """Login form component with username/password fields.
+
+    Returns:
+        The styled login form component
+    """
     return rx.el.div(
         rx.el.div(
             rx.icon(
@@ -112,4 +123,9 @@ def login_form() -> rx.Component:
 
 
 def auth_page() -> rx.Component:
+    """Auth page component.
+
+    Returns:
+        The login form page
+    """
     return login_form()

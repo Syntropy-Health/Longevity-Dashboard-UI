@@ -1,9 +1,9 @@
+"""Patient analytics reusable components."""
+
 import reflex as rx
-from ..components.layout import authenticated_layout
-from ..states.patient_analytics_state import PatientAnalyticsState
-from ..data import BiomarkerCategory, BiomarkerMetric
-from ..components.charts import TOOLTIP_PROPS
-from ..styles.constants import GlassStyles
+from ...data import BiomarkerCategory, BiomarkerMetric
+from ...components.charts import TOOLTIP_PROPS
+from ...styles.constants import GlassStyles
 
 
 def trend_chart(data: list[dict], color: str) -> rx.Component:
@@ -117,33 +117,4 @@ def category_section(category: BiomarkerCategory) -> rx.Component:
             class_name="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6",
         ),
         class_name="mb-12",
-    )
-
-
-def analytics_page() -> rx.Component:
-    """Patient biomarker analytics page."""
-    return authenticated_layout(
-        rx.el.div(
-            rx.el.div(
-                rx.el.div(
-                    rx.el.h1(
-                        "Biomarker Analytics",
-                        class_name=f"text-4xl {GlassStyles.HEADING}",
-                    ),
-                    rx.el.p(
-                        "Comprehensive health intelligence report",
-                        class_name=f"{GlassStyles.SUBHEADING} mt-2 text-lg",
-                    ),
-                ),
-                rx.el.button(
-                    rx.icon("download", class_name="w-4 h-4 mr-2"),
-                    "Export Report",
-                    on_click=PatientAnalyticsState.export_report,
-                    class_name=f"{GlassStyles.BUTTON_SECONDARY} flex items-center",
-                ),
-                class_name="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-16 gap-4",
-            ),
-            rx.foreach(PatientAnalyticsState.biomarker_panels, category_section),
-            class_name="max-w-7xl mx-auto pb-20",
-        )
     )

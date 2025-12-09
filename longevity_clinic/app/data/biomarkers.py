@@ -80,7 +80,9 @@ class BiomarkerTrend(StrEnum):
 
 
 BIOMARKER_CATEGORIES: Final[list[str]] = _enum_values(BiomarkerCategoryEnum)
-BIOMARKER_SIMPLE_CATEGORIES: Final[list[str]] = _enum_values(BiomarkerSimpleCategoryEnum)
+BIOMARKER_SIMPLE_CATEGORIES: Final[list[str]] = _enum_values(
+    BiomarkerSimpleCategoryEnum
+)
 BIOMARKER_STATUSES: Final[list[str]] = _enum_values(BiomarkerStatus)
 BIOMARKER_TRENDS: Final[list[str]] = _enum_values(BiomarkerTrend)
 
@@ -98,6 +100,7 @@ class BiomarkerMetricSeed(TypedDict):
 
 class BiomarkerMetric(TypedDict):
     """Type definition for a single biomarker metric."""
+
     name: str
     value: float
     unit: str
@@ -108,11 +111,14 @@ class BiomarkerMetric(TypedDict):
 
 class BiomarkerCategory(TypedDict):
     """Type definition for a biomarker category panel."""
+
     category: str
     metrics: list[BiomarkerMetric]
 
 
-_METRIC_TABLE_CACHE: dict[BiomarkerCategoryEnum, list[BiomarkerMetricSeed]] | None = None
+_METRIC_TABLE_CACHE: dict[BiomarkerCategoryEnum, list[BiomarkerMetricSeed]] | None = (
+    None
+)
 
 
 def _metric_seed_table() -> dict[BiomarkerCategoryEnum, list[BiomarkerMetricSeed]]:

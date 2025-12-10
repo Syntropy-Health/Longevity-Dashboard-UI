@@ -89,36 +89,36 @@ class Medication(BaseModel):
     adherence_rate: float = Field(default=1.0, description="Adherence rate 0-1")
 
 
-class Condition(TypedDict):
-    """Health condition type."""
+class Condition(BaseModel):
+    """Health condition - Pydantic model for LLM output and state storage."""
 
-    id: str
-    name: str
-    icd_code: str
-    diagnosed_date: str
-    status: str
-    severity: str
-    treatments: str
-
-
-class Symptom(TypedDict):
-    """Symptom type."""
-
-    id: str
-    name: str
-    severity: str
-    frequency: str
-    trend: str
+    id: str = Field(default="", description="Unique identifier")
+    name: str = Field(default="", description="Condition name")
+    icd_code: str = Field(default="", description="ICD diagnosis code")
+    diagnosed_date: str = Field(default="", description="Date diagnosed")
+    status: str = Field(default="active", description="active/managed/resolved")
+    severity: str = Field(default="", description="Severity level")
+    treatments: str = Field(default="", description="Current treatments")
 
 
-class SymptomLog(TypedDict):
-    """Symptom log entry type."""
+class Symptom(BaseModel):
+    """Symptom - Pydantic model for LLM output and state storage."""
 
-    id: str
-    symptom_name: str
-    severity: int
-    notes: str
-    timestamp: str
+    id: str = Field(default="", description="Unique identifier")
+    name: str = Field(default="", description="Symptom name")
+    severity: str = Field(default="", description="Severity level")
+    frequency: str = Field(default="", description="Frequency of occurrence")
+    trend: str = Field(default="", description="Trend direction")
+
+
+class SymptomLog(BaseModel):
+    """Symptom log entry - Pydantic model for LLM output and state storage."""
+
+    id: str = Field(default="", description="Unique identifier")
+    symptom_name: str = Field(default="", description="Symptom name")
+    severity: int = Field(default=0, description="Severity rating 0-10")
+    notes: str = Field(default="", description="Additional notes")
+    timestamp: str = Field(default="", description="Log timestamp")
 
 
 class Reminder(TypedDict):
@@ -132,29 +132,29 @@ class Reminder(TypedDict):
     completed: bool
 
 
-class SymptomTrend(TypedDict):
-    """Symptom trend data type."""
+class SymptomTrend(BaseModel):
+    """Symptom trend - Pydantic model for LLM output and state storage."""
 
-    id: str
-    symptom_name: str
-    current_severity: int
-    previous_severity: int
-    trend: str  # improving, worsening, stable
-    change_percent: float
-    period: str
+    id: str = Field(default="", description="Unique identifier")
+    symptom_name: str = Field(default="", description="Symptom name")
+    current_severity: int = Field(default=0, description="Current severity 0-10")
+    previous_severity: int = Field(default=0, description="Previous severity 0-10")
+    trend: str = Field(default="stable", description="improving/worsening/stable")
+    change_percent: float = Field(default=0.0, description="Percent change")
+    period: str = Field(default="", description="Time period")
 
 
-class DataSource(TypedDict):
-    """Data source type."""
+class DataSource(BaseModel):
+    """Data source - Pydantic model for LLM output and state storage."""
 
-    id: str
-    name: str
-    type: str
-    status: str
-    icon: str
-    image: str
-    last_sync: str
-    connected: bool
+    id: str = Field(default="", description="Unique identifier")
+    name: str = Field(default="", description="Data source name")
+    type: str = Field(default="", description="wearable/scale/cgm/app/ehr")
+    status: str = Field(default="disconnected", description="connected/disconnected")
+    icon: str = Field(default="", description="Icon name")
+    image: str = Field(default="", description="Image URL")
+    last_sync: str = Field(default="", description="Last sync time")
+    connected: bool = Field(default=False, description="Connection status")
 
 
 class CheckIn(TypedDict):

@@ -112,6 +112,12 @@ class AppConfig(BaseModel):
         "https://directus-staging-ee94.up.railway.app/items/call_logs"
     )
 
+    # VlogsAgent Configuration
+    vlogs_parse_with_llm: bool = True
+    vlogs_llm_model: str = "gpt-4o-mini"
+    vlogs_temperature: float = 0.3
+    vlogs_fetch_limit: int = 50
+
     # Glass UI Styles
     glass_bg_gradient: str = "bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-blue-50/30 via-white to-emerald-50/30"
     glass_panel_style: str = "bg-white/60 backdrop-blur-3xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] hover:bg-white/80 transition-all duration-500"

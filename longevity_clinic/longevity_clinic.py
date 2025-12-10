@@ -9,7 +9,7 @@ from .app.pages.notifications import notifications_page
 from .app.pages.appointments import appointments_page
 
 # Import states
-from .app.states import PatientBiomarkerState, PatientDashboardState
+from .app.states import PatientBiomarkerState, HealthDashboardState
 from .app.states.checkins import CheckinState
 
 app = rx.App(
@@ -33,7 +33,7 @@ app.add_page(
     route="/patient/checkins",
     on_load=[
         PatientBiomarkerState.load_biomarkers,
-        PatientDashboardState.load_dashboard_data,
+        HealthDashboardState.load_dashboard_data,
         CheckinState.refresh_call_logs,
     ],
 )

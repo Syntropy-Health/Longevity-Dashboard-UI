@@ -13,8 +13,8 @@ from .utils import (
     format_timestamp,
     extract_topics_from_summary,
     fetch_call_logs,
-    fetch_and_process_call_logs,
 )
+from .vlogs_agent import VlogsAgent, VlogsConfig
 from .patients import (
     # Call logs
     summarize_transcript,
@@ -55,7 +55,9 @@ __all__ = [
     "format_timestamp",
     "extract_topics_from_summary",
     "fetch_call_logs",
-    "fetch_and_process_call_logs",
+    # VlogsAgent
+    "VlogsAgent",
+    "VlogsConfig",
     # Patient: Call logs
     "summarize_transcript",
     "process_call_logs",

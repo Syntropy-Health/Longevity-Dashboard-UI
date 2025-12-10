@@ -7,7 +7,7 @@ import httpx
 
 from ...config import current_config, get_logger
 from ...data.api_schemas import CallLogsQueryParams, CallLogsAPIConfig
-from ...data.state_schemas import CallLogEntry, TranscriptSummary
+from ...data.state_schemas import CallLogEntry
 
 logger = get_logger("longevity_clinic.functions")
 
@@ -75,33 +75,3 @@ async def fetch_call_logs(
         call_logs = data.get("data", [])
         logger.info("Fetched %d call logs", len(call_logs))
         return call_logs
-
-
-async def fetch_and_process_call_logs(
-    phone_number: Optional[str] = None,
-    processed_ids: Optional[set[str]] = None,
-    use_llm_summary: bool = False,
-    limit: int = 50,
-) -> tuple[int, list[dict], dict[str, TranscriptSummary]]:
-    """Fetch call logs from API and process them into checkins/summaries.
-
-    Combined function for fetching and processing call logs in one call.
-
-    Args:
-        phone_number: Filter by phone (None = all logs)
-        processed_ids: Set of call_ids already processed (skip these)
-        use_llm_summary: Use LLM for AI summary (slower but richer)
-        limit: Max records to fetch
-
-    Returns:
-        Tuple of (new_logs_count, new_checkins, new_summaries)
-    """
-    from .patients.call_logs import process_call_logs
-
-    processed_ids = processed_ids or set()
-
-    # Fetch from API
-    call_logs = await fetch_call_logs(phone_number=phone_number, limit=limit)
-
-    # Process into checkins/summaries
-    return await process_call_logs(call_logs, processed_ids, use_llm_summary)

@@ -1,16 +1,22 @@
 """Patient state modules.
 
 This package contains Reflex state classes for patient functionality.
+State classes use simplified names (removing 'Patient' prefix where possible).
 """
 
-from .patient_state import PatientState
-from .patient_biomarker_state import PatientBiomarkerState
-from .patient_analytics_state import PatientAnalyticsState
-from .patient_dashboard_state import PatientDashboardState
+from .state import PatientState
+from .biomarker_state import PatientBiomarkerState
+from .analytics_state import PatientAnalyticsState
+
+# Aliases for cleaner imports (backwards compatible)
+BiomarkerState = PatientBiomarkerState
+AnalyticsState = PatientAnalyticsState
 
 __all__ = [
     "PatientState",
     "PatientBiomarkerState",
     "PatientAnalyticsState",
-    "PatientDashboardState",
+    # Aliases
+    "BiomarkerState",
+    "AnalyticsState",
 ]

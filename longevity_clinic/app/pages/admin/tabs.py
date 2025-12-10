@@ -2,12 +2,20 @@
 
 import reflex as rx
 from ...styles import GlassStyles
+from ...states import AdminDashboardState, HealthDashboardState
 from ...components.charts import (
     overview_trend_chart,
     treatment_distribution_chart,
     biomarker_improvement_chart,
     daily_patient_flow_chart,
     room_utilization_chart,
+)
+from ...components.shared import (
+    search_input,
+    patient_select_item,
+    loading_spinner,
+    empty_state,
+    health_metrics_dashboard,
 )
 from .components import (
     stat_card,
@@ -207,4 +215,115 @@ def efficiency_tab() -> rx.Component:
             ),
             class_name="grid grid-cols-1 lg:grid-cols-2 gap-6",
         ),
+    )
+
+
+def patient_search_dropdown() -> rx.Component:
+    """Patient search dropdown for selecting a patient to view."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.label(
+                "Select Patient",
+                class_name="text-sm font-medium text-slate-300 mb-2 block",
+            ),
+            search_input(
+                placeholder="Search patients by name or email...",
+                value=AdminDashboardState.patient_search_query,
+                on_change=AdminDashboardState.set_patient_search_query,
+            ),
+            class_name="mb-4",
+        ),
+        # Dropdown results
+        rx.cond(
+            AdminDashboardState.patient_search_query != "",
+            rx.el.div(
+                rx.foreach(
+                    AdminDashboardState.filtered_patients,
+                    lambda patient: patient_select_item(
+                        patient,
+                        on_click=lambda p=patient: [
+                            AdminDashboardState.select_patient(p),
+                            HealthDashboardState.load_patient_health_data(p["id"]),
+                        ],
+                    ),
+                ),
+                class_name=f"{GlassStyles.PANEL} mt-2 max-h-60 overflow-y-auto",
+            ),
+        ),
+        class_name="w-full max-w-md",
+    )
+
+
+def selected_patient_header() -> rx.Component:
+    """Header showing selected patient info."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.el.span(
+                    AdminDashboardState.selected_patient["full_name"][0],
+                    class_name="text-lg font-bold text-teal-300",
+                ),
+                class_name="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center mr-4 border border-teal-500/30",
+            ),
+            rx.el.div(
+                rx.el.h3(
+                    AdminDashboardState.selected_patient["full_name"],
+                    class_name="text-lg font-semibold text-white",
+                ),
+                rx.el.p(
+                    AdminDashboardState.selected_patient["email"],
+                    class_name="text-sm text-slate-400",
+                ),
+            ),
+            class_name="flex items-center",
+        ),
+        rx.el.button(
+            rx.icon("x", class_name="w-4 h-4"),
+            "Clear Selection",
+            on_click=[
+                AdminDashboardState.clear_selected_patient,
+                HealthDashboardState.clear_patient_health_data,
+            ],
+            class_name="px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg flex items-center gap-2 transition-all",
+        ),
+        class_name="flex items-center justify-between p-4 bg-slate-800/30 rounded-xl border border-slate-700/50 mb-6",
+    )
+
+
+def patient_health_tab() -> rx.Component:
+    """Patient health tab for admin to view patient metrics."""
+    return rx.el.div(
+        # Header
+        rx.el.div(
+            rx.el.h2(
+                "Patient Health Dashboard",
+                class_name="text-xl font-bold text-white mb-2",
+            ),
+            rx.el.p(
+                "Search and select a patient to view their health metrics.",
+                class_name="text-slate-400 text-sm",
+            ),
+            class_name="mb-6",
+        ),
+        # Patient selection or health data
+        rx.cond(
+            AdminDashboardState.has_selected_patient,
+            rx.fragment(
+                selected_patient_header(),
+                rx.cond(
+                    HealthDashboardState.is_loading,
+                    loading_spinner("Loading patient data..."),
+                    # Use the shared health metrics dashboard
+                    health_metrics_dashboard(),
+                ),
+            ),
+            rx.el.div(
+                patient_search_dropdown(),
+                empty_state(
+                    icon="user-search",
+                    message="Select a patient to view their health data",
+                ),
+            ),
+        ),
+        on_mount=AdminDashboardState.load_patients_for_selection,
     )

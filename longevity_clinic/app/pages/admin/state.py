@@ -1,13 +1,10 @@
-"""Admin dashboard state management."""
+"""Admin dashboard state management.
 
-import reflex as rx
+This module re-exports AdminDashboardState from the shared states module.
+All admin dashboard state is now managed in:
+    longevity_clinic.app.states.shared.dashboard_state
+"""
 
+from ...states.shared.dashboard_state import AdminDashboardState
 
-class AdminDashboardState(rx.State):
-    """State for admin dashboard tab management."""
-
-    active_tab: str = "overview"
-
-    def set_tab(self, tab: str):
-        """Set the active tab."""
-        self.active_tab = tab
+__all__ = ["AdminDashboardState"]

@@ -177,6 +177,16 @@ def dashboard_tabs() -> rx.Component:
             ),
         ),
         rx.el.button(
+            rx.icon("heart-pulse", class_name="w-4 h-4 mr-2"),
+            "Patient Health",
+            on_click=lambda: AdminDashboardState.set_tab("patient_health"),
+            class_name=rx.cond(
+                AdminDashboardState.active_tab == "patient_health",
+                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center bg-teal-500/20 text-teal-300 border border-teal-500/30",
+                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent",
+            ),
+        ),
+        rx.el.button(
             rx.icon("gauge", class_name="w-4 h-4 mr-2"),
             "Clinical Efficiency",
             on_click=lambda: AdminDashboardState.set_tab("efficiency"),

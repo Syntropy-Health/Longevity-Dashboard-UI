@@ -39,7 +39,8 @@ uv run python -c "from longevity_clinic.app.states.patient_dashboard_state impor
 3. Check if `PatientDashboardState.checkins` is updated
 
 **Key Files**:
-- `states/functions/utils.py` - `fetch_call_logs`, `fetch_and_process_call_logs`
+- `states/functions/utils.py` - `fetch_call_logs`
+- `states/functions/vlogs_agent.py` - `VlogsAgent` class
 - `states/patient_checkin_state.py` - `refresh_call_logs`
 
 ### Page Redefinition Warnings

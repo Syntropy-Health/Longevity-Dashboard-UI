@@ -1,42 +1,45 @@
 """Data sources tab component for patient portal."""
 
 import reflex as rx
-from ....states import PatientDashboardState
+from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
+from ....data.state_schemas import DataSource
 
 
-def data_source_card(source: dict) -> rx.Component:
-    """Data source card with device image and connection toggle."""
+def data_source_card(source: DataSource) -> rx.Component:
+    """Data source card with device image and connection toggle.
+
+    Args:
+        source: DataSource instance from PatientDashboardState
+    """
     return rx.el.div(
         rx.el.div(
             # Device image/icon
             rx.el.div(
                 rx.el.img(
-                    src=source["image"],
+                    src=source.image,
                     class_name="w-10 h-10 object-contain",
                 ),
                 class_name=rx.cond(
-                    source["connected"],
+                    source.connected,
                     "w-14 h-14 rounded-xl bg-teal-500/10 flex items-center justify-center mr-4 border border-teal-500/20",
                     "w-14 h-14 rounded-xl bg-slate-500/10 flex items-center justify-center mr-4 border border-slate-500/20 opacity-60",
                 ),
             ),
             rx.el.div(
                 rx.el.h4(
-                    source["name"],
+                    source.name,
                     class_name=rx.cond(
-                        source["connected"],
+                        source.connected,
                         "text-base font-semibold text-white mb-1",
                         "text-base font-semibold text-slate-400 mb-1",
                     ),
                 ),
+                rx.el.p(source.type.capitalize(), class_name="text-xs text-slate-400"),
                 rx.el.p(
-                    source["type"].capitalize(), class_name="text-xs text-slate-400"
-                ),
-                rx.el.p(
-                    rx.fragment("Last sync: ", source["last_sync"]),
+                    rx.fragment("Last sync: ", source.last_sync),
                     class_name=rx.cond(
-                        source["connected"],
+                        source.connected,
                         "text-xs text-slate-400 mt-1",
                         "text-xs text-slate-500 mt-1",
                     ),
@@ -50,26 +53,26 @@ def data_source_card(source: dict) -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         class_name=rx.cond(
-                            source["connected"],
+                            source.connected,
                             "w-5 h-5 bg-white rounded-full shadow-md transform translate-x-6 transition-transform duration-200",
                             "w-5 h-5 bg-slate-300 rounded-full shadow-md transform translate-x-0 transition-transform duration-200",
                         ),
                     ),
                     class_name=rx.cond(
-                        source["connected"],
+                        source.connected,
                         "w-12 h-6 bg-teal-500 rounded-full p-0.5 flex items-center transition-colors duration-200",
                         "w-12 h-6 bg-slate-600 rounded-full p-0.5 flex items-center transition-colors duration-200",
                     ),
                 ),
-                on_click=lambda: PatientDashboardState.toggle_data_source_connection(
-                    source["id"]
+                on_click=lambda: HealthDashboardState.toggle_data_source_connection(
+                    source.id
                 ),
                 class_name="focus:outline-none",
             ),
             rx.el.span(
-                rx.cond(source["connected"], "Connected", "Disconnected"),
+                rx.cond(source.connected, "Connected", "Disconnected"),
                 class_name=rx.cond(
-                    source["connected"],
+                    source.connected,
                     "text-xs text-teal-400 mt-2",
                     "text-xs text-slate-500 mt-2",
                 ),
@@ -77,7 +80,7 @@ def data_source_card(source: dict) -> rx.Component:
             class_name="flex flex-col items-center",
         ),
         class_name=rx.cond(
-            source["connected"],
+            source.connected,
             f"{GlassStyles.CARD_INTERACTIVE} flex justify-between items-center",
             "group relative overflow-hidden rounded-2xl p-6 bg-white/3 border border-white/5 backdrop-blur-md transition-all duration-300 flex justify-between items-center opacity-80",
         ),
@@ -173,33 +176,33 @@ def data_sources_tab() -> rx.Component:
         rx.el.div(
             rx.el.button(
                 "Devices & Wearables",
-                on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                on_click=lambda: HealthDashboardState.set_data_sources_filter(
                     "devices"
                 ),
                 class_name=rx.cond(
-                    PatientDashboardState.data_sources_filter == "devices",
+                    HealthDashboardState.data_sources_filter == "devices",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
             rx.el.button(
                 "API Connections",
-                on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                on_click=lambda: HealthDashboardState.set_data_sources_filter(
                     "api_connections"
                 ),
                 class_name=rx.cond(
-                    PatientDashboardState.data_sources_filter == "api_connections",
+                    HealthDashboardState.data_sources_filter == "api_connections",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
             rx.el.button(
                 "Import History",
-                on_click=lambda: PatientDashboardState.set_data_sources_filter(
+                on_click=lambda: HealthDashboardState.set_data_sources_filter(
                     "import_history"
                 ),
                 class_name=rx.cond(
-                    PatientDashboardState.data_sources_filter == "import_history",
+                    HealthDashboardState.data_sources_filter == "import_history",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
@@ -208,7 +211,7 @@ def data_sources_tab() -> rx.Component:
         ),
         # Content based on filter
         rx.cond(
-            PatientDashboardState.data_sources_filter == "import_history",
+            HealthDashboardState.data_sources_filter == "import_history",
             import_drop_zone(),
             rx.el.div(
                 # Summary Card
@@ -222,7 +225,7 @@ def data_sources_tab() -> rx.Component:
                         class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                     ),
                     rx.el.span(
-                        PatientDashboardState.connected_sources_count,
+                        HealthDashboardState.connected_sources_count,
                         class_name="text-3xl font-bold text-white",
                     ),
                     class_name=f"{GlassStyles.PANEL} p-5 mb-6",
@@ -230,7 +233,7 @@ def data_sources_tab() -> rx.Component:
                 # Sources List
                 rx.el.div(
                     rx.foreach(
-                        PatientDashboardState.filtered_data_sources, data_source_card
+                        HealthDashboardState.filtered_data_sources, data_source_card
                     ),
                     class_name="space-y-4",
                 ),
@@ -241,7 +244,7 @@ def data_sources_tab() -> rx.Component:
                     ),
                     rx.el.button(
                         "Suggest an integration",
-                        on_click=PatientDashboardState.open_suggest_integration_modal,
+                        on_click=HealthDashboardState.open_suggest_integration_modal,
                         class_name="text-teal-400 text-sm hover:text-teal-300 underline underline-offset-2 transition-colors",
                     ),
                     class_name="mt-6 text-center",

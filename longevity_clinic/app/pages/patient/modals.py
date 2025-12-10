@@ -1,7 +1,7 @@
 """Patient portal modal components."""
 
 import reflex as rx
-from ...states import PatientDashboardState, VoiceTranscriptionState, audio_capture
+from ...states import HealthDashboardState, VoiceTranscriptionState, audio_capture
 from ...states.checkins import CheckinState
 from ...styles.constants import GlassStyles
 
@@ -297,7 +297,7 @@ def medication_modal() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.radix.primitives.dialog.title(
-                            PatientDashboardState.selected_medication.get(
+                            HealthDashboardState.selected_medication.get(
                                 "name", "Medication"
                             ),
                             class_name="text-xl font-bold text-white",
@@ -318,7 +318,7 @@ def medication_modal() -> rx.Component:
                                 class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                             ),
                             rx.el.p(
-                                PatientDashboardState.selected_medication.get(
+                                HealthDashboardState.selected_medication.get(
                                     "dosage", "N/A"
                                 ),
                                 class_name="text-white font-medium",
@@ -331,7 +331,7 @@ def medication_modal() -> rx.Component:
                                 class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                             ),
                             rx.el.p(
-                                PatientDashboardState.selected_medication.get(
+                                HealthDashboardState.selected_medication.get(
                                     "frequency", "N/A"
                                 ),
                                 class_name="text-white font-medium",
@@ -344,7 +344,7 @@ def medication_modal() -> rx.Component:
                                 class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                             ),
                             rx.el.span(
-                                PatientDashboardState.selected_medication.get(
+                                HealthDashboardState.selected_medication.get(
                                     "status", "active"
                                 ),
                                 class_name="px-3 py-1 rounded-full text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20 capitalize",
@@ -358,7 +358,7 @@ def medication_modal() -> rx.Component:
                             ),
                             rx.el.div(
                                 rx.el.span(
-                                    f"{PatientDashboardState.selected_medication.get('adherence_rate', 0):.0f}%",
+                                    f"{HealthDashboardState.selected_medication.get('adherence_rate', 0):.0f}%",
                                     class_name="text-2xl font-bold text-teal-400",
                                 ),
                             ),
@@ -375,8 +375,8 @@ def medication_modal() -> rx.Component:
                         ),
                         rx.el.button(
                             "Log Dose",
-                            on_click=lambda: PatientDashboardState.log_dose(
-                                PatientDashboardState.selected_medication.get("id", "")
+                            on_click=lambda: HealthDashboardState.log_dose(
+                                HealthDashboardState.selected_medication.get("id", "")
                             ),
                             class_name=GlassStyles.BUTTON_PRIMARY,
                         ),
@@ -387,8 +387,8 @@ def medication_modal() -> rx.Component:
                 class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
             ),
         ),
-        open=PatientDashboardState.show_medication_modal,
-        on_open_change=PatientDashboardState.set_show_medication_modal,
+        open=HealthDashboardState.show_medication_modal,
+        on_open_change=HealthDashboardState.set_show_medication_modal,
     )
 
 
@@ -404,7 +404,7 @@ def condition_modal() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.radix.primitives.dialog.title(
-                            PatientDashboardState.selected_condition.get(
+                            HealthDashboardState.selected_condition.get(
                                 "name", "Condition"
                             ),
                             class_name="text-xl font-bold text-white",
@@ -425,7 +425,7 @@ def condition_modal() -> rx.Component:
                                 class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                             ),
                             rx.el.p(
-                                PatientDashboardState.selected_condition.get(
+                                HealthDashboardState.selected_condition.get(
                                     "icd_code", "N/A"
                                 ),
                                 class_name="text-white font-medium",
@@ -438,7 +438,7 @@ def condition_modal() -> rx.Component:
                                 class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                             ),
                             rx.el.p(
-                                PatientDashboardState.selected_condition.get(
+                                HealthDashboardState.selected_condition.get(
                                     "diagnosed_date", "N/A"
                                 ),
                                 class_name="text-white font-medium",
@@ -451,7 +451,7 @@ def condition_modal() -> rx.Component:
                                 class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                             ),
                             rx.el.p(
-                                PatientDashboardState.selected_condition.get(
+                                HealthDashboardState.selected_condition.get(
                                     "severity", "N/A"
                                 ),
                                 class_name="text-white font-medium capitalize",
@@ -464,7 +464,7 @@ def condition_modal() -> rx.Component:
                                 class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                             ),
                             rx.el.span(
-                                PatientDashboardState.selected_condition.get(
+                                HealthDashboardState.selected_condition.get(
                                     "status", "active"
                                 ),
                                 class_name="px-3 py-1 rounded-full text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20 capitalize",
@@ -479,7 +479,7 @@ def condition_modal() -> rx.Component:
                             class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
                         ),
                         rx.el.p(
-                            PatientDashboardState.selected_condition.get(
+                            HealthDashboardState.selected_condition.get(
                                 "treatments", "No treatments linked"
                             ),
                             class_name="text-sm text-slate-300",
@@ -501,8 +501,8 @@ def condition_modal() -> rx.Component:
                 class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
             ),
         ),
-        open=PatientDashboardState.show_condition_modal,
-        on_open_change=PatientDashboardState.set_show_condition_modal,
+        open=HealthDashboardState.show_condition_modal,
+        on_open_change=HealthDashboardState.set_show_condition_modal,
     )
 
 
@@ -518,7 +518,7 @@ def symptom_modal() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.radix.primitives.dialog.title(
-                            f"Log: {PatientDashboardState.selected_symptom.get('name', 'Symptom')}",
+                            f"Log: {HealthDashboardState.selected_symptom.get('name', 'Symptom')}",
                             class_name="text-xl font-bold text-white",
                         ),
                         rx.radix.primitives.dialog.close(
@@ -567,7 +567,7 @@ def symptom_modal() -> rx.Component:
                         ),
                         rx.el.button(
                             "Save Log",
-                            on_click=PatientDashboardState.save_symptom_log,
+                            on_click=HealthDashboardState.save_symptom_log,
                             class_name=GlassStyles.BUTTON_PRIMARY,
                         ),
                         class_name="flex justify-end gap-3",
@@ -577,8 +577,8 @@ def symptom_modal() -> rx.Component:
                 class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
             ),
         ),
-        open=PatientDashboardState.show_symptom_modal,
-        on_open_change=PatientDashboardState.set_show_symptom_modal,
+        open=HealthDashboardState.show_symptom_modal,
+        on_open_change=HealthDashboardState.set_show_symptom_modal,
     )
 
 
@@ -696,8 +696,8 @@ def connect_source_modal() -> rx.Component:
                 class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
             ),
         ),
-        open=PatientDashboardState.show_connect_modal,
-        on_open_change=PatientDashboardState.set_show_connect_modal,
+        open=HealthDashboardState.show_connect_modal,
+        on_open_change=HealthDashboardState.set_show_connect_modal,
     )
 
 
@@ -732,8 +732,8 @@ def add_food_modal() -> rx.Component:
                         ),
                         rx.el.input(
                             placeholder="e.g., Grilled Chicken Salad",
-                            value=PatientDashboardState.new_food_name,
-                            on_change=PatientDashboardState.set_new_food_name,
+                            value=HealthDashboardState.new_food_name,
+                            on_change=HealthDashboardState.set_new_food_name,
                             class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all",
                         ),
                         class_name="mb-4",
@@ -747,11 +747,11 @@ def add_food_modal() -> rx.Component:
                         rx.el.div(
                             rx.el.button(
                                 "Breakfast",
-                                on_click=lambda: PatientDashboardState.set_new_food_meal_type(
+                                on_click=lambda: HealthDashboardState.set_new_food_meal_type(
                                     "breakfast"
                                 ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.new_food_meal_type
+                                    HealthDashboardState.new_food_meal_type
                                     == "breakfast",
                                     "flex-1 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                     "flex-1 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10",
@@ -759,22 +759,22 @@ def add_food_modal() -> rx.Component:
                             ),
                             rx.el.button(
                                 "Lunch",
-                                on_click=lambda: PatientDashboardState.set_new_food_meal_type(
+                                on_click=lambda: HealthDashboardState.set_new_food_meal_type(
                                     "lunch"
                                 ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.new_food_meal_type == "lunch",
+                                    HealthDashboardState.new_food_meal_type == "lunch",
                                     "flex-1 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                     "flex-1 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10",
                                 ),
                             ),
                             rx.el.button(
                                 "Dinner",
-                                on_click=lambda: PatientDashboardState.set_new_food_meal_type(
+                                on_click=lambda: HealthDashboardState.set_new_food_meal_type(
                                     "dinner"
                                 ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.new_food_meal_type
+                                    HealthDashboardState.new_food_meal_type
                                     == "dinner",
                                     "flex-1 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                     "flex-1 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10",
@@ -782,11 +782,11 @@ def add_food_modal() -> rx.Component:
                             ),
                             rx.el.button(
                                 "Snack",
-                                on_click=lambda: PatientDashboardState.set_new_food_meal_type(
+                                on_click=lambda: HealthDashboardState.set_new_food_meal_type(
                                     "snack"
                                 ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.new_food_meal_type == "snack",
+                                    HealthDashboardState.new_food_meal_type == "snack",
                                     "flex-1 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                     "flex-1 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-white/10",
                                 ),
@@ -809,8 +809,8 @@ def add_food_modal() -> rx.Component:
                                 rx.el.input(
                                     placeholder="0",
                                     type="number",
-                                    value=PatientDashboardState.new_food_calories,
-                                    on_change=PatientDashboardState.set_new_food_calories,
+                                    value=HealthDashboardState.new_food_calories,
+                                    on_change=HealthDashboardState.set_new_food_calories,
                                     class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all",
                                 ),
                             ),
@@ -822,8 +822,8 @@ def add_food_modal() -> rx.Component:
                                 rx.el.input(
                                     placeholder="0",
                                     type="number",
-                                    value=PatientDashboardState.new_food_protein,
-                                    on_change=PatientDashboardState.set_new_food_protein,
+                                    value=HealthDashboardState.new_food_protein,
+                                    on_change=HealthDashboardState.set_new_food_protein,
                                     class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all",
                                 ),
                             ),
@@ -835,8 +835,8 @@ def add_food_modal() -> rx.Component:
                                 rx.el.input(
                                     placeholder="0",
                                     type="number",
-                                    value=PatientDashboardState.new_food_carbs,
-                                    on_change=PatientDashboardState.set_new_food_carbs,
+                                    value=HealthDashboardState.new_food_carbs,
+                                    on_change=HealthDashboardState.set_new_food_carbs,
                                     class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all",
                                 ),
                             ),
@@ -847,8 +847,8 @@ def add_food_modal() -> rx.Component:
                                 rx.el.input(
                                     placeholder="0",
                                     type="number",
-                                    value=PatientDashboardState.new_food_fat,
-                                    on_change=PatientDashboardState.set_new_food_fat,
+                                    value=HealthDashboardState.new_food_fat,
+                                    on_change=HealthDashboardState.set_new_food_fat,
                                     class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all",
                                 ),
                             ),
@@ -868,7 +868,7 @@ def add_food_modal() -> rx.Component:
                             rx.el.button(
                                 rx.icon("plus", class_name="w-4 h-4 mr-2"),
                                 "Add Food",
-                                on_click=PatientDashboardState.save_food_entry,
+                                on_click=HealthDashboardState.save_food_entry,
                                 class_name=GlassStyles.BUTTON_PRIMARY
                                 + " flex items-center",
                             ),
@@ -880,8 +880,8 @@ def add_food_modal() -> rx.Component:
                 class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
             ),
         ),
-        open=PatientDashboardState.show_add_food_modal,
-        on_open_change=PatientDashboardState.set_show_add_food_modal,
+        open=HealthDashboardState.show_add_food_modal,
+        on_open_change=HealthDashboardState.set_show_add_food_modal,
     )
 
 
@@ -913,7 +913,7 @@ def suggest_integration_modal() -> rx.Component:
                         class_name="text-slate-400 text-sm mb-6",
                     ),
                     rx.cond(
-                        PatientDashboardState.integration_suggestion_submitted,
+                        HealthDashboardState.integration_suggestion_submitted,
                         # Success state
                         rx.el.div(
                             rx.el.div(
@@ -951,8 +951,8 @@ def suggest_integration_modal() -> rx.Component:
                                 ),
                                 rx.el.input(
                                     placeholder="e.g., Whoop, Levels, Eight Sleep",
-                                    value=PatientDashboardState.suggested_integration_name,
-                                    on_change=PatientDashboardState.set_suggested_integration_name,
+                                    value=HealthDashboardState.suggested_integration_name,
+                                    on_change=HealthDashboardState.set_suggested_integration_name,
                                     class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all",
                                 ),
                                 class_name="mb-4",
@@ -965,8 +965,8 @@ def suggest_integration_modal() -> rx.Component:
                                 ),
                                 rx.el.textarea(
                                     placeholder="Tell us how this integration would help you track your health...",
-                                    value=PatientDashboardState.suggested_integration_description,
-                                    on_change=PatientDashboardState.set_suggested_integration_description,
+                                    value=HealthDashboardState.suggested_integration_description,
+                                    on_change=HealthDashboardState.set_suggested_integration_description,
                                     rows=3,
                                     class_name="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 transition-all resize-none",
                                 ),
@@ -982,7 +982,7 @@ def suggest_integration_modal() -> rx.Component:
                                 ),
                                 rx.el.button(
                                     "Submit Suggestion",
-                                    on_click=PatientDashboardState.submit_integration_suggestion,
+                                    on_click=HealthDashboardState.submit_integration_suggestion,
                                     class_name=GlassStyles.BUTTON_PRIMARY,
                                 ),
                                 class_name="flex justify-end gap-3",
@@ -994,6 +994,6 @@ def suggest_integration_modal() -> rx.Component:
                 class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md {GlassStyles.MODAL} z-50",
             ),
         ),
-        open=PatientDashboardState.show_suggest_integration_modal,
-        on_open_change=PatientDashboardState.set_show_suggest_integration_modal,
+        open=HealthDashboardState.show_suggest_integration_modal,
+        on_open_change=HealthDashboardState.set_show_suggest_integration_modal,
     )

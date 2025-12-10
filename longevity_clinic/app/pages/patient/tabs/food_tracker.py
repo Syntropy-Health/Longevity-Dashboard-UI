@@ -1,12 +1,16 @@
 """Food tracker tab component for patient portal."""
 
 import reflex as rx
-from ....states import PatientDashboardState
+from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 
 
-def food_entry_card(entry: dict) -> rx.Component:
-    """Food entry card."""
+def food_entry_card(entry) -> rx.Component:
+    """Food entry card.
+
+    Args:
+        entry: FoodEntry instance from PatientDashboardState
+    """
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -14,18 +18,16 @@ def food_entry_card(entry: dict) -> rx.Component:
                 class_name="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center mr-3 border border-teal-500/20",
             ),
             rx.el.div(
-                rx.el.h4(entry["name"], class_name="text-sm font-semibold text-white"),
+                rx.el.h4(entry.name, class_name="text-sm font-semibold text-white"),
                 rx.el.p(
-                    f"{entry['time']} • {entry['meal_type'].capitalize()}",
+                    rx.text(entry.time, " • ", entry.meal_type.capitalize()),
                     class_name="text-xs text-slate-400",
                 ),
             ),
             class_name="flex items-center flex-1",
         ),
         rx.el.div(
-            rx.el.span(
-                f"{entry['calories']}", class_name="text-lg font-bold text-white"
-            ),
+            rx.el.span(entry.calories, class_name="text-lg font-bold text-white"),
             rx.el.span(" kcal", class_name="text-xs text-slate-400 ml-1"),
             class_name="flex items-baseline",
         ),
@@ -59,11 +61,11 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.span(
-                        PatientDashboardState.nutrition_summary["total_calories"],
+                        HealthDashboardState.nutrition_summary["total_calories"],
                         class_name="text-3xl font-bold text-white",
                     ),
                     rx.el.span(
-                        f" / {PatientDashboardState.nutrition_summary['goal_calories']}",
+                        f" / {HealthDashboardState.nutrition_summary['goal_calories']}",
                         class_name="text-sm text-slate-400",
                     ),
                 ),
@@ -80,7 +82,7 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.span(
-                        f"{PatientDashboardState.nutrition_summary['total_protein']:.0f}",
+                        f"{HealthDashboardState.nutrition_summary['total_protein']:.0f}",
                         class_name="text-3xl font-bold text-white",
                     ),
                     rx.el.span("g", class_name="text-sm text-slate-400 ml-1"),
@@ -98,7 +100,7 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.span(
-                        f"{PatientDashboardState.nutrition_summary['total_carbs']:.0f}",
+                        f"{HealthDashboardState.nutrition_summary['total_carbs']:.0f}",
                         class_name="text-3xl font-bold text-white",
                     ),
                     rx.el.span("g", class_name="text-sm text-slate-400 ml-1"),
@@ -116,7 +118,7 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.span(
-                        f"{PatientDashboardState.nutrition_summary['water_intake']:.1f}",
+                        f"{HealthDashboardState.nutrition_summary['water_intake']:.1f}",
                         class_name="text-3xl font-bold text-white",
                     ),
                     rx.el.span("L", class_name="text-sm text-slate-400 ml-1"),
@@ -134,13 +136,13 @@ def food_tracker_tab() -> rx.Component:
                 rx.el.button(
                     rx.icon("plus", class_name="w-4 h-4 mr-2"),
                     "Add Food",
-                    on_click=PatientDashboardState.open_add_food_modal,
+                    on_click=HealthDashboardState.open_add_food_modal,
                     class_name=GlassStyles.BUTTON_PRIMARY + " flex items-center",
                 ),
                 class_name="flex justify-between items-center mb-4",
             ),
             rx.el.div(
-                rx.foreach(PatientDashboardState.food_entries, food_entry_card),
+                rx.foreach(HealthDashboardState.food_entries, food_entry_card),
                 class_name="space-y-3",
             ),
         ),

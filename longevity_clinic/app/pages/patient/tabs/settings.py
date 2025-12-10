@@ -2,7 +2,7 @@
 
 import reflex as rx
 from ....states import AuthState
-from ....states import PatientDashboardState
+from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 
 
@@ -67,18 +67,18 @@ def settings_tab() -> rx.Component:
                             rx.el.div(
                                 rx.el.div(
                                     class_name=rx.cond(
-                                        PatientDashboardState.email_notifications,
+                                        HealthDashboardState.email_notifications,
                                         "w-5 h-5 bg-white rounded-full shadow-md transform translate-x-6 transition-transform duration-200",
                                         "w-5 h-5 bg-slate-300 rounded-full shadow-md transform translate-x-0 transition-transform duration-200",
                                     ),
                                 ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.email_notifications,
+                                    HealthDashboardState.email_notifications,
                                     "w-12 h-6 bg-teal-500 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                     "w-12 h-6 bg-slate-600 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                 ),
                             ),
-                            on_click=PatientDashboardState.toggle_email_notifications,
+                            on_click=HealthDashboardState.toggle_email_notifications,
                             class_name="focus:outline-none",
                         ),
                         class_name="flex items-center justify-between p-4 border-b border-white/5",
@@ -98,18 +98,18 @@ def settings_tab() -> rx.Component:
                             rx.el.div(
                                 rx.el.div(
                                     class_name=rx.cond(
-                                        PatientDashboardState.push_notifications,
+                                        HealthDashboardState.push_notifications,
                                         "w-5 h-5 bg-white rounded-full shadow-md transform translate-x-6 transition-transform duration-200",
                                         "w-5 h-5 bg-slate-300 rounded-full shadow-md transform translate-x-0 transition-transform duration-200",
                                     ),
                                 ),
                                 class_name=rx.cond(
-                                    PatientDashboardState.push_notifications,
+                                    HealthDashboardState.push_notifications,
                                     "w-12 h-6 bg-teal-500 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                     "w-12 h-6 bg-slate-600 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                 ),
                             ),
-                            on_click=PatientDashboardState.toggle_push_notifications,
+                            on_click=HealthDashboardState.toggle_push_notifications,
                             class_name="focus:outline-none",
                         ),
                         class_name="flex items-center justify-between p-4",

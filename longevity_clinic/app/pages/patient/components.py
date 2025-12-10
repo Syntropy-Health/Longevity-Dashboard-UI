@@ -5,7 +5,7 @@ from ...states import (
     PatientBiomarkerState,
 )
 from ...data.state_schemas import Biomarker, PortalAppointment, PortalTreatment
-from ...states import PatientDashboardState
+from ...states import HealthDashboardState
 from ...components.charts import biomarker_history_chart
 from ...styles.constants import GlassStyles
 
@@ -299,9 +299,9 @@ def tab_button(label: str, tab_id: str, icon: str) -> rx.Component:
     return rx.el.button(
         rx.icon(icon, class_name="w-4 h-4 mr-2"),
         label,
-        on_click=lambda: PatientDashboardState.set_active_tab(tab_id),
+        on_click=lambda: HealthDashboardState.set_active_tab(tab_id),
         class_name=rx.cond(
-            PatientDashboardState.active_tab == tab_id,
+            HealthDashboardState.active_tab == tab_id,
             "flex items-center px-4 py-2.5 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30 transition-all",
             "flex items-center px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition-all",
         ),

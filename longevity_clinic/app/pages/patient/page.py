@@ -3,7 +3,7 @@
 import reflex as rx
 from ...components.layout import authenticated_layout
 from ...states import AuthState
-from ...states import PatientDashboardState
+from ...states import HealthDashboardState
 from ...styles.constants import GlassStyles
 from .components import patient_portal_tabs
 from .tabs import (
@@ -49,7 +49,7 @@ def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
                 patient_portal_tabs(),
                 # Tab Content
                 rx.match(
-                    PatientDashboardState.active_tab,
+                    HealthDashboardState.active_tab,
                     ("overview", overview_tab()),
                     ("food", food_tracker_tab()),
                     ("medications", medications_tab()),
@@ -67,8 +67,8 @@ def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
             add_food_modal(),
             on_mount=[
                 # PatientBiomarkerState.load_biomarkers,
-                # PatientDashboardState.load_dashboard_data,
-                lambda: PatientDashboardState.set_active_tab(initial_tab),
+                # HealthDashboardState.load_dashboard_data,
+                lambda: HealthDashboardState.set_active_tab(initial_tab),
             ],
         )
     )

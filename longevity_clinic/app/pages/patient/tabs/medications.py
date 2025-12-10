@@ -1,12 +1,16 @@
 """Medications tab component for patient portal."""
 
 import reflex as rx
-from ....states import PatientDashboardState
+from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 
 
-def medication_card(med: dict) -> rx.Component:
-    """Medication card."""
+def medication_card(med) -> rx.Component:
+    """Medication card.
+
+    Args:
+        med: Medication instance from PatientDashboardState
+    """
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -15,10 +19,10 @@ def medication_card(med: dict) -> rx.Component:
             ),
             rx.el.div(
                 rx.el.h4(
-                    med["name"], class_name="text-base font-semibold text-white mb-1"
+                    med.name, class_name="text-base font-semibold text-white mb-1"
                 ),
-                rx.el.p(med["dosage"], class_name="text-sm text-slate-300"),
-                rx.el.p(med["frequency"], class_name="text-xs text-slate-400 mt-1"),
+                rx.el.p(med.dosage, class_name="text-sm text-slate-300"),
+                rx.el.p(med.frequency, class_name="text-xs text-slate-400 mt-1"),
             ),
             class_name="flex items-start flex-1",
         ),
@@ -29,9 +33,9 @@ def medication_card(med: dict) -> rx.Component:
                     class_name="text-[10px] text-slate-400 uppercase tracking-wider",
                 ),
                 rx.el.span(
-                    f"{med['adherence_rate']:.0f}%",
+                    rx.text(f"{med.adherence_rate:.0f}%"),
                     class_name=rx.cond(
-                        med["adherence_rate"] >= 90,
+                        med.adherence_rate >= 90,
                         "text-lg font-bold text-teal-400",
                         "text-lg font-bold text-amber-400",
                     ),
@@ -39,16 +43,16 @@ def medication_card(med: dict) -> rx.Component:
                 class_name="text-right",
             ),
             rx.el.span(
-                med["status"].capitalize(),
+                med.status.capitalize(),
                 class_name=rx.cond(
-                    med["status"] == "active",
+                    med.status == "active",
                     "mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20",
                     "mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-500/10 text-slate-300 border border-slate-500/20",
                 ),
             ),
             class_name="flex flex-col items-end",
         ),
-        on_click=lambda: PatientDashboardState.open_medication_modal(med),
+        on_click=lambda: HealthDashboardState.open_medication_modal(med),
         class_name=f"{GlassStyles.CARD_INTERACTIVE} flex justify-between",
     )
 
@@ -76,7 +80,7 @@ def medications_tab() -> rx.Component:
                     class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                 ),
                 rx.el.span(
-                    f"{PatientDashboardState.total_medication_adherence:.0f}%",
+                    f"{HealthDashboardState.total_medication_adherence:.0f}%",
                     class_name="text-3xl font-bold text-teal-400",
                 ),
                 class_name=f"{GlassStyles.PANEL} p-5",
@@ -91,7 +95,7 @@ def medications_tab() -> rx.Component:
                     class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                 ),
                 rx.el.span(
-                    PatientDashboardState.medications.length(),
+                    HealthDashboardState.medications.length(),
                     class_name="text-3xl font-bold text-white",
                 ),
                 class_name=f"{GlassStyles.PANEL} p-5",
@@ -100,7 +104,7 @@ def medications_tab() -> rx.Component:
         ),
         # Medication List
         rx.el.div(
-            rx.foreach(PatientDashboardState.medications, medication_card),
+            rx.foreach(HealthDashboardState.medications, medication_card),
             class_name="space-y-4",
         ),
     )

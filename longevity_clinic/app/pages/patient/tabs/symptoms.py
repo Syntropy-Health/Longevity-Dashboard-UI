@@ -1,20 +1,21 @@
 """Symptoms tab component for patient portal."""
 
 import reflex as rx
-from ....states import PatientDashboardState
+from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 
 
-def symptom_card(symptom: dict) -> rx.Component:
-    """Symptom card."""
+def symptom_card(symptom) -> rx.Component:
+    """Symptom card.
+
+    Args:
+        symptom: Symptom instance from PatientDashboardState
+    """
     trend_icon = {
         "improving": ("trending-down", "text-teal-400"),
         "stable": ("minus", "text-slate-400"),
         "worsening": ("trending-up", "text-red-400"),
     }
-    icon_name, icon_class = trend_icon.get(
-        symptom.get("trend", "stable"), ("minus", "text-slate-400")
-    )
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -23,15 +24,15 @@ def symptom_card(symptom: dict) -> rx.Component:
             ),
             rx.el.div(
                 rx.el.h4(
-                    symptom["name"],
+                    symptom.name,
                     class_name="text-base font-semibold text-white mb-1",
                 ),
                 rx.el.p(
-                    f"Severity: {symptom['severity'].capitalize()}",
+                    rx.text("Severity: ", symptom.severity.capitalize()),
                     class_name="text-sm text-slate-300",
                 ),
                 rx.el.p(
-                    f"Frequency: {symptom['frequency']}",
+                    rx.text("Frequency: ", symptom.frequency),
                     class_name="text-xs text-slate-400 mt-1",
                 ),
             ),
@@ -39,15 +40,36 @@ def symptom_card(symptom: dict) -> rx.Component:
         ),
         rx.el.div(
             rx.el.div(
-                rx.icon(icon_name, class_name=f"w-4 h-4 {icon_class} mr-1"),
-                rx.el.span(
-                    symptom["trend"].capitalize(), class_name=f"text-xs {icon_class}"
+                rx.match(
+                    symptom.trend,
+                    (
+                        "improving",
+                        rx.fragment(
+                            rx.icon(
+                                "trending-down", class_name="w-4 h-4 text-teal-400 mr-1"
+                            ),
+                            rx.el.span("Improving", class_name="text-xs text-teal-400"),
+                        ),
+                    ),
+                    (
+                        "worsening",
+                        rx.fragment(
+                            rx.icon(
+                                "trending-up", class_name="w-4 h-4 text-red-400 mr-1"
+                            ),
+                            rx.el.span("Worsening", class_name="text-xs text-red-400"),
+                        ),
+                    ),
+                    rx.fragment(
+                        rx.icon("minus", class_name="w-4 h-4 text-slate-400 mr-1"),
+                        rx.el.span("Stable", class_name="text-xs text-slate-400"),
+                    ),
                 ),
                 class_name="flex items-center",
             ),
             rx.el.button(
                 "Log",
-                on_click=lambda: PatientDashboardState.open_symptom_modal(symptom),
+                on_click=lambda: HealthDashboardState.open_symptom_modal(symptom),
                 class_name="mt-2 px-3 py-1 text-xs font-medium bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg border border-white/10 transition-all",
             ),
             class_name="flex flex-col items-end",
@@ -56,18 +78,22 @@ def symptom_card(symptom: dict) -> rx.Component:
     )
 
 
-def symptom_log_item(log: dict) -> rx.Component:
-    """Symptom log item."""
+def symptom_log_item(log) -> rx.Component:
+    """Symptom log item.
+
+    Args:
+        log: SymptomLog instance from PatientDashboardState
+    """
     return rx.el.div(
         rx.el.div(
-            rx.el.p(log["timestamp"], class_name="text-xs text-teal-400 font-medium"),
-            rx.el.p(log["symptom_name"], class_name="text-sm font-semibold text-white"),
-            rx.el.p(log["notes"], class_name="text-xs text-slate-400 mt-1"),
+            rx.el.p(log.timestamp, class_name="text-xs text-teal-400 font-medium"),
+            rx.el.p(log.symptom_name, class_name="text-sm font-semibold text-white"),
+            rx.el.p(log.notes, class_name="text-xs text-slate-400 mt-1"),
             class_name="flex-1",
         ),
         rx.el.div(
             rx.el.span(
-                f"Severity: {log['severity']}/10",
+                rx.text(f"Severity: {log.severity}/10"),
                 class_name="text-xs text-slate-300 bg-slate-700/50 px-2 py-1 rounded",
             ),
         ),
@@ -139,17 +165,12 @@ def reminder_item(reminder: dict) -> rx.Component:
     )
 
 
-def symptom_trend_item(trend: dict) -> rx.Component:
-    """Symptom trend item component."""
-    trend_styles = {
-        "improving": ("trending-down", "text-teal-400", "bg-teal-500/10", "Improving"),
-        "worsening": ("trending-up", "text-red-400", "bg-red-500/10", "Worsening"),
-        "stable": ("minus", "text-slate-400", "bg-slate-500/10", "Stable"),
-    }
-    icon_name, icon_color, bg_color, label = trend_styles.get(
-        trend.get("trend", "stable"),
-        ("minus", "text-slate-400", "bg-slate-500/10", "Stable"),
-    )
+def symptom_trend_item(trend) -> rx.Component:
+    """Symptom trend item component.
+
+    Args:
+        trend: SymptomTrend instance from PatientDashboardState
+    """
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -158,39 +179,83 @@ def symptom_trend_item(trend: dict) -> rx.Component:
             ),
             rx.el.div(
                 rx.el.h4(
-                    trend["symptom_name"],
+                    trend.symptom_name,
                     class_name="text-base font-semibold text-white mb-1",
                 ),
                 rx.el.div(
                     rx.el.span("Current: ", class_name="text-xs text-slate-400"),
                     rx.el.span(
-                        f"{trend['current_severity']}/10",
+                        rx.text(f"{trend.current_severity}/10"),
                         class_name="text-sm text-white font-medium",
                     ),
                     rx.el.span(
                         " vs Previous: ", class_name="text-xs text-slate-400 ml-2"
                     ),
                     rx.el.span(
-                        f"{trend['previous_severity']}/10",
+                        rx.text(f"{trend.previous_severity}/10"),
                         class_name="text-sm text-slate-300",
                     ),
                     class_name="flex items-center",
                 ),
-                rx.el.p(trend["period"], class_name="text-xs text-slate-500 mt-1"),
+                rx.el.p(trend.period, class_name="text-xs text-slate-500 mt-1"),
             ),
             class_name="flex items-start flex-1",
         ),
         rx.el.div(
-            rx.el.div(
-                rx.icon(icon_name, class_name=f"w-4 h-4 {icon_color} mr-1"),
-                rx.el.span(label, class_name=f"text-xs font-medium {icon_color}"),
-                class_name=f"flex items-center px-3 py-1 rounded-full {bg_color}",
+            rx.match(
+                trend.trend,
+                (
+                    "improving",
+                    rx.el.div(
+                        rx.icon(
+                            "trending-down", class_name="w-4 h-4 text-teal-400 mr-1"
+                        ),
+                        rx.el.span(
+                            "Improving", class_name="text-xs font-medium text-teal-400"
+                        ),
+                        class_name="flex items-center px-3 py-1 rounded-full bg-teal-500/10",
+                    ),
+                ),
+                (
+                    "worsening",
+                    rx.el.div(
+                        rx.icon("trending-up", class_name="w-4 h-4 text-red-400 mr-1"),
+                        rx.el.span(
+                            "Worsening", class_name="text-xs font-medium text-red-400"
+                        ),
+                        class_name="flex items-center px-3 py-1 rounded-full bg-red-500/10",
+                    ),
+                ),
+                rx.el.div(
+                    rx.icon("minus", class_name="w-4 h-4 text-slate-400 mr-1"),
+                    rx.el.span(
+                        "Stable", class_name="text-xs font-medium text-slate-400"
+                    ),
+                    class_name="flex items-center px-3 py-1 rounded-full bg-slate-500/10",
+                ),
             ),
             rx.cond(
-                trend["change_percent"] > 0,
-                rx.el.p(
-                    f"{trend['change_percent']:.0f}%",
-                    class_name=f"text-xs {icon_color} mt-1 text-right",
+                trend.change_percent > 0,
+                rx.match(
+                    trend.trend,
+                    (
+                        "improving",
+                        rx.el.p(
+                            rx.text(f"{trend.change_percent:.0f}%"),
+                            class_name="text-xs text-teal-400 mt-1 text-right",
+                        ),
+                    ),
+                    (
+                        "worsening",
+                        rx.el.p(
+                            rx.text(f"{trend.change_percent:.0f}%"),
+                            class_name="text-xs text-red-400 mt-1 text-right",
+                        ),
+                    ),
+                    rx.el.p(
+                        rx.text(f"{trend.change_percent:.0f}%"),
+                        class_name="text-xs text-slate-400 mt-1 text-right",
+                    ),
                 ),
                 rx.fragment(),
             ),
@@ -215,36 +280,36 @@ def symptoms_tab() -> rx.Component:
         rx.el.div(
             rx.el.button(
                 "Timeline",
-                on_click=lambda: PatientDashboardState.set_symptoms_filter("timeline"),
+                on_click=lambda: HealthDashboardState.set_symptoms_filter("timeline"),
                 class_name=rx.cond(
-                    PatientDashboardState.symptoms_filter == "timeline",
+                    HealthDashboardState.symptoms_filter == "timeline",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
             rx.el.button(
                 "Symptoms",
-                on_click=lambda: PatientDashboardState.set_symptoms_filter("symptoms"),
+                on_click=lambda: HealthDashboardState.set_symptoms_filter("symptoms"),
                 class_name=rx.cond(
-                    PatientDashboardState.symptoms_filter == "symptoms",
+                    HealthDashboardState.symptoms_filter == "symptoms",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
             rx.el.button(
                 "Reminders",
-                on_click=lambda: PatientDashboardState.set_symptoms_filter("reminders"),
+                on_click=lambda: HealthDashboardState.set_symptoms_filter("reminders"),
                 class_name=rx.cond(
-                    PatientDashboardState.symptoms_filter == "reminders",
+                    HealthDashboardState.symptoms_filter == "reminders",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
             rx.el.button(
                 "Trends",
-                on_click=lambda: PatientDashboardState.set_symptoms_filter("trends"),
+                on_click=lambda: HealthDashboardState.set_symptoms_filter("trends"),
                 class_name=rx.cond(
-                    PatientDashboardState.symptoms_filter == "trends",
+                    HealthDashboardState.symptoms_filter == "trends",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
@@ -253,32 +318,32 @@ def symptoms_tab() -> rx.Component:
         ),
         # Content based on filter
         rx.cond(
-            PatientDashboardState.symptoms_filter == "timeline",
+            HealthDashboardState.symptoms_filter == "timeline",
             rx.el.div(
                 rx.el.h3(
                     "Recent Symptom Logs",
                     class_name="text-lg font-semibold text-white mb-4",
                 ),
                 rx.el.div(
-                    rx.foreach(PatientDashboardState.symptom_logs, symptom_log_item),
+                    rx.foreach(HealthDashboardState.symptom_logs, symptom_log_item),
                     class_name=f"{GlassStyles.PANEL} p-4",
                 ),
             ),
             rx.cond(
-                PatientDashboardState.symptoms_filter == "symptoms",
+                HealthDashboardState.symptoms_filter == "symptoms",
                 rx.el.div(
-                    rx.foreach(PatientDashboardState.symptoms, symptom_card),
+                    rx.foreach(HealthDashboardState.symptoms, symptom_card),
                     class_name="space-y-4",
                 ),
                 rx.cond(
-                    PatientDashboardState.symptoms_filter == "reminders",
+                    HealthDashboardState.symptoms_filter == "reminders",
                     rx.el.div(
                         rx.el.h3(
                             "Today's Reminders",
                             class_name="text-lg font-semibold text-white mb-4",
                         ),
                         rx.el.div(
-                            rx.foreach(PatientDashboardState.reminders, reminder_item),
+                            rx.foreach(HealthDashboardState.reminders, reminder_item),
                             class_name="space-y-0",
                         ),
                     ),
@@ -293,7 +358,7 @@ def symptoms_tab() -> rx.Component:
                         ),
                         rx.el.div(
                             rx.foreach(
-                                PatientDashboardState.symptom_trends, symptom_trend_item
+                                HealthDashboardState.symptom_trends, symptom_trend_item
                             ),
                             class_name="space-y-0",
                         ),

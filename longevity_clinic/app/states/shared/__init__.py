@@ -9,10 +9,16 @@ from .voice_transcription_state import (
     audio_capture,
     voice_recorder_component,
 )
+from .dashboard_state import (
+    HealthDashboardState,
+    AdminDashboardState,
+)
 
 __all__ = [
     "NotificationState",
     "VoiceTranscriptionState",
     "audio_capture",
     "voice_recorder_component",
+    "HealthDashboardState",
+    "AdminDashboardState",
 ]

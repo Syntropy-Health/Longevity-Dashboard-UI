@@ -55,28 +55,38 @@ class NutritionSummary(TypedDict):
     water_intake: float
 
 
-class FoodEntry(TypedDict):
-    """Food entry type."""
-
-    id: str
-    name: str
-    calories: int
-    protein: float
-    carbs: float
-    fat: float
-    time: str
-    meal_type: str
+# =============================================================================
+# Food Entry Schema (Pydantic - single source of truth)
+# =============================================================================
 
 
-class Medication(TypedDict):
-    """Medication type."""
+class FoodEntry(BaseModel):
+    """Food entry - Pydantic model for LLM output and state storage."""
 
-    id: str
-    name: str
-    dosage: str
-    frequency: str
-    status: str
-    adherence_rate: float
+    id: str = Field(default="", description="Unique identifier")
+    name: str = Field(default="", description="Food item name")
+    calories: int = Field(default=0, description="Estimated calories")
+    protein: float = Field(default=0.0, description="Protein in grams")
+    carbs: float = Field(default=0.0, description="Carbs in grams")
+    fat: float = Field(default=0.0, description="Fat in grams")
+    time: str = Field(default="", description="Time consumed")
+    meal_type: str = Field(default="snack", description="breakfast/lunch/dinner/snack")
+
+
+# =============================================================================
+# Medication Schema (Pydantic - single source of truth)
+# =============================================================================
+
+
+class Medication(BaseModel):
+    """Medication - Pydantic model for LLM output and state storage."""
+
+    id: str = Field(default="", description="Unique identifier")
+    name: str = Field(default="", description="Medication name")
+    dosage: str = Field(default="", description="Dosage amount and unit")
+    frequency: str = Field(default="", description="How often taken")
+    status: str = Field(default="active", description="active/discontinued/as-needed")
+    adherence_rate: float = Field(default=1.0, description="Adherence rate 0-1")
 
 
 class Condition(TypedDict):

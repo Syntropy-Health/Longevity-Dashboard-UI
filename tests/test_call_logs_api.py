@@ -174,26 +174,27 @@ class TestProcessCallLogsFunction:
 
 
 # =============================================================================
-# Test fetch_and_process_call_logs combined function
+# Test VlogsAgent combined function
 # =============================================================================
 
 
-class TestFetchAndProcessCallLogs:
-    """Test the combined fetch_and_process_call_logs function."""
+class TestVlogsAgentProcess:
+    """Test the VlogsAgent.process_logs method."""
 
     @pytest.mark.asyncio
-    async def test_fetch_and_process_combined(self, call_api_token, demo_phone_number):
-        """Test the combined fetch_and_process_call_logs function."""
+    async def test_vlogs_agent_process_logs(self, call_api_token, demo_phone_number):
+        """Test the VlogsAgent.process_logs method."""
         if not call_api_token:
             pytest.skip("CALL_API_TOKEN not set")
 
         from longevity_clinic.app.states.functions import (
             fetch_call_logs,
-            fetch_and_process_call_logs,
+            VlogsAgent,
+            VlogsConfig,
         )
 
         logger.info("=" * 60)
-        logger.info("TEST: fetch_and_process_call_logs(phone=%s)", demo_phone_number)
+        logger.info("TEST: VlogsAgent.process_logs(phone=%s)", demo_phone_number)
         logger.info("=" * 60)
 
         # Step 1: Fetch raw call logs to log intermediate API response
@@ -217,29 +218,30 @@ class TestFetchAndProcessCallLogs:
             if transcript:
                 logger.info("  transcript_preview: %s...", transcript[:300])
 
-        # Step 2: Process call logs using combined function
-        logger.info("\n--- STEP 2: Processing Call Logs ---")
-        new_count, checkins, summaries = await fetch_and_process_call_logs(
+        # Step 2: Process call logs using VlogsAgent
+        logger.info("\n--- STEP 2: Processing Call Logs with VlogsAgent ---")
+        config = VlogsConfig(parse_with_llm=False, limit=5)
+        agent = VlogsAgent(config=config)
+        new_count, outputs, summaries = await agent.process_logs(
             phone_number=demo_phone_number,
             processed_ids=set(),
-            use_llm_summary=False,
-            limit=5,
         )
 
-        assert isinstance(checkins, list)
+        assert isinstance(outputs, list)
         assert isinstance(summaries, dict)
 
         logger.info(
-            "Processing result: %d new, %d checkins, %d summaries",
+            "Processing result: %d new, %d outputs, %d summaries",
             new_count,
-            len(checkins),
+            len(outputs),
             len(summaries),
         )
 
-        # Step 3: Log processed CheckIns (Pydantic dict format)
-        logger.info("\n--- STEP 3: Processed CheckIns (Pydantic Dict) ---")
-        for i, checkin in enumerate(checkins):
-            logger.info("\n[CHECKIN %d]:", i + 1)
+        # Step 3: Log processed CallLogsOutput (Pydantic format)
+        logger.info("\n--- STEP 3: Processed CallLogsOutput (Pydantic) ---")
+        for i, output in enumerate(outputs):
+            checkin = output.to_checkin_dict()
+            logger.info("\n[OUTPUT %d]:", i + 1)
             logger.info("  id: %s", checkin.get("id"))
             logger.info("  type: %s", checkin.get("type"))
             logger.info("  timestamp: %s", checkin.get("timestamp"))
@@ -259,8 +261,9 @@ class TestFetchAndProcessCallLogs:
         logger.info("TEST COMPLETE: All assertions passed")
         logger.info("=" * 60)
 
-        if checkins:
-            assert checkins[0]["type"] == "call"
+        if outputs:
+            checkin = outputs[0].to_checkin_dict()
+            assert checkin["type"] == "call"
 
 
 # =============================================================================
@@ -298,9 +301,9 @@ class TestCallLogsAPIConnection:
             )
 
             logger.info("API Response Status: %d", response.status_code)
-            assert response.status_code == 200, (
-                f"API returned status {response.status_code}"
-            )
+            assert (
+                response.status_code == 200
+            ), f"API returned status {response.status_code}"
             logger.info("API connection successful")
 
     @pytest.mark.asyncio
@@ -451,9 +454,9 @@ class TestCallLogsDataFetching:
             # Verify transcripts exist
             for record in records[:5]:
                 transcript = record.get("full_transcript")
-                assert transcript is not None, (
-                    "Filtered records should have transcripts"
-                )
+                assert (
+                    transcript is not None
+                ), "Filtered records should have transcripts"
                 assert len(transcript) > 0, "Transcript should not be empty"
 
 

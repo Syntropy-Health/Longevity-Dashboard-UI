@@ -4,7 +4,7 @@ from typing import Optional
 
 import reflex as rx
 
-from ..patient.patient_state import PatientState
+from ..patient.state import PatientState
 from ...data.state_schemas import TreatmentProtocol
 
 

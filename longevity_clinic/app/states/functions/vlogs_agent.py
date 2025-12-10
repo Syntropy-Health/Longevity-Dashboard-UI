@@ -5,13 +5,12 @@ Handles fetching and processing call logs with configurable LLM parsing.
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Optional
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from longevity_clinic.app.config import get_logger
+from longevity_clinic.app.config import get_logger, current_config
 from longevity_clinic.app.prompts import PARSE_CHECKIN
 from longevity_clinic.app.data.process_schema import CallLogsOutput, CheckInSummary
 from longevity_clinic.app.data.state_schemas import CallLogEntry, TranscriptSummary
@@ -20,10 +19,19 @@ from .utils import fetch_call_logs, format_timestamp
 
 logger = get_logger("longevity_clinic.vlogs_agent")
 
-# Phone to patient name mapping
+
+# =============================================================================
+# Constants
+# =============================================================================
+
 PHONE_TO_PATIENT_NAME: dict[str, str] = {
     "+12126804645": "Demo Patient (Sarah Chen)",
 }
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
 
 
 def _get_patient_name(phone: str) -> str:
@@ -61,28 +69,78 @@ def _get_best_summary(api_summary: str, full_transcript: str) -> str:
     return "Voice call check-in"
 
 
+# =============================================================================
+# Configuration Dataclasses
+# =============================================================================
+
+
 @dataclass
 class VlogsConfig:
-    """Configuration for VlogsAgent."""
+    """Configuration for VlogsAgent.
+    
+    Attributes:
+        parse_with_llm: Enable LLM-based parsing for structured extraction
+        llm_model: OpenAI model to use for parsing
+        temperature: LLM temperature for response generation
+        limit: Maximum number of call logs to fetch per request
+    """
 
-    parse_with_llm: bool = False
+    parse_with_llm: bool = True  # Default to True for better extraction
     llm_model: str = "gpt-4o-mini"
     temperature: float = 0.3
     limit: int = 50
+
+    @classmethod
+    def from_app_config(cls) -> "VlogsConfig":
+        """Create VlogsConfig from app configuration."""
+        return cls(
+            parse_with_llm=current_config.vlogs_parse_with_llm,
+            llm_model=current_config.vlogs_llm_model,
+            temperature=current_config.vlogs_temperature,
+            limit=current_config.vlogs_fetch_limit,
+        )
+
+
+# =============================================================================
+# Main Agent Dataclass
+# =============================================================================
 
 
 @dataclass
 class VlogsAgent:
     """Agent for processing voice call logs into structured data.
 
+    This agent handles the complete pipeline of:
+    1. Fetching call logs from the API
+    2. Processing transcripts (with or without LLM)
+    3. Extracting structured health data
+    4. Generating summaries and metadata
+
     Usage:
-        agent = VlogsAgent(config=VlogsConfig(parse_with_llm=True))
-        result = await agent.process_logs(phone_number="+1234567890")
+        # Use default config from app settings
+        agent = VlogsAgent.from_config()
+        
+        # Or with custom config
+        config = VlogsConfig(parse_with_llm=True, limit=100)
+        agent = VlogsAgent(config=config)
+        
+        # Process logs
+        new_count, outputs, summaries = await agent.process_logs(
+            phone_number="+1234567890"
+        )
+
+    Attributes:
+        config: VlogsConfig instance with agent settings
     """
 
     config: VlogsConfig = field(default_factory=VlogsConfig)
-    _llm: Optional[ChatOpenAI] = field(default=None, init=False)
-    _structured_llm: Optional[object] = field(default=None, init=False)
+    _llm: Optional[ChatOpenAI] = field(default=None, init=False, repr=False)
+    _structured_llm: Optional[object] = field(default=None, init=False, repr=False)
+
+    @classmethod
+    def from_config(cls) -> "VlogsAgent":
+        """Create VlogsAgent with configuration from app settings."""
+        return cls(config=VlogsConfig.from_app_config())
 
     def __post_init__(self):
         if self.config.parse_with_llm:

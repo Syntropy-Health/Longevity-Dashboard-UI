@@ -1,9 +1,9 @@
 """State modules for the Longevity Clinic application.
 
 This package contains Reflex state classes organized by functionality:
-- Patient states: Dashboard, biomarkers, analytics
-- Admin states: Check-in management
-- Shared states: Auth, voice transcription, notifications
+- Patient states: Biomarkers, analytics
+- Admin states: Patient management, dashboard
+- Shared states: Auth, voice transcription, notifications, health dashboard
 - Treatment states: Search, management
 - Checkin states: Unified patient and admin check-in management
 - Appointment states: Scheduling and calendar
@@ -15,11 +15,14 @@ separation of concerns and testability.
 # Auth states
 from .auth.auth_state import AuthState
 
-# Patient states
-from .patient.patient_state import PatientState
-from .patient.patient_biomarker_state import PatientBiomarkerState
-from .patient.patient_analytics_state import PatientAnalyticsState
-from .patient.patient_dashboard_state import PatientDashboardState
+# Patient states (from patient package)
+from .patient.state import PatientState
+from .patient.biomarker_state import PatientBiomarkerState
+from .patient.analytics_state import PatientAnalyticsState
+
+# Aliases for cleaner naming
+BiomarkerState = PatientBiomarkerState
+AnalyticsState = PatientAnalyticsState
 
 # Treatment states
 from .treatments.treatment_state import TreatmentState
@@ -31,6 +34,10 @@ from .shared.voice_transcription_state import (
     VoiceTranscriptionState,
     audio_capture,
     voice_recorder_component,
+)
+from .shared.dashboard_state import (
+    HealthDashboardState,
+    AdminDashboardState,
 )
 
 # Appointment states
@@ -46,7 +53,8 @@ __all__ = [
     "PatientState",
     "PatientBiomarkerState",
     "PatientAnalyticsState",
-    "PatientDashboardState",
+    "BiomarkerState",
+    "AnalyticsState",
     # Treatment states
     "TreatmentState",
     "TreatmentSearchState",
@@ -60,4 +68,7 @@ __all__ = [
     "VoiceTranscriptionState",
     "audio_capture",
     "voice_recorder_component",
+    # Dashboard states
+    "HealthDashboardState",
+    "AdminDashboardState",
 ]

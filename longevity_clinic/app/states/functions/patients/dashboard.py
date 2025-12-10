@@ -8,6 +8,14 @@ When is_demo=True, returns demo data. Otherwise calls the API.
 from typing import List, Dict, Any, Optional
 
 from longevity_clinic.app.config import get_logger, current_config
+from longevity_clinic.app.data.state_schemas import (
+    Medication,
+    Condition,
+    Symptom,
+    SymptomLog,
+    SymptomTrend,
+    DataSource,
+)
 from longevity_clinic.app.data.demo import (
     DEMO_NUTRITION_SUMMARY,
     DEMO_FOOD_ENTRIES,
@@ -61,7 +69,7 @@ async def fetch_medications(
     patient_id: Optional[str] = None,
     active_only: bool = True,
     is_demo: Optional[bool] = None,
-) -> List[Dict[str, Any]]:
+) -> List[Medication]:
     """Fetch medications for a patient.
 
     Args:
@@ -70,7 +78,7 @@ async def fetch_medications(
         is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        List of medication records
+        List of Medication objects
     """
     if is_demo is None:
         is_demo = current_config.is_demo
@@ -84,7 +92,11 @@ async def fetch_medications(
 
     if is_demo:
         logger.debug("fetch_medications: Returning demo data")
-        return DEMO_MEDICATIONS
+        # Convert dicts to Medication objects for proper typing
+        return [
+            Medication(**med) if isinstance(med, dict) else med
+            for med in DEMO_MEDICATIONS
+        ]
 
     # TODO: Implement API call
     logger.warning("fetch_medications: API not implemented, returning empty list")
@@ -94,7 +106,7 @@ async def fetch_medications(
 async def fetch_conditions(
     patient_id: Optional[str] = None,
     is_demo: Optional[bool] = None,
-) -> List[Dict[str, Any]]:
+) -> List[Condition]:
     """Fetch medical conditions for a patient.
 
     Args:
@@ -102,7 +114,7 @@ async def fetch_conditions(
         is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        List of condition records
+        List of Condition objects
     """
     if is_demo is None:
         is_demo = current_config.is_demo
@@ -115,7 +127,11 @@ async def fetch_conditions(
 
     if is_demo:
         logger.debug("fetch_conditions: Returning demo data")
-        return DEMO_CONDITIONS
+        # Convert dicts to Condition objects for proper typing
+        return [
+            Condition(**cond) if isinstance(cond, dict) else cond
+            for cond in DEMO_CONDITIONS
+        ]
 
     # TODO: Implement API call
     logger.warning("fetch_conditions: API not implemented, returning empty list")
@@ -130,7 +146,7 @@ async def fetch_symptoms(
     """Fetch symptom data for a patient.
 
     Args:
-        patient_id: Patient ID (None = current patient)
+        patient_id: Patient ID   (None = current patient)
         days: Number of days of history
         is_demo: If True, return demo data. Defaults to config.is_demo.
 
@@ -150,9 +166,17 @@ async def fetch_symptoms(
     if is_demo:
         logger.debug("fetch_symptoms: Returning demo data")
         return {
-            "symptoms": DEMO_SYMPTOMS,
-            "symptom_logs": DEMO_SYMPTOM_LOGS,
-            "symptom_trends": DEMO_SYMPTOM_TRENDS,
+            "symptoms": [
+                Symptom(**s) if isinstance(s, dict) else s for s in DEMO_SYMPTOMS
+            ],
+            "symptom_logs": [
+                SymptomLog(**sl) if isinstance(sl, dict) else sl
+                for sl in DEMO_SYMPTOM_LOGS
+            ],
+            "symptom_trends": [
+                SymptomTrend(**st) if isinstance(st, dict) else st
+                for st in DEMO_SYMPTOM_TRENDS
+            ],
         }
 
     # TODO: Implement API call
@@ -163,7 +187,7 @@ async def fetch_symptoms(
 async def fetch_data_sources(
     patient_id: Optional[str] = None,
     is_demo: Optional[bool] = None,
-) -> List[Dict[str, Any]]:
+) -> List[DataSource]:
     """Fetch connected data sources for a patient.
 
     Args:
@@ -171,7 +195,7 @@ async def fetch_data_sources(
         is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        List of data source records with connection status
+        List of DataSource objects
     """
     if is_demo is None:
         is_demo = current_config.is_demo
@@ -184,7 +208,10 @@ async def fetch_data_sources(
 
     if is_demo:
         logger.debug("fetch_data_sources: Returning demo data")
-        return DEMO_DATA_SOURCES
+        # Convert dicts to DataSource objects for proper typing
+        return [
+            DataSource(**ds) if isinstance(ds, dict) else ds for ds in DEMO_DATA_SOURCES
+        ]
 
     # TODO: Implement API call
     logger.warning("fetch_data_sources: API not implemented, returning empty list")

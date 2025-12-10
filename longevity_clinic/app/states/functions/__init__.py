@@ -16,11 +16,6 @@ from .utils import (
 )
 from .vlogs_agent import VlogsAgent, VlogsConfig
 from .patients import (
-    # Call logs
-    summarize_transcript,
-    process_call_logs,
-    get_patient_name,
-    PHONE_TO_PATIENT_NAME,
     # Check-ins
     extract_checkin_from_text,
     # Voice
@@ -58,11 +53,6 @@ __all__ = [
     # VlogsAgent
     "VlogsAgent",
     "VlogsConfig",
-    # Patient: Call logs
-    "summarize_transcript",
-    "process_call_logs",
-    "get_patient_name",
-    "PHONE_TO_PATIENT_NAME",
     # Patient: Check-ins
     "extract_checkin_from_text",
     # Patient: Voice

@@ -14,7 +14,8 @@ import reflex as rx
 from ...config import get_logger
 from ...data.demo import DEMO_CHECKINS, DEMO_PHONE_NUMBER, DEMO_ADMIN_CHECKINS
 from ...data.state_schemas import CheckIn, AdminCheckIn
-from ..functions import fetch_and_process_call_logs
+from ...data.process_schema import CallLogsOutput
+from ..functions import VlogsAgent, VlogsConfig
 from ..functions.patients import extract_checkin_from_text
 from ..functions.admins import (
     filter_checkins,
@@ -554,47 +555,37 @@ class CheckinState(rx.State):
 
     @rx.event(background=True)
     async def refresh_call_logs(self):
-        """Fetch call logs and sync to checkins (background task)."""
-        print("[DEBUG] refresh_call_logs: ENTERED", flush=True)
+        """Fetch call logs and sync to checkins using VlogsAgent."""
         logger.info("refresh_call_logs: Starting")
 
-        print("[DEBUG] refresh_call_logs: Acquiring lock for setup...", flush=True)
         async with self:
             self.call_logs_syncing = True
             self.call_logs_sync_error = ""
             processed_ids = set(self._processed_call_ids)
             current_checkins = list(self.checkins)
-        print("[DEBUG] refresh_call_logs: Lock released, starting fetch...", flush=True)
 
         try:
-            print(
-                "[DEBUG] refresh_call_logs: Calling fetch_and_process_call_logs...",
-                flush=True,
-            )
-            new_count, new_checkins, new_summaries = await fetch_and_process_call_logs(
+            # Use VlogsAgent for structured processing
+            agent = VlogsAgent(config=VlogsConfig(parse_with_llm=False))
+            new_count, outputs, new_summaries = await agent.process_logs(
                 phone_number=DEMO_PHONE_NUMBER,
                 processed_ids=processed_ids,
-                use_llm_summary=False,
-            )
-            print(
-                f"[DEBUG] refresh_call_logs: Fetch complete, {new_count} new logs",
-                flush=True,
             )
             logger.info("refresh_call_logs: Processed %d new logs", new_count)
 
+            # Convert CallLogsOutput to checkin dicts
             existing_ids = {c["id"] for c in current_checkins}
-            to_add = [c for c in new_checkins if c["id"] not in existing_ids]
-            if to_add:
-                sorted_new = sorted(
-                    to_add, key=lambda x: x.get("timestamp", ""), reverse=True
-                )
-            else:
-                sorted_new = []
+            new_checkins = []
+            for output in outputs:
+                checkin_dict = output.to_checkin_dict()
+                if checkin_dict["id"] not in existing_ids:
+                    new_checkins.append(checkin_dict)
 
-            print(
-                "[DEBUG] refresh_call_logs: Acquiring lock to save results...",
-                flush=True,
+            # Sort by timestamp descending
+            sorted_new = sorted(
+                new_checkins, key=lambda x: x.get("timestamp", ""), reverse=True
             )
+
             async with self:
                 if sorted_new:
                     self.checkins = sorted_new + list(self.checkins)
@@ -605,10 +596,8 @@ class CheckinState(rx.State):
                 )
                 self.last_sync_time = datetime.now().strftime("%I:%M %p")
                 self.call_logs_syncing = False
-            print("[DEBUG] refresh_call_logs: COMPLETED successfully", flush=True)
 
         except Exception as e:
-            print(f"[DEBUG] refresh_call_logs: FAILED - {e}", flush=True)
             logger.error("refresh_call_logs: Failed - %s", e)
             async with self:
                 self.call_logs_sync_error = str(e)

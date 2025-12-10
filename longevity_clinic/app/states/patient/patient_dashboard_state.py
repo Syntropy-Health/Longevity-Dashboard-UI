@@ -12,17 +12,6 @@ from typing import Any, Dict, List
 import reflex as rx
 
 from ...config import get_logger
-from ...data.state_schemas import (
-    Condition,
-    DataSource,
-    FoodEntry,
-    Medication,
-    NutritionSummary,
-    Reminder,
-    Symptom,
-    SymptomLog,
-    SymptomTrend,
-)
 from ..functions.patients.dashboard import load_all_dashboard_data
 
 logger = get_logger("longevity_clinic.dashboard")
@@ -75,15 +64,16 @@ class PatientDashboardState(rx.State):
     push_notifications: bool = True
 
     # Data - initialized empty, loaded via load_dashboard_data()
-    nutrition_summary: NutritionSummary = {}
-    food_entries: List[FoodEntry] = []
-    medications: List[Medication] = []
-    conditions: List[Condition] = []
-    symptoms: List[Symptom] = []
-    symptom_logs: List[SymptomLog] = []
-    reminders: List[Reminder] = []
-    symptom_trends: List[SymptomTrend] = []
-    data_sources: List[DataSource] = []
+    # Using Dict for Reflex state compatibility (serializes Pydantic models)
+    nutrition_summary: Dict[str, Any] = {}
+    food_entries: List[Dict[str, Any]] = []
+    medications: List[Dict[str, Any]] = []
+    conditions: List[Dict[str, Any]] = []
+    symptoms: List[Dict[str, Any]] = []
+    symptom_logs: List[Dict[str, Any]] = []
+    reminders: List[Dict[str, Any]] = []
+    symptom_trends: List[Dict[str, Any]] = []
+    data_sources: List[Dict[str, Any]] = []
 
     # Loading state
     is_loading: bool = False
@@ -117,7 +107,7 @@ class PatientDashboardState(rx.State):
         return len([c for c in self.conditions if c["status"] == "resolved"])
 
     @rx.var
-    def filtered_conditions(self) -> List[Condition]:
+    def filtered_conditions(self) -> List[Dict[str, Any]]:
         """Get filtered conditions based on filter."""
         if self.conditions_filter == "all":
             return self.conditions
@@ -129,7 +119,7 @@ class PatientDashboardState(rx.State):
         return len([s for s in self.data_sources if s.get("connected", False)])
 
     @rx.var
-    def filtered_data_sources(self) -> List[DataSource]:
+    def filtered_data_sources(self) -> List[Dict[str, Any]]:
         """Get filtered data sources."""
         type_map = {
             "devices": ["wearable", "scale", "cgm"],

@@ -1,0 +1,180 @@
+Loaded environment from /home/mo/projects/Hackathon/longevity_clinic/.env
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=https://longevity-clinic-backend-test.up.railway.app
+──────────────────────────────────────── System Info ─────────────────────────────────────────
+Debug: Config file: 
+'/home/mo/projects/Hackathon/longevity_clinic/.venv/lib/python3.13/site-packages/reflex/config
+.py'
+Debug: Config: Config(app_name='longevity_clinic', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', backend_port=None, 
+api_url='https://longevity-clinic-backend-test.up.railway.app', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url='dev.db', 
+async_db_url=None, redis_url=None, telemetry_enabled=True, enable_pyleak_monitoring=False, 
+pyleak_blocking_threshold=0.1, pyleak_thread_grace_period=0.2, pyleak_action=None, 
+bun_path=PosixPath('/home/mo/.local/share/reflex/bun/bin/bun'), 
+static_page_generation_timeout=60, 
+cors_allowed_origins=['https://longevity-clinic-backend-test.up.railway.app', 
+'https://longevity-clinic-test.up.railway.app', 'http://localhost:3000'], 
+react_strict_mode=True, frontend_packages=['react-icons'], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000, 
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'show_built_with_reflex', 'loglevel', 'db_url', 
+'api_url', 'frontend_packages', 'cors_allowed_origins', 'plugins'}, env_file=None, 
+state_auto_setters=None, show_built_with_reflex=False, is_reflex_cloud=False, 
+extra_overlay_function=None, plugins=[SitemapPlugin(), TailwindV4Plugin(config={'plugins': 
+['@tailwindcss/typography@0.5.19']})], disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/home/mo/.nvm/versions/node/v22.14.0/bin/node'), 
+'--version']
+Debug: Running command: [PosixPath('/home/mo/.local/share/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.8.20 with Python 3.13.5 (PATH: 
+/home/mo/projects/Hackathon/longevity_clinic/.venv/bin/python)]
+Debug: [Node 22.14.0 (Minimum: 20.19.0) (PATH:/home/mo/.nvm/versions/node/v22.14.0/bin/node)]
+Debug: [Bun 1.3.2 (Minimum: 1.3.0) (PATH: /home/mo/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 22.04.5 LTS]
+Debug: Using package installer at: ['/home/mo/.local/share/reflex/bun/bin/bun', 
+'/home/mo/.nvm/versions/node/v22.14.0/bin/npm']
+Debug: Using package executer at: [['/home/mo/.local/share/reflex/bun/bin/bun'], 
+['/home/mo/.nvm/versions/node/v22.14.0/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Checking if Frontend port: 3000 is in use.
+Debug: Checking if Frontend port: 3000 is in use for families: [<AddressFamily.AF_INET: 2>, 
+<AddressFamily.AF_INET6: 10>].
+Debug: Frontend port: 3000 is not in use.
+Debug: Checking if Backend port: 8000 is in use.
+Debug: Checking if Backend port: 8000 is in use for families: [<AddressFamily.AF_INET: 2>, 
+<AddressFamily.AF_INET6: 10>].
+Debug: Backend port: 8000 is not in use.
+Loaded environment from /home/mo/projects/Hackathon/longevity_clinic/.env
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3000
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8000
+──────────────────────────────────── Starting Reflex App ─────────────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.059 seconds
+Debug: Latest version of reflex: 0.8.21
+DeprecationWarning: rx.Base has been deprecated in version 0.8.15. <class 
+'reflex_audio_capture.audio_capture.MediaDeviceInfo'> is subclassing rx.Base. You can subclass
+from `pydantic.BaseModel` directly instead or use dataclasses if possible. It will be 
+completely removed in 0.9.0. (<frozen abc>:106)
+Loaded environment from /home/mo/projects/Hackathon/longevity_clinic/.env
+Debug: Evaluating page: index
+Debug: Evaluating page: login
+Debug: Evaluating page: admin/dashboard
+Debug: Evaluating page: patient/portal
+Debug: Evaluating page: patient/checkins
+[DEBUG] checkins_page() function called - building component
+Debug: Evaluating page: patient/settings
+Debug: Evaluating page: admin/treatments
+Debug: Evaluating page: patient/analytics
+Debug: Evaluating page: patient/treatment-search
+Debug: Evaluating page: appointments
+Debug: Evaluating page: notifications
+Debug: Evaluating page: 404
+Debug: Slowest pages:
+patient/portal: 67.8ms
+admin/dashboard: 59.9ms
+notifications: 35.2ms
+appointments: 34.7ms
+patient/checkins: 26.4ms
+admin/treatments: 18.2ms
+patient/settings: 15.7ms
+patient/treatment-search: 11.5ms
+patient/analytics: 10.9ms
+index: 3.6ms
+Debug: [timing] Evaluate Pages (Frontend): 0.29s
+Debug: [timing] Collect all imports and app wraps: 0.08s
+Debug: [timing] Auto-memoize StatefulComponents: 0.24s
+Debug: [timing] Copy assets: 0.00s
+Debug: [timing] Compile to Javascript: 0.19s
+[13:12:46] Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 61/61 0:00:00
+Debug: Running command: ['/home/mo/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.2 (b131639c)
+Debug: 
+Debug: Checked 383 installs across 410 packages (no changes) [126.00ms]
+Debug: Running command: ['/home/mo/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'tailwindcss@4.1.17', '@tailwindcss/postcss@4.1.17', 
+'@tailwindcss/typography@0.5.19']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.2 (b131639c)
+Debug: Saved lockfile
+Debug: 
+Debug: installed tailwindcss@4.1.17
+Debug: installed @tailwindcss/postcss@4.1.17
+Debug: installed @tailwindcss/typography@0.5.19
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/home/mo/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'sonner@2.0.7', 'audio-recorder-polyfill', '@radix-ui/themes@3.2.1', 
+'react-error-boundary@6.0.0', 'lucide-react@0.553.0', '@radix-ui/react-dialog@1.1.15', 
+'react-icons', 'react-debounce-input@3.3.0', 'recharts@3.4.1']
+Debug: Installing frontend packages from config and components
+Debug: bun add v1.3.2 (b131639c)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [2]
+Debug: Saved lockfile
+Debug: 
+Debug: installed sonner@2.0.7
+Debug: installed audio-recorder-polyfill@0.4.1
+Debug: installed @radix-ui/themes@3.2.1
+Debug: installed react-error-boundary@6.0.0
+Debug: installed lucide-react@0.553.0
+Debug: installed @radix-ui/react-dialog@1.1.15
+Debug: installed react-icons@5.5.0
+Debug: installed react-debounce-input@3.3.0
+Debug: installed recharts@3.4.1
+Debug: 
+Debug: [154.00ms] done
+Debug: [timing] Install Frontend Packages: 0.30s
+Debug: [timing] Write to Disk: 0.01s
+Debug: Ensuring reflex installation id.
+Debug: Creating /home/mo/.local/share/reflex
+Debug: Running command: [PosixPath('/home/mo/.local/share/reflex/bun/bin/bun'), '--version']
+──────────────────────────────────────── App Running ─────────────────────────────────────────
+Debug: Running command: ['/home/mo/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: ['/home/mo/projects/Hackathon/longevity_clinic/package-lock.json', 
+'/home/mo/projects/Hackathon/longevity_clinic/.gitmodules', 
+'/home/mo/projects/Hackathon/longevity_clinic/reflex-railway-deploy', 
+'/home/mo/projects/Hackathon/longevity_clinic/package.json', 
+'/home/mo/projects/Hackathon/longevity_clinic/scripts', 
+'/home/mo/projects/Hackathon/longevity_clinic/CLAUDE.md', 
+'/home/mo/projects/Hackathon/longevity_clinic/test.log', 
+'/home/mo/projects/Hackathon/longevity_clinic/pyproject.toml', 
+'/home/mo/projects/Hackathon/longevity_clinic/assets', 
+'/home/mo/projects/Hackathon/longevity_clinic/longevity_clinic', 
+'/home/mo/projects/Hackathon/longevity_clinic/.python-version', 
+'/home/mo/projects/Hackathon/longevity_clinic/rxconfig.py', 
+'/home/mo/projects/Hackathon/longevity_clinic/dev.logs', 
+'/home/mo/projects/Hackathon/longevity_clinic/.env.example', 
+'/home/mo/projects/Hackathon/longevity_clinic/docs', 
+'/home/mo/projects/Hackathon/longevity_clinic/README.md', 
+'/home/mo/projects/Hackathon/longevity_clinic/tests', 
+'/home/mo/projects/Hackathon/longevity_clinic/debugging_strategy.md', 
+'/home/mo/projects/Hackathon/longevity_clinic/app.log', 
+'/home/mo/projects/Hackathon/longevity_clinic/monitor_logs.sh', 
+'/home/mo/projects/Hackathon/longevity_clinic/main.py', 
+'/home/mo/projects/Hackathon/longevity_clinic/.env', 
+'/home/mo/projects/Hackathon/longevity_clinic/reflex-audio-capture', 
+'/home/mo/projects/Hackathon/longevity_clinic/uv.lock']
+[INFO] Starting granian (main PID: 1543)
+[INFO] Listening at: http://0.0.0.0:8000
+[INFO] Spawning worker-1 with PID: 1636
+DeprecationWarning: rx.Base has been deprecated in version 0.8.15. <class 
+'reflex_audio_capture.audio_capture.MediaDeviceInfo'> is subclassing rx.Base. You can subclass
+from `pydantic.BaseModel` directly instead or use dataclasses if possible. It will be 
+completely removed in 0.9.0. (<frozen abc>:106)
+Loaded environment from /home/mo/projects/Hackathon/longevity_clinic/.env
+[INFO] Started worker-1
+[INFO] Started worker-1 runtime-1
+Debug:   ➜  Local:   http://localhost:3000/
+App running at: http://localhost:3000/
+Backend running at: http://0.0.0.0:8000
+Debug:   ➜  Network: http://10.255.255.254:3000/
+Debug:   ➜  Network: http://172.29.128.157:3000/
+Debug:   ➜  press h + enter to show help

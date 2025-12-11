@@ -1,19 +1,34 @@
 """VlogsAgent - Modular call logs processing agent.
 
 Handles fetching and processing call logs with configurable LLM parsing.
+Implements CDC (Change Data Capture) pattern for syncing to database.
 """
 
 import asyncio
+import json
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Optional
 
+import reflex as rx
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
+from sqlmodel import select
 
-from longevity_clinic.app.config import get_logger, current_config
+from longevity_clinic.app.config import get_logger, VlogsConfig
 from longevity_clinic.app.prompts import PARSE_CHECKIN
 from longevity_clinic.app.data.process_schema import CallLogsOutput, CheckInSummary
 from longevity_clinic.app.data.state_schemas import CallLogEntry, TranscriptSummary
+from longevity_clinic.app.data.model import (
+    CallLog,
+    CallTranscript,
+    CallSummary,
+    CheckIn,
+    MedicationEntry,
+    FoodLogEntry,
+    SymptomEntry,
+    User,
+)
 
 from .utils import fetch_call_logs, format_timestamp
 
@@ -70,38 +85,6 @@ def _get_best_summary(api_summary: str, full_transcript: str) -> str:
 
 
 # =============================================================================
-# Configuration Dataclasses
-# =============================================================================
-
-
-@dataclass
-class VlogsConfig:
-    """Configuration for VlogsAgent.
-    
-    Attributes:
-        parse_with_llm: Enable LLM-based parsing for structured extraction
-        llm_model: OpenAI model to use for parsing
-        temperature: LLM temperature for response generation
-        limit: Maximum number of call logs to fetch per request
-    """
-
-    parse_with_llm: bool = True  # Default to True for better extraction
-    llm_model: str = "gpt-4o-mini"
-    temperature: float = 0.3
-    limit: int = 50
-
-    @classmethod
-    def from_app_config(cls) -> "VlogsConfig":
-        """Create VlogsConfig from app configuration."""
-        return cls(
-            parse_with_llm=current_config.vlogs_parse_with_llm,
-            llm_model=current_config.vlogs_llm_model,
-            temperature=current_config.vlogs_temperature,
-            limit=current_config.vlogs_fetch_limit,
-        )
-
-
-# =============================================================================
 # Main Agent Dataclass
 # =============================================================================
 
@@ -121,7 +104,8 @@ class VlogsAgent:
         agent = VlogsAgent.from_config()
         
         # Or with custom config
-        config = VlogsConfig(parse_with_llm=True, limit=100)
+        from longevity_clinic.app.data.process_schema import CallLogsOutput
+        config = VlogsConfig(parse_with_llm=True, limit=100, output_schema=CallLogsOutput)
         agent = VlogsAgent(config=config)
         
         # Process logs
@@ -140,14 +124,16 @@ class VlogsAgent:
     @classmethod
     def from_config(cls) -> "VlogsAgent":
         """Create VlogsAgent with configuration from app settings."""
-        return cls(config=VlogsConfig.from_app_config())
+        return cls(config=VlogsConfig(output_schema=CallLogsOutput))
 
     def __post_init__(self):
         if self.config.parse_with_llm:
             self._llm = ChatOpenAI(
                 model=self.config.llm_model, temperature=self.config.temperature
             )
-            self._structured_llm = self._llm.with_structured_output(CallLogsOutput)
+            # Use output_schema from config, fallback to CallLogsOutput
+            schema = self.config.output_schema or CallLogsOutput
+            self._structured_llm = self._llm.with_structured_output(schema)
 
     async def fetch(
         self,
@@ -324,3 +310,243 @@ class VlogsAgent:
 
         logger.info("Processed %d new call logs", new_count)
         return new_count, outputs, summaries
+
+    # =========================================================================
+    # Database Sync Methods (CDC Pattern)
+    # =========================================================================
+
+    def get_processed_call_ids_sync(self) -> set[str]:
+        """Get set of call_ids already in database (sync version)."""
+        with rx.session() as session:
+            result = session.exec(select(CallLog.call_id))
+            return set(result.all())
+
+    def get_user_by_phone_sync(self, phone: str) -> Optional[int]:
+        """Get user_id by phone number (sync version)."""
+        with rx.session() as session:
+            result = session.exec(
+                select(User).where(User.phone == phone)
+            )
+            user = result.first()
+            return user.id if user else None
+
+    def sync_single_to_db_sync(
+        self,
+        log: CallLogEntry,
+        output: CallLogsOutput,
+        summary: TranscriptSummary,
+    ) -> Optional[int]:
+        """Sync a single processed call log to database (sync version).
+        
+        Returns the call_log_id if successful.
+        """
+        call_id = log.get("call_id", "")
+        if not call_id:
+            return None
+
+        try:
+            with rx.session() as session:
+                # Check if already exists
+                existing = session.exec(
+                    select(CallLog).where(CallLog.call_id == call_id)
+                ).first()
+                if existing:
+                    logger.debug("Call %s already in DB, skipping", call_id)
+                    return None
+
+                # Get user_id from phone
+                raw_phone = log.get("caller_phone", "")
+                phone = (
+                    raw_phone.get("phone_number", "")
+                    if isinstance(raw_phone, dict)
+                    else raw_phone
+                )
+                user_id = self.get_user_by_phone_sync(phone)
+
+                # Parse call date
+                call_date_str = log.get("call_date", "")
+                try:
+                    started_at = datetime.fromisoformat(
+                        call_date_str.replace("Z", "+00:00")
+                    )
+                except (ValueError, AttributeError):
+                    started_at = datetime.now(timezone.utc)
+
+                # 1. Create CallLog
+                call_log = CallLog(
+                    call_id=call_id,
+                    user_id=user_id,
+                    phone_number=phone,
+                    direction="inbound",
+                    duration_seconds=log.get("duration", 0),
+                    started_at=started_at,
+                    status="completed",
+                )
+                session.add(call_log)
+                session.flush()  # Get the ID
+                call_log_id = call_log.id
+
+                # 2. Create CallTranscript
+                transcript = CallTranscript(
+                    call_log_id=call_log_id,
+                    call_id=call_id,
+                    raw_transcript=log.get("full_transcript", ""),
+                    language="en",
+                )
+                session.add(transcript)
+
+                # 3. Create CallSummary with LLM output
+                medications = getattr(output, 'medications_entries', []) or getattr(output, 'medications', [])
+                symptom_entries = getattr(output, 'symptom_entries', [])
+                call_summary = CallSummary(
+                    call_log_id=call_log_id,
+                    call_id=call_id,
+                    summary=output.checkin.summary,
+                    health_topics=json.dumps(output.checkin.key_topics),
+                    sentiment=output.checkin.sentiment,
+                    urgency_level="routine",
+                    medications_json=json.dumps(
+                        [m.model_dump() for m in medications]
+                    ) if medications else None,
+                    food_entries_json=json.dumps(
+                        [f.model_dump() for f in output.food_entries]
+                    ) if output.food_entries else None,
+                    symptoms_json=json.dumps(
+                        [s.model_dump() for s in symptom_entries]
+                    ) if symptom_entries else None,
+                    has_medications=output.has_medications,
+                    has_nutrition=output.has_nutrition,
+                    has_symptoms=getattr(output, 'has_symptoms', False),
+                    llm_model=self.config.llm_model if self.config.parse_with_llm else None,
+                )
+                session.add(call_summary)
+                session.flush()
+                summary_id = call_summary.id
+
+                # 4. Create CheckIn
+                checkin = CheckIn(
+                    checkin_id=output.checkin.id,
+                    user_id=user_id,
+                    call_log_id=call_log_id,
+                    patient_name=output.checkin.patient_name,
+                    checkin_type="call",
+                    summary=output.checkin.summary,
+                    raw_content=log.get("full_transcript", ""),
+                    health_topics=json.dumps(output.checkin.key_topics),
+                    status="pending",
+                    timestamp=started_at,
+                )
+                session.add(checkin)
+
+                # 5. Create normalized MedicationEntry records
+                med_count = 0
+                medications = getattr(output, 'medications_entries', []) or getattr(output, 'medications', [])
+                for med in medications:
+                    med_entry = MedicationEntry(
+                        user_id=user_id,
+                        call_log_id=call_log_id,
+                        summary_id=summary_id,
+                        name=med.name,
+                        dosage=med.dosage,
+                        frequency=med.frequency,
+                        status=med.status,
+                        adherence_rate=med.adherence_rate,
+                        source="call_log",
+                        mentioned_at=started_at,
+                    )
+                    session.add(med_entry)
+                    med_count += 1
+
+                # 6. Create normalized FoodLogEntry records
+                food_count = 0
+                for food in output.food_entries:
+                    food_entry = FoodLogEntry(
+                        user_id=user_id,
+                        call_log_id=call_log_id,
+                        summary_id=summary_id,
+                        name=food.name,
+                        calories=food.calories,
+                        protein=food.protein,
+                        carbs=food.carbs,
+                        fat=food.fat,
+                        meal_type=food.meal_type,
+                        consumed_at=food.time,
+                        source="call_log",
+                        logged_at=started_at,
+                    )
+                    session.add(food_entry)
+                    food_count += 1
+
+                # 7. Create normalized SymptomEntry records
+                symptom_count = 0
+                symptom_entries = getattr(output, 'symptom_entries', [])
+                for sym in symptom_entries:
+                    sym_entry = SymptomEntry(
+                        user_id=user_id,
+                        call_log_id=call_log_id,
+                        summary_id=summary_id,
+                        name=sym.name,
+                        severity=sym.severity,
+                        frequency=sym.frequency,
+                        trend=sym.trend,
+                        source="call_log",
+                        reported_at=started_at,
+                    )
+                    session.add(sym_entry)
+                    symptom_count += 1
+
+                session.commit()
+                logger.info(
+                    "Synced call %s to DB (id=%d): %d meds, %d foods, %d symptoms",
+                    call_id, call_log_id, med_count, food_count, symptom_count
+                )
+                return call_log_id
+
+        except Exception as e:
+            logger.error("Failed to sync call %s to DB: %s", call_id, e)
+            return None
+
+    async def process_and_sync(
+        self,
+        phone_number: Optional[str] = None,
+    ) -> tuple[int, list[CallLogsOutput]]:
+        """Full CDC pipeline: fetch, diff, process, sync.
+        
+        Returns:
+            Tuple of (new_count, outputs)
+        """
+        # 1. Get already processed IDs from DB (sync call in thread)
+        processed_ids = await asyncio.to_thread(self.get_processed_call_ids_sync)
+        logger.info("Found %d existing call logs in DB", len(processed_ids))
+
+        # 2. Fetch from API
+        call_logs = await self.fetch(phone_number=phone_number)
+        logger.info("Fetched %d call logs from API", len(call_logs))
+
+        # 3. Filter to new logs only
+        new_logs = [
+            log for log in call_logs
+            if log.get("call_id") and log.get("call_id") not in processed_ids
+        ]
+        logger.info("Found %d new call logs to process", len(new_logs))
+
+        if not new_logs:
+            return 0, []
+
+        # 4. Process each new log with LLM and sync to DB
+        outputs: list[CallLogsOutput] = []
+        synced_count = 0
+
+        for log in new_logs:
+            output, summary = await self.process_single(log)
+            outputs.append(output)
+            
+            # Sync to database (sync call in thread)
+            call_log_id = await asyncio.to_thread(
+                self.sync_single_to_db_sync, log, output, summary
+            )
+            if call_log_id:
+                synced_count += 1
+
+        logger.info("Processed and synced %d new call logs", synced_count)
+        return synced_count, outputs

@@ -74,15 +74,15 @@ class FoodEntry(BaseModel):
 
 
 # =============================================================================
-# Medication Schema (Pydantic - single source of truth)
+# MedicationEntry Schema (Pydantic - single source of truth)
 # =============================================================================
 
 
-class Medication(BaseModel):
-    """Medication - Pydantic model for LLM output and state storage."""
+class MedicationEntry(BaseModel):
+    """MedicationEntry - Pydantic model for LLM output and state storage."""
 
     id: str = Field(default="", description="Unique identifier")
-    name: str = Field(default="", description="Medication name")
+    name: str = Field(default="", description="MedicationEntry name")
     dosage: str = Field(default="", description="Dosage amount and unit")
     frequency: str = Field(default="", description="How often taken")
     status: str = Field(default="active", description="active/discontinued/as-needed")
@@ -111,7 +111,7 @@ class Symptom(BaseModel):
     trend: str = Field(default="", description="Trend direction")
 
 
-class SymptomLog(BaseModel):
+class SymptomEntry(BaseModel):
     """Symptom log entry - Pydantic model for LLM output and state storage."""
 
     id: str = Field(default="", description="Unique identifier")

@@ -7,7 +7,7 @@ from typing import List
 from pydantic import BaseModel, Field
 
 # Import Pydantic models from central schema module (using canonical names)
-from .state_schemas import Medication, FoodEntry
+from .state_schemas import MedicationEntry, FoodEntry, Symptom
 
 
 class CheckInSummary(BaseModel):
@@ -30,17 +30,23 @@ class CallLogsOutput(BaseModel):
     """
 
     checkin: CheckInSummary = Field(description="Check-in summary data")
-    medications: List[Medication] = Field(
+    medications_entries: List[MedicationEntry] = Field(
         default_factory=list, description="Medications mentioned"
     )
     food_entries: List[FoodEntry] = Field(
         default_factory=list, description="Food/nutrition mentioned"
     )
+    symptom_entries: List[Symptom] = Field(
+        default_factory=list, description="Symptoms mentioned"
+    )
     has_medications: bool = Field(
         default=False, description="True if medications were discussed"
     )
     has_nutrition: bool = Field(
-        default=False, description="True if nutrition was discussed"
+        default=False, description="True if ingesting anything was discussed"
+    )
+    has_symptoms: bool = Field(
+        default=False, description="True if symptoms were discussed"
     )
 
     def to_checkin_dict(self) -> dict:

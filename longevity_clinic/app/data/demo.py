@@ -14,10 +14,10 @@ from .state_schemas import (
     ChartData,
     NutritionSummary,
     FoodEntry,
-    Medication,
+    MedicationEntry,
     Condition,
     Symptom,
-    SymptomLog,
+    SymptomEntry,
     Reminder,
     SymptomTrend,
     DataSource,
@@ -239,7 +239,7 @@ BIOMARKER_METRIC_DEMO_DATA: dict[BiomarkerCategoryEnum, list[BiomarkerMetricSeed
 
 
 # Demo phone number for call logs API
-DEMO_PHONE_NUMBER = "+14129339056"
+DEMO_PHONE_NUMBER = "+1(412)933-9056"
 
 __all__ = [
     # Biomarker demo data
@@ -255,10 +255,10 @@ __all__ = [
     "ChartData",
     "NutritionSummary",
     "FoodEntry",
-    "Medication",
+    "MedicationEntry",
     "Condition",
     "Symptom",
-    "SymptomLog",
+    "SymptomEntry",
     "Reminder",
     "SymptomTrend",
     "DataSource",
@@ -483,7 +483,7 @@ DEMO_FOOD_ENTRIES: List[FoodEntry] = [
     },
 ]
 
-DEMO_MEDICATIONS: List[Medication] = [
+DEMO_MEDICATIONS: List[MedicationEntry] = [
     {
         "id": "1",
         "name": "Metformin",
@@ -581,7 +581,7 @@ DEMO_SYMPTOMS: List[Symptom] = [
     },
 ]
 
-DEMO_SYMPTOM_LOGS: List[SymptomLog] = [
+DEMO_SYMPTOM_LOGS: List[SymptomEntry] = [
     {
         "id": "1",
         "symptom_name": "Fatigue",

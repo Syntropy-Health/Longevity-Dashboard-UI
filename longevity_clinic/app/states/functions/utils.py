@@ -73,5 +73,4 @@ async def fetch_call_logs(
         response.raise_for_status()
         data = response.json()
         call_logs = data.get("data", [])
-        logger.info("Fetched %d call logs", len(call_logs))
         return call_logs

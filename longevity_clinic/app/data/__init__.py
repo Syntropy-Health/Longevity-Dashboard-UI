@@ -36,10 +36,10 @@ from .state_schemas import (
     # Patient dashboard schemas
     NutritionSummary,
     FoodEntry,
-    Medication,
+    MedicationEntry,
     Condition,
     Symptom,
-    SymptomLog,
+    SymptomEntry,
     Reminder,
     SymptomTrend,
     DataSource,
@@ -97,6 +97,19 @@ from .demo import (
     PHONE_TO_PATIENT,
 )
 
+# Database models (SQLModel/rx.Model)
+from .model import (
+    User as UserModel,
+    CallLog as CallLogModel,
+    CallTranscript as CallTranscriptModel,
+    CallSummary as CallSummaryModel,
+    CheckIn as CheckInModel_DB,
+    Notification as NotificationModel,
+    MedicationEntry as MedicationEntryModel,
+    FoodLogEntry as FoodLogEntryModel,
+    SymptomEntry as SymptomEntryModel,
+)
+
 __all__ = [
     # Categories and constants
     "TREATMENT_CATEGORIES",
@@ -127,10 +140,10 @@ __all__ = [
     # State schemas - Patient dashboard
     "NutritionSummary",
     "FoodEntry",
-    "Medication",
+    "MedicationEntry",
     "Condition",
     "Symptom",
-    "SymptomLog",
+    "SymptomEntry",
     "Reminder",
     "SymptomTrend",
     "DataSource",
@@ -180,4 +193,14 @@ __all__ = [
     "DEMO_TREND_DATA",
     "DEMO_TREATMENT_DATA",
     "DEMO_BIOMARKER_DATA",
+    # Database models
+    "UserModel",
+    "CallLogModel",
+    "CallTranscriptModel",
+    "CallSummaryModel",
+    "CheckInModel_DB",
+    "NotificationModel",
+    "MedicationEntryModel",
+    "FoodLogEntryModel",
+    "SymptomEntryModel",
 ]

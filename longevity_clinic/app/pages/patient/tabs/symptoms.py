@@ -82,7 +82,7 @@ def symptom_log_item(log) -> rx.Component:
     """Symptom log item.
 
     Args:
-        log: SymptomLog instance from PatientDashboardState
+        log: SymptomEntry instance from PatientDashboardState
     """
     return rx.el.div(
         rx.el.div(

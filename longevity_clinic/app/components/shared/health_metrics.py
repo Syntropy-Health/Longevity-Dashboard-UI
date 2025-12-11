@@ -267,6 +267,73 @@ def symptoms_list() -> rx.Component:
             ),
             class_name="space-y-3",
         ),
+        class_name="mb-8",
+    )
+
+
+def food_entries_list() -> rx.Component:
+    """Food entries list showing recent meals."""
+    return rx.el.div(
+        rx.el.h3(
+            "Recent Food Entries",
+            class_name="text-lg font-semibold text-white mb-4",
+        ),
+        rx.el.div(
+            rx.cond(
+                HealthDashboardState.food_entries.length() > 0,
+                rx.foreach(
+                    HealthDashboardState.food_entries,
+                    lambda entry: rx.el.div(
+                        rx.el.div(
+                            rx.el.div(
+                                rx.icon("utensils", class_name="w-4 h-4 text-teal-400"),
+                                class_name="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center mr-3 border border-teal-500/20",
+                            ),
+                            rx.el.div(
+                                rx.el.h4(
+                                    entry["name"],
+                                    class_name="text-sm font-semibold text-white",
+                                ),
+                                rx.el.p(
+                                    rx.text(entry["time"], " • ", entry["meal_type"]),
+                                    class_name="text-xs text-slate-400",
+                                ),
+                            ),
+                            class_name="flex items-center flex-1",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                rx.el.span(
+                                    entry["calories"],
+                                    class_name="text-lg font-bold text-white",
+                                ),
+                                rx.el.span(" kcal", class_name="text-xs text-slate-400 ml-1"),
+                                class_name="flex items-baseline",
+                            ),
+                            rx.el.div(
+                                rx.el.span(
+                                    rx.text("P:", entry["protein"], "g"),
+                                    class_name="text-xs text-red-400 mr-2",
+                                ),
+                                rx.el.span(
+                                    rx.text("C:", entry["carbs"], "g"),
+                                    class_name="text-xs text-amber-400 mr-2",
+                                ),
+                                rx.el.span(
+                                    rx.text("F:", entry["fat"], "g"),
+                                    class_name="text-xs text-blue-400",
+                                ),
+                                class_name="flex mt-1",
+                            ),
+                            class_name="text-right",
+                        ),
+                        class_name=f"{GlassStyles.PANEL} p-4 flex items-center justify-between",
+                    ),
+                ),
+                rx.el.p("No food entries recorded", class_name="text-slate-400 text-sm"),
+            ),
+            class_name="space-y-3",
+        ),
     )
 
 
@@ -274,11 +341,13 @@ def health_metrics_dashboard() -> rx.Component:
     """Complete health metrics dashboard component.
     
     This is the main component that displays all health metrics including
-    nutrition, medications, conditions, and symptoms.
+    nutrition, medications, conditions, symptoms, and food entries.
+    Data is sourced from the database via CDC pipeline.
     """
     return rx.el.div(
         nutrition_summary_cards(),
         medications_list(),
         conditions_list(),
         symptoms_list(),
+        food_entries_list(),
     )

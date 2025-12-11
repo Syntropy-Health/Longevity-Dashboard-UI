@@ -15,6 +15,7 @@ from .health_metrics import (
     medications_list,
     conditions_list,
     symptoms_list,
+    food_entries_list,
     health_metrics_dashboard,
 )
 
@@ -30,5 +31,6 @@ __all__ = [
     "medications_list",
     "conditions_list",
     "symptoms_list",
+    "food_entries_list",
     "health_metrics_dashboard",
 ]

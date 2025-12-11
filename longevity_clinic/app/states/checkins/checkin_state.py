@@ -8,14 +8,21 @@ import asyncio
 import uuid
 from datetime import datetime
 from typing import List, Dict, Any
+import re
 
 import reflex as rx
+from sqlmodel import select
 
-from ...config import get_logger
+from ...config import get_logger, VlogsConfig
 from ...data.demo import DEMO_CHECKINS, DEMO_PHONE_NUMBER, DEMO_ADMIN_CHECKINS
 from ...data.state_schemas import CheckIn, AdminCheckIn
 from ...data.process_schema import CallLogsOutput
-from ..functions import VlogsAgent, VlogsConfig
+from ...data.model import (
+    CheckIn as CheckInDB,
+    MedicationEntry,
+    FoodLogEntry,
+)
+from ..functions import VlogsAgent
 from ..functions.patients import extract_checkin_from_text
 from ..functions.admins import (
     filter_checkins,
@@ -23,6 +30,7 @@ from ..functions.admins import (
     fetch_all_checkins,
 )
 from ..shared.voice_transcription_state import VoiceTranscriptionState
+from ..shared.dashboard_state import HealthDashboardState
 
 logger = get_logger("longevity_clinic.checkins")
 
@@ -550,50 +558,49 @@ class CheckinState(rx.State):
             logger.info("sync_call_logs_to_admin: No new checkins to sync")
 
     # =========================================================================
-    # Call Logs Sync (Patient)
+    # Call Logs Sync (Patient) - CDC Pattern with Database
     # =========================================================================
 
     @rx.event(background=True)
     async def refresh_call_logs(self):
-        """Fetch call logs and sync to checkins using VlogsAgent."""
-        logger.info("refresh_call_logs: Starting")
+        """Fetch call logs and sync to database using VlogsAgent CDC pipeline.
+
+        Pipeline:
+        1. Agent fetches call logs from API
+        2. Agent diffs against database (skips existing)
+        3. Agent processes new logs with LLM
+        4. Agent syncs to database (CallLog, CallSummary, MedicationEntry, etc.)
+        5. State loads fresh data from database
+        """
+        logger.info("refresh_call_logs: Starting CDC pipeline")
 
         async with self:
             self.call_logs_syncing = True
             self.call_logs_sync_error = ""
-            processed_ids = set(self._processed_call_ids)
-            current_checkins = list(self.checkins)
 
         try:
-            # Use VlogsAgent for structured processing
-            agent = VlogsAgent(config=VlogsConfig(parse_with_llm=False))
-            new_count, outputs, new_summaries = await agent.process_logs(
-                phone_number=DEMO_PHONE_NUMBER,
-                processed_ids=processed_ids,
+            # Use VlogsAgent for full CDC pipeline
+            config = VlogsConfig(
+                parse_with_llm=True,
+                output_schema=CallLogsOutput,
             )
-            logger.info("refresh_call_logs: Processed %d new logs", new_count)
-
-            # Convert CallLogsOutput to checkin dicts
-            existing_ids = {c["id"] for c in current_checkins}
-            new_checkins = []
-            for output in outputs:
-                checkin_dict = output.to_checkin_dict()
-                if checkin_dict["id"] not in existing_ids:
-                    new_checkins.append(checkin_dict)
-
-            # Sort by timestamp descending
-            sorted_new = sorted(
-                new_checkins, key=lambda x: x.get("timestamp", ""), reverse=True
+            agent = VlogsAgent(config=config)
+            
+            # Run CDC: fetch -> diff -> process -> sync to DB
+            phone_clean = re.sub(r"[()\-\s]", "", DEMO_PHONE_NUMBER)
+            new_count, outputs = await agent.process_and_sync(
+                phone_number=phone_clean,
             )
+            logger.info("refresh_call_logs: Processed %d new call logs", new_count)
 
+            # Load fresh check-ins from database
+            checkins_from_db = await self._load_checkins_from_db()
+            
             async with self:
-                if sorted_new:
-                    self.checkins = sorted_new + list(self.checkins)
-                    logger.info("refresh_call_logs: Added %d checkins", len(sorted_new))
-
-                self._processed_call_ids = list(
-                    processed_ids | set(new_summaries.keys())
-                )
+                if checkins_from_db:
+                    self.checkins = checkins_from_db
+                    logger.info("refresh_call_logs: Loaded %d checkins from DB", len(checkins_from_db))
+                
                 self.last_sync_time = datetime.now().strftime("%I:%M %p")
                 self.call_logs_syncing = False
 
@@ -602,3 +609,36 @@ class CheckinState(rx.State):
             async with self:
                 self.call_logs_sync_error = str(e)
                 self.call_logs_syncing = False
+
+    async def _load_checkins_from_db(self) -> List[Dict[str, Any]]:
+        """Load check-ins from database for current user."""
+        def _query_checkins():
+            with rx.session() as session:
+                result = session.exec(
+                    select(CheckInDB)
+                    .where(CheckInDB.checkin_type == "call")
+                    .order_by(CheckInDB.timestamp.desc())
+                    .limit(100)
+                )
+                checkins = result.all()
+                
+                # Convert to dict format for state
+                return [
+                    {
+                        "id": c.checkin_id,
+                        "type": c.checkin_type,
+                        "summary": c.summary,
+                        "timestamp": c.timestamp.isoformat() if c.timestamp else "",
+                        "sentiment": "neutral",
+                        "key_topics": [],
+                        "provider_reviewed": c.provider_reviewed,
+                        "patient_name": c.patient_name,
+                        "status": c.status,
+                    }
+                    for c in checkins
+                ]
+        try:
+            return await asyncio.to_thread(_query_checkins)
+        except Exception as e:
+            logger.error("Failed to load checkins from DB: %s", e)
+            return []

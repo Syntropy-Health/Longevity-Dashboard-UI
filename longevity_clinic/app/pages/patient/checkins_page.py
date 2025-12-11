@@ -3,6 +3,7 @@
 import reflex as rx
 from ...components.layout import authenticated_layout
 from ...components.modals import transcript_modal
+from ...data.demo import DEMO_PHONE_NUMBER
 from ...states import AuthState
 from ...states.checkins import CheckinState
 from ...styles.constants import GlassStyles
@@ -357,7 +358,7 @@ def stat_card(
 def patient_checkins_view() -> rx.Component:
     """Patient view for their own check-ins."""
     return rx.el.div(
-        # Header
+        # Header with Phone Number Info
         rx.el.div(
             rx.el.div(
                 rx.el.h1(
@@ -369,16 +370,27 @@ def patient_checkins_view() -> rx.Component:
                     class_name="text-slate-400 text-sm",
                 ),
             ),
-            rx.button(
-                rx.cond(
-                    CheckinState.call_logs_syncing,
-                    rx.icon("loader-circle", class_name="w-4 h-4 animate-spin mr-2"),
-                    rx.icon("refresh-cw", class_name="w-4 h-4 mr-2"),
+            # Right side: Phone number badge + Refresh button
+            rx.el.div(
+                # Demo Phone Number Badge
+                rx.el.div(
+                    rx.icon("phone", class_name="w-4 h-4 text-purple-400 mr-2"),
+                    rx.el.span("Voice Line: ", class_name="text-xs text-slate-500"),
+                    rx.el.span(DEMO_PHONE_NUMBER, class_name="text-sm font-mono text-purple-300"),
+                    class_name=f"{GlassStyles.PANEL} px-3 py-2 flex items-center mr-3",
                 ),
-                rx.cond(CheckinState.call_logs_syncing, "Syncing...", "Refresh"),
-                on_click=CheckinState.refresh_call_logs,
-                disabled=CheckinState.call_logs_syncing,
-                class_name=f"{GlassStyles.BUTTON_SECONDARY} flex items-center text-sm",
+                rx.button(
+                    rx.cond(
+                        CheckinState.call_logs_syncing,
+                        rx.icon("loader-circle", class_name="w-4 h-4 animate-spin mr-2"),
+                        rx.icon("refresh-cw", class_name="w-4 h-4 mr-2"),
+                    ),
+                    rx.cond(CheckinState.call_logs_syncing, "Syncing...", "Refresh"),
+                    on_click=CheckinState.refresh_call_logs,
+                    disabled=CheckinState.call_logs_syncing,
+                    class_name=f"{GlassStyles.BUTTON_SECONDARY} flex items-center text-sm",
+                ),
+                class_name="flex items-center",
             ),
             class_name="flex justify-between items-start mb-6",
         ),

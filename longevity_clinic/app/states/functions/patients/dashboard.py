@@ -1,27 +1,24 @@
 """Dashboard data fetching functions.
 
-Functions for fetching dashboard-related data including nutrition,
-medications, conditions, symptoms, and data sources.
-When is_demo=True, returns demo data. Otherwise calls the API.
+Functions for fetching static dashboard-related data including
+conditions, data sources, and reminders.
+
+NOTE: Medications, food entries, and symptoms are now sourced from
+the database via CDC pipeline (call log extraction). These functions
+provide only static/default data for things not yet in the DB.
 """
 
 from typing import List, Dict, Any, Optional
 
-from longevity_clinic.app.config import get_logger, current_config
+from longevity_clinic.app.config import get_logger
 from longevity_clinic.app.data.state_schemas import (
-    Medication,
     Condition,
-    Symptom,
-    SymptomLog,
+    SymptomEntry,
     SymptomTrend,
     DataSource,
 )
 from longevity_clinic.app.data.demo import (
-    DEMO_NUTRITION_SUMMARY,
-    DEMO_FOOD_ENTRIES,
-    DEMO_MEDICATIONS,
     DEMO_CONDITIONS,
-    DEMO_SYMPTOMS,
     DEMO_SYMPTOM_LOGS,
     DEMO_REMINDERS,
     DEMO_SYMPTOM_TRENDS,
@@ -31,191 +28,87 @@ from longevity_clinic.app.data.demo import (
 logger = get_logger("longevity_clinic.dashboard_functions")
 
 
-async def fetch_nutrition_summary(
-    patient_id: Optional[str] = None,
-    date: Optional[str] = None,
-    is_demo: Optional[bool] = None,
-) -> Dict[str, Any]:
-    """Fetch nutrition summary for a patient.
-
-    Args:
-        patient_id: Patient ID (None = current patient)
-        date: Date to fetch summary for (None = today)
-        is_demo: If True, return demo data. Defaults to config.is_demo.
-
-    Returns:
-        Nutrition summary dict with calories, protein, carbs, fat
-    """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
-    logger.info(
-        "Fetching nutrition summary for patient: %s, date: %s (demo=%s)",
-        patient_id or "current",
-        date or "today",
-        is_demo,
-    )
-
-    if is_demo:
-        logger.debug("fetch_nutrition_summary: Returning demo data")
-        return DEMO_NUTRITION_SUMMARY
-
-    # TODO: Implement API call
-    logger.warning("fetch_nutrition_summary: API not implemented, returning empty dict")
-    return {}
-
-
-async def fetch_medications(
-    patient_id: Optional[str] = None,
-    active_only: bool = True,
-    is_demo: Optional[bool] = None,
-) -> List[Medication]:
-    """Fetch medications for a patient.
-
-    Args:
-        patient_id: Patient ID (None = current patient)
-        active_only: Only return active medications
-        is_demo: If True, return demo data. Defaults to config.is_demo.
-
-    Returns:
-        List of Medication objects
-    """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
-    logger.info(
-        "Fetching medications for patient: %s (active_only=%s, demo=%s)",
-        patient_id or "current",
-        active_only,
-        is_demo,
-    )
-
-    if is_demo:
-        logger.debug("fetch_medications: Returning demo data")
-        # Convert dicts to Medication objects for proper typing
-        return [
-            Medication(**med) if isinstance(med, dict) else med
-            for med in DEMO_MEDICATIONS
-        ]
-
-    # TODO: Implement API call
-    logger.warning("fetch_medications: API not implemented, returning empty list")
-    return []
+# NOTE: fetch_nutrition_summary, fetch_medications, and fetch_food_entries
+# have been removed. This data now comes from the database via CDC pipeline
+# (call log extraction). See dashboard_state._load_health_entries_from_db()
 
 
 async def fetch_conditions(
     patient_id: Optional[str] = None,
-    is_demo: Optional[bool] = None,
 ) -> List[Condition]:
     """Fetch medical conditions for a patient.
 
     Args:
         patient_id: Patient ID (None = current patient)
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        List of Condition objects
+        List of Condition objects (static demo data for now)
     """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
     logger.info(
-        "Fetching conditions for patient: %s (demo=%s)",
+        "Fetching conditions for patient: %s",
         patient_id or "current",
-        is_demo,
     )
 
-    if is_demo:
-        logger.debug("fetch_conditions: Returning demo data")
-        # Convert dicts to Condition objects for proper typing
-        return [
-            Condition(**cond) if isinstance(cond, dict) else cond
-            for cond in DEMO_CONDITIONS
-        ]
-
-    # TODO: Implement API call
-    logger.warning("fetch_conditions: API not implemented, returning empty list")
-    return []
+    # Return static conditions - these don't come from call logs yet
+    return [
+        Condition(**cond) if isinstance(cond, dict) else cond
+        for cond in DEMO_CONDITIONS
+    ]
 
 
 async def fetch_symptoms(
     patient_id: Optional[str] = None,
     days: int = 30,
-    is_demo: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Fetch symptom data for a patient.
 
     Args:
-        patient_id: Patient ID   (None = current patient)
+        patient_id: Patient ID (None = current patient)
         days: Number of days of history
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        Dict with 'symptoms', 'symptom_logs', 'symptom_trends' keys
+        Dict with 'symptom_logs' and 'symptom_trends' keys.
+        NOTE: Actual symptoms come from DB via CDC pipeline.
     """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
     logger.info(
-        "Fetching symptoms for patient: %s (%d days, demo=%s)",
+        "Fetching symptom logs/trends for patient: %s (%d days)",
         patient_id or "current",
         days,
-        is_demo,
     )
 
-    if is_demo:
-        logger.debug("fetch_symptoms: Returning demo data")
-        return {
-            "symptoms": [
-                Symptom(**s) if isinstance(s, dict) else s for s in DEMO_SYMPTOMS
-            ],
-            "symptom_logs": [
-                SymptomLog(**sl) if isinstance(sl, dict) else sl
-                for sl in DEMO_SYMPTOM_LOGS
-            ],
-            "symptom_trends": [
-                SymptomTrend(**st) if isinstance(st, dict) else st
-                for st in DEMO_SYMPTOM_TRENDS
-            ],
-        }
-
-    # TODO: Implement API call
-    logger.warning("fetch_symptoms: API not implemented, returning empty data")
-    return {"symptoms": [], "symptom_logs": [], "symptom_trends": []}
+    # Return static symptom logs and trends (symptoms come from DB)
+    return {
+        "symptom_logs": [
+            SymptomEntry(**sl) if isinstance(sl, dict) else sl
+            for sl in DEMO_SYMPTOM_LOGS
+        ],
+        "symptom_trends": [
+            SymptomTrend(**st) if isinstance(st, dict) else st
+            for st in DEMO_SYMPTOM_TRENDS
+        ],
+    }
 
 
 async def fetch_data_sources(
     patient_id: Optional[str] = None,
-    is_demo: Optional[bool] = None,
 ) -> List[DataSource]:
     """Fetch connected data sources for a patient.
 
     Args:
         patient_id: Patient ID (None = current patient)
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        List of DataSource objects
+        List of DataSource objects (static demo data for now)
     """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
     logger.info(
-        "Fetching data sources for patient: %s (demo=%s)",
+        "Fetching data sources for patient: %s",
         patient_id or "current",
-        is_demo,
     )
 
-    if is_demo:
-        logger.debug("fetch_data_sources: Returning demo data")
-        # Convert dicts to DataSource objects for proper typing
-        return [
-            DataSource(**ds) if isinstance(ds, dict) else ds for ds in DEMO_DATA_SOURCES
-        ]
-
-    # TODO: Implement API call
-    logger.warning("fetch_data_sources: API not implemented, returning empty list")
-    return []
+    # Return static data sources
+    return [
+        DataSource(**ds) if isinstance(ds, dict) else ds for ds in DEMO_DATA_SOURCES
+    ]
 
 
 async def sync_data_source(
@@ -324,108 +217,62 @@ def calculate_symptom_trends(
     return sorted(trends, key=lambda x: x["occurrences"], reverse=True)
 
 
-async def fetch_food_entries(
-    patient_id: Optional[str] = None,
-    is_demo: Optional[bool] = None,
-) -> List[Dict[str, Any]]:
-    """Fetch food entries for a patient.
-
-    Args:
-        patient_id: Patient ID (None = current patient)
-        is_demo: If True, return demo data. Defaults to config.is_demo.
-
-    Returns:
-        List of food entry records
-    """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
-    logger.info(
-        "Fetching food entries for patient: %s (demo=%s)",
-        patient_id or "current",
-        is_demo,
-    )
-
-    if is_demo:
-        logger.debug("fetch_food_entries: Returning demo data")
-        return DEMO_FOOD_ENTRIES
-
-    # TODO: Implement API call
-    logger.warning("fetch_food_entries: API not implemented, returning empty list")
-    return []
+# NOTE: fetch_food_entries has been removed.
+# Food entries now come from the database via CDC pipeline.
 
 
 async def fetch_reminders(
     patient_id: Optional[str] = None,
-    is_demo: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch reminders for a patient.
 
     Args:
         patient_id: Patient ID (None = current patient)
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        List of reminder records
+        List of reminder records (static demo data for now)
     """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
     logger.info(
-        "Fetching reminders for patient: %s (demo=%s)", patient_id or "current", is_demo
+        "Fetching reminders for patient: %s", patient_id or "current"
     )
 
-    if is_demo:
-        logger.debug("fetch_reminders: Returning demo data")
-        return DEMO_REMINDERS
-
-    # TODO: Implement API call
-    logger.warning("fetch_reminders: API not implemented, returning empty list")
-    return []
+    # Return static reminders
+    return DEMO_REMINDERS
 
 
 async def load_all_dashboard_data(
     patient_id: Optional[str] = None,
-    is_demo: Optional[bool] = None,
 ) -> Dict[str, Any]:
-    """Load all dashboard data for a patient.
+    """Load static dashboard data for a patient.
 
-    This is a convenience function that fetches all dashboard-related
-    data in one call.
+    NOTE: Medications, food entries, and symptoms are now loaded from
+    the database (via CDC pipeline). This function only provides:
+    - conditions (static)
+    - symptom_logs (static)
+    - symptom_trends (static)
+    - reminders (static)
+    - data_sources (static)
 
     Args:
         patient_id: Patient ID (None = current patient)
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        Dict with keys: 'nutrition_summary', 'food_entries', 'medications',
-        'conditions', 'symptoms', 'symptom_logs', 'symptom_trends',
+        Dict with keys: 'conditions', 'symptom_logs', 'symptom_trends',
         'reminders', 'data_sources'
     """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
     logger.info(
-        "Loading all dashboard data for patient: %s (demo=%s)",
+        "Loading static dashboard data for patient: %s",
         patient_id or "current",
-        is_demo,
     )
 
-    # Fetch all data with the same is_demo setting
-    nutrition_summary = await fetch_nutrition_summary(patient_id, is_demo=is_demo)
-    food_entries = await fetch_food_entries(patient_id, is_demo=is_demo)
-    medications = await fetch_medications(patient_id, is_demo=is_demo)
-    conditions = await fetch_conditions(patient_id, is_demo=is_demo)
-    symptoms_data = await fetch_symptoms(patient_id, is_demo=is_demo)
-    reminders = await fetch_reminders(patient_id, is_demo=is_demo)
-    data_sources = await fetch_data_sources(patient_id, is_demo=is_demo)
+    # Fetch only static data (medications, food, symptoms come from DB)
+    conditions = await fetch_conditions(patient_id)
+    symptoms_data = await fetch_symptoms(patient_id)
+    reminders = await fetch_reminders(patient_id)
+    data_sources = await fetch_data_sources(patient_id)
 
     return {
-        "nutrition_summary": nutrition_summary,
-        "food_entries": food_entries,
-        "medications": medications,
         "conditions": conditions,
-        "symptoms": symptoms_data.get("symptoms", []),
         "symptom_logs": symptoms_data.get("symptom_logs", []),
         "symptom_trends": symptoms_data.get("symptom_trends", []),
         "reminders": reminders,

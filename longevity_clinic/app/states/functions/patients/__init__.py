@@ -28,12 +28,9 @@ from .analytics import (
     format_analytics_value,
 )
 from .dashboard import (
-    fetch_nutrition_summary,
-    fetch_medications,
     fetch_conditions,
     fetch_symptoms,
     fetch_data_sources,
-    fetch_food_entries,
     fetch_reminders,
     load_all_dashboard_data,
     sync_data_source,

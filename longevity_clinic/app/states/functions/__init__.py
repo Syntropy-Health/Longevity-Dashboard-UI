@@ -14,7 +14,8 @@ from .utils import (
     extract_topics_from_summary,
     fetch_call_logs,
 )
-from .vlogs_agent import VlogsAgent, VlogsConfig
+from .vlogs_agent import VlogsAgent
+from longevity_clinic.app.config import VlogsConfig
 from .patients import (
     # Check-ins
     extract_checkin_from_text,
@@ -31,9 +32,8 @@ from .patients import (
     fetch_analytics_summary,
     calculate_health_score,
     calculate_trend_analysis,
-    # Dashboard
-    fetch_nutrition_summary,
-    fetch_medications,
+    # Dashboard - NOTE: fetch_nutrition_summary, fetch_medications, fetch_food_entries
+    # have been removed. This data now comes from DB via CDC pipeline.
     fetch_conditions,
     calculate_medication_adherence,
 )
@@ -68,9 +68,7 @@ __all__ = [
     "fetch_analytics_summary",
     "calculate_health_score",
     "calculate_trend_analysis",
-    # Patient: Dashboard
-    "fetch_nutrition_summary",
-    "fetch_medications",
+    # Patient: Dashboard (NOTE: fetch_nutrition_summary, fetch_medications removed - use DB)
     "fetch_conditions",
     "calculate_medication_adherence",
     # Admin: Check-ins

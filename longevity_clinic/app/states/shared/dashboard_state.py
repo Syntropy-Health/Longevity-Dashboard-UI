@@ -5,22 +5,29 @@ This module provides consolidated dashboard state for both admin and patient vie
 - AdminDashboardState: Manages admin-specific state including patient selection
 """
 
+import asyncio
 import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
 import reflex as rx
+from sqlmodel import select
 
 from ...config import get_logger
 from ...data.state_schemas import (
     FoodEntry,
-    Medication,
+    MedicationEntry,
     Condition,
     Symptom,
-    SymptomLog,
+    SymptomEntry,
     SymptomTrend,
     DataSource,
     Patient,
+)
+from ...data.model import (
+    MedicationEntry as MedicationEntryDB,
+    FoodLogEntry as FoodLogEntryDB,
+    SymptomEntry as SymptomEntryDB,
 )
 from ..functions.patients.dashboard import load_all_dashboard_data
 from ..functions.patients.patients import load_all_patient_data
@@ -80,10 +87,10 @@ class HealthDashboardState(rx.State):
     # Using Dict for Reflex state compatibility (serializes Pydantic models)
     nutrition_summary: Dict[str, Any] = {}
     food_entries: list[FoodEntry] = []
-    medications: list[Medication] = []
+    medications: list[MedicationEntry] = []
     conditions: list[Condition] = []
     symptoms: list[Symptom] = []
-    symptom_logs: list[SymptomLog] = []
+    symptom_logs: list[SymptomEntry] = []
     reminders: List[Dict[str, Any]] = []
     symptom_trends: list[SymptomTrend] = []
     data_sources: list[DataSource] = []
@@ -104,35 +111,35 @@ class HealthDashboardState(rx.State):
         """Calculate overall medication adherence."""
         if not self.medications:
             return 0.0
-        total = sum(med["adherence_rate"] for med in self.medications)
+        total = sum(med.adherence_rate for med in self.medications)
         return total / len(self.medications)
 
     @rx.var
     def active_conditions_count(self) -> int:
         """Count active conditions."""
-        return len([c for c in self.conditions if c["status"] == "active"])
+        return len([c for c in self.conditions if c.status == "active"])
 
     @rx.var
     def managed_conditions_count(self) -> int:
         """Count managed conditions."""
-        return len([c for c in self.conditions if c["status"] == "managed"])
+        return len([c for c in self.conditions if c.status == "managed"])
 
     @rx.var
     def resolved_conditions_count(self) -> int:
         """Count resolved conditions."""
-        return len([c for c in self.conditions if c["status"] == "resolved"])
+        return len([c for c in self.conditions if c.status == "resolved"])
 
     @rx.var
     def filtered_conditions(self) -> list[Condition]:
         """Get filtered conditions based on filter."""
         if self.conditions_filter == "all":
             return self.conditions
-        return [c for c in self.conditions if c["status"] == self.conditions_filter]
+        return [c for c in self.conditions if c.status == self.conditions_filter]
 
     @rx.var
     def connected_sources_count(self) -> int:
         """Count connected data sources."""
-        return len([s for s in self.data_sources if s["connected"]])
+        return len([s for s in self.data_sources if s.connected])
 
     @rx.var
     def filtered_data_sources(self) -> list[DataSource]:
@@ -145,7 +152,7 @@ class HealthDashboardState(rx.State):
         types = type_map.get(self.data_sources_filter, [])
         if not types:
             return self.data_sources
-        return [s for s in self.data_sources if s["type"] in types]
+        return [s for s in self.data_sources if s.type in types]
 
     # =========================================================================
     # Data Loading
@@ -153,10 +160,14 @@ class HealthDashboardState(rx.State):
 
     @rx.event(background=True)
     async def load_dashboard_data(self):
-        """Load dashboard data.
+        """Load dashboard data from database.
 
-        Respects IS_DEMO env var: when True, returns demo data;
-        when False, calls the API.
+        Database is the source of truth for:
+        - Medications (from call log extraction)
+        - Food entries (from call log extraction)
+        - Symptoms (from call log extraction)
+        
+        Static data (conditions, reminders, data sources) loaded from defaults.
         """
         # Prevent duplicate loads
         async with self:
@@ -165,30 +176,145 @@ class HealthDashboardState(rx.State):
                 return
             self.is_loading = True
 
-        logger.info("load_dashboard_data: Starting")
+        logger.info("load_dashboard_data: Starting (DB as source of truth)")
 
         try:
-            # Fetch data using extracted function (respects IS_DEMO config)
-            data = await load_all_dashboard_data(patient_id=self._viewing_patient_id)
+            # Load health data from database (medications, food, symptoms)
+            db_data = await self._load_health_entries_from_db()
+
+            # Load static data (conditions, data sources, reminders) - these don't change
+            static_data = await load_all_dashboard_data(patient_id=self._viewing_patient_id)
+
+            # Calculate nutrition from DB food entries
+            nutrition = {}
+            if db_data["food_entries"]:
+                nutrition["total_calories"] = sum(f.calories for f in db_data["food_entries"])
+                nutrition["total_protein"] = sum(f.protein for f in db_data["food_entries"])
+                nutrition["total_carbs"] = sum(f.carbs for f in db_data["food_entries"])
+                nutrition["total_fat"] = sum(f.fat for f in db_data["food_entries"])
+                nutrition["calorie_goal"] = 2000
+                nutrition["protein_goal"] = 150
+                nutrition["carbs_goal"] = 250
+                nutrition["fat_goal"] = 65
+            else:
+                # Default goals if no data
+                nutrition = {
+                    "total_calories": 0,
+                    "total_protein": 0,
+                    "total_carbs": 0,
+                    "total_fat": 0,
+                    "calorie_goal": 2000,
+                    "protein_goal": 150,
+                    "carbs_goal": 250,
+                    "fat_goal": 65,
+                }
 
             async with self:
-                self.nutrition_summary = data["nutrition_summary"]
-                self.food_entries = data["food_entries"]
-                self.medications = data["medications"]
-                self.conditions = data["conditions"]
-                self.symptoms = data["symptoms"]
-                self.symptom_logs = data["symptom_logs"]
-                self.symptom_trends = data["symptom_trends"]
-                self.reminders = data["reminders"]
-                self.data_sources = data["data_sources"]
+                # DB data takes priority
+                self.nutrition_summary = nutrition
+                self.food_entries = db_data["food_entries"]
+                self.medications = db_data["medications"]
+                self.symptoms = db_data["symptoms"]
+                # Static data from defaults
+                self.conditions = static_data.get("conditions", [])
+                self.symptom_logs = static_data.get("symptom_logs", [])
+                self.symptom_trends = static_data.get("symptom_trends", [])
+                self.reminders = static_data.get("reminders", [])
+                self.data_sources = static_data.get("data_sources", [])
                 self.is_loading = False
                 self._data_loaded = True
 
-            logger.info("load_dashboard_data: Complete")
+            logger.info(
+                "load_dashboard_data: Complete (DB: %d meds, %d foods, %d symptoms)",
+                len(db_data["medications"]),
+                len(db_data["food_entries"]),
+                len(db_data["symptoms"]),
+            )
         except Exception as e:
             logger.error("load_dashboard_data: Failed - %s", e)
             async with self:
                 self.is_loading = False
+
+    async def _load_health_entries_from_db(self) -> Dict[str, Any]:
+        """Load health entries (meds, food, symptoms) from database."""
+
+        def _query():
+            with rx.session() as session:
+                # Load medications
+                med_result = session.exec(
+                    select(MedicationEntryDB)
+                    .order_by(MedicationEntryDB.mentioned_at.desc())
+                    .limit(50)
+                )
+                db_meds = list(med_result.all())
+
+                # Load food entries
+                food_result = session.exec(
+                    select(FoodLogEntryDB)
+                    .order_by(FoodLogEntryDB.logged_at.desc())
+                    .limit(50)
+                )
+                db_foods = list(food_result.all())
+
+                # Load symptoms
+                sym_result = session.exec(
+                    select(SymptomEntryDB)
+                    .order_by(SymptomEntryDB.reported_at.desc())
+                    .limit(50)
+                )
+                db_symptoms = list(sym_result.all())
+
+                return db_meds, db_foods, db_symptoms
+
+        try:
+            db_meds, db_foods, db_symptoms = await asyncio.to_thread(_query)
+
+            # Convert to Pydantic models
+            medications = [
+                MedicationEntry(
+                    id=str(m.id),
+                    name=m.name,
+                    dosage=m.dosage,
+                    frequency=m.frequency,
+                    status=m.status,
+                    adherence_rate=m.adherence_rate,
+                )
+                for m in db_meds
+            ]
+
+            food_entries = [
+                FoodEntry(
+                    id=str(f.id),
+                    name=f.name,
+                    calories=f.calories,
+                    protein=f.protein,
+                    carbs=f.carbs,
+                    fat=f.fat,
+                    time=f.consumed_at or "",
+                    meal_type=f.meal_type,
+                )
+                for f in db_foods
+            ]
+
+            symptoms = [
+                Symptom(
+                    id=str(s.id),
+                    name=s.name,
+                    severity=s.severity,
+                    frequency=s.frequency,
+                    trend=s.trend,
+                )
+                for s in db_symptoms
+            ]
+
+            return {
+                "medications": medications,
+                "food_entries": food_entries,
+                "symptoms": symptoms,
+            }
+        except Exception as e:
+            logger.error("_load_health_entries_from_db: Failed - %s", e)
+            return {"medications": [], "food_entries": [], "symptoms": []}
 
     @rx.event(background=True)
     async def load_patient_health_data(self, patient_id: str):
@@ -242,6 +368,55 @@ class HealthDashboardState(rx.State):
         self.data_sources = []
 
     # =========================================================================
+    # Database Loading (for CDC-synced data)
+    # =========================================================================
+
+    @rx.event(background=True)
+    async def load_health_data_from_db(self):
+        """Load health data from database and update state.
+
+        This loads data that was extracted by VlogsAgent CDC pipeline.
+        Can be called independently to refresh data from DB.
+        """
+        logger.info("load_health_data_from_db: Loading from database")
+
+        try:
+            # Load from DB using helper
+            db_data = await self._load_health_entries_from_db()
+
+            if not any([db_data["medications"], db_data["food_entries"], db_data["symptoms"]]):
+                logger.info("load_health_data_from_db: No data in DB yet")
+                return
+
+            # Calculate nutrition from DB food entries
+            nutrition = {}
+            if db_data["food_entries"]:
+                nutrition["total_calories"] = sum(f.calories for f in db_data["food_entries"])
+                nutrition["total_protein"] = sum(f.protein for f in db_data["food_entries"])
+                nutrition["total_carbs"] = sum(f.carbs for f in db_data["food_entries"])
+                nutrition["total_fat"] = sum(f.fat for f in db_data["food_entries"])
+
+            # Update state
+            async with self:
+                if db_data["medications"]:
+                    self.medications = db_data["medications"]
+                if db_data["food_entries"]:
+                    self.food_entries = db_data["food_entries"]
+                    self.nutrition_summary = nutrition
+                if db_data["symptoms"]:
+                    self.symptoms = db_data["symptoms"]
+
+            logger.info(
+                "load_health_data_from_db: Loaded %d meds, %d food, %d symptoms from DB",
+                len(db_data["medications"]),
+                len(db_data["food_entries"]),
+                len(db_data["symptoms"]),
+            )
+
+        except Exception as e:
+            logger.error("load_health_data_from_db: Failed - %s", e)
+
+    # =========================================================================
     # Tab and Filter Methods
     # =========================================================================
 
@@ -269,14 +444,15 @@ class HealthDashboardState(rx.State):
         """Toggle a data source connection on/off."""
         updated_sources = []
         for source in self.data_sources:
-            if source["id"] == source_id:
-                new_connected = not source["connected"]
-                updated_source = {
-                    **source,
-                    "connected": new_connected,
-                    "status": "connected" if new_connected else "disconnected",
-                    "last_sync": "Just now" if new_connected else "Disconnected",
-                }
+            if source.id == source_id:
+                new_connected = not source.connected
+                updated_source = source.model_copy(
+                    update={
+                        "connected": new_connected,
+                        "status": "connected" if new_connected else "disconnected",
+                        "last_sync": "Just now" if new_connected else "Disconnected",
+                    }
+                )
                 updated_sources.append(updated_source)
             else:
                 updated_sources.append(source)
@@ -295,7 +471,7 @@ class HealthDashboardState(rx.State):
         self.push_notifications = not self.push_notifications
 
     # =========================================================================
-    # Medication Modal
+    # MedicationEntry Modal
     # =========================================================================
 
     def open_medication_modal(self, medication: Dict[str, Any]):
@@ -358,13 +534,13 @@ class HealthDashboardState(rx.State):
     async def save_symptom_log(self):
         """Save a symptom log entry."""
         if self.selected_symptom:
-            new_log: SymptomLog = {
-                "id": f"sym_{uuid.uuid4().hex[:8]}",
-                "symptom_name": self.selected_symptom.get("name", "Unknown"),
-                "severity": 5,
-                "notes": "",
-                "timestamp": datetime.now().strftime("Today, %I:%M %p"),
-            }
+            new_log = SymptomEntry(
+                id=f"sym_{uuid.uuid4().hex[:8]}",
+                symptom_name=self.selected_symptom.get("name", "Unknown"),
+                severity=5,
+                notes="",
+                timestamp=datetime.now().strftime("Today, %I:%M %p"),
+            )
             self.symptom_logs = [new_log, *self.symptom_logs]
 
         self.show_symptom_modal = False
@@ -435,16 +611,16 @@ class HealthDashboardState(rx.State):
     def save_food_entry(self):
         """Save a new food entry."""
         # Create new food entry
-        new_entry: FoodEntry = {
-            "id": str(uuid.uuid4())[:8],
-            "name": self.new_food_name,
-            "calories": int(self.new_food_calories) if self.new_food_calories else 0,
-            "protein": float(self.new_food_protein) if self.new_food_protein else 0.0,
-            "carbs": float(self.new_food_carbs) if self.new_food_carbs else 0.0,
-            "fat": float(self.new_food_fat) if self.new_food_fat else 0.0,
-            "time": datetime.now().strftime("%I:%M %p"),
-            "meal_type": self.new_food_meal_type,
-        }
+        new_entry = FoodEntry(
+            id=str(uuid.uuid4())[:8],
+            name=self.new_food_name,
+            calories=int(self.new_food_calories) if self.new_food_calories else 0,
+            protein=float(self.new_food_protein) if self.new_food_protein else 0.0,
+            carbs=float(self.new_food_carbs) if self.new_food_carbs else 0.0,
+            fat=float(self.new_food_fat) if self.new_food_fat else 0.0,
+            time=datetime.now().strftime("%I:%M %p"),
+            meal_type=self.new_food_meal_type,
+        )
 
         # Add to list
         self.food_entries = [*self.food_entries, new_entry]
@@ -453,13 +629,12 @@ class HealthDashboardState(rx.State):
         self.nutrition_summary = {
             **self.nutrition_summary,
             "total_calories": self.nutrition_summary.get("total_calories", 0)
-            + new_entry["calories"],
+            + new_entry.calories,
             "total_protein": self.nutrition_summary.get("total_protein", 0)
-            + new_entry["protein"],
+            + new_entry.protein,
             "total_carbs": self.nutrition_summary.get("total_carbs", 0)
-            + new_entry["carbs"],
-            "total_fat": self.nutrition_summary.get("total_fat", 0)
-            + new_entry["fat"],
+            + new_entry.carbs,
+            "total_fat": self.nutrition_summary.get("total_fat", 0) + new_entry.fat,
         }
 
         # Close modal
@@ -573,7 +748,7 @@ class AdminDashboardState(rx.State):
         try:
             data = await load_all_patient_data()
 
-            async with self:  
+            async with self:
                 self.patients = data["patients"]
                 self.is_loading = False
                 self._patients_loaded = True

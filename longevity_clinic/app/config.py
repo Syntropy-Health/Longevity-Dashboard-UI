@@ -1,8 +1,8 @@
 import os
 import logging
-from typing import Literal
+from typing import Literal, Type, Optional, Any
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, Field
 
 
 # =============================================================================
@@ -50,17 +50,13 @@ app_logger = get_logger("longevity_clinic")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 CALL_API_TOKEN = os.getenv("CALL_API_TOKEN", "")
 
-# Demo mode - when True, states use demo data instead of API calls
-# Default to True for development
-IS_DEMO = os.getenv("IS_DEMO", "true").lower() in ("true", "1", "yes")
-
-# Validate required API keys on startup (only warn if not in demo mode)
-if not OPENAI_API_KEY and not IS_DEMO:
+# Validate required API keys on startup
+if not OPENAI_API_KEY:
     print(
         "WARNING: OPENAI_API_KEY not set. Voice transcription and AI features will not work."
     )
 
-if not CALL_API_TOKEN and not IS_DEMO:
+if not CALL_API_TOKEN:
     print("WARNING: CALL_API_TOKEN not set. Call log fetching will not work.")
 
 
@@ -102,9 +98,6 @@ class AppConfig(BaseModel):
     patient_role_name: str = os.getenv("PATIENT_ROLE_NAME", "Patient")
     theme_color: str = os.getenv("THEME_COLOR", "emerald")
 
-    # Demo mode - uses static demo data instead of API calls
-    is_demo: bool = IS_DEMO
-
     # API Configuration
     openai_api_key: str = OPENAI_API_KEY
     call_api_token: str = CALL_API_TOKEN
@@ -133,3 +126,31 @@ class AppConfig(BaseModel):
 
 
 current_config = AppConfig()
+
+
+# =============================================================================
+# VlogsAgent Configuration
+# =============================================================================
+
+
+class VlogsConfig(BaseModel):
+    """Configuration for VlogsAgent.
+
+    Loads defaults from AppConfig (current_config) automatically.
+    Can override any field when instantiating.
+
+    Attributes:
+        parse_with_llm: Enable LLM-based parsing for structured extraction
+        llm_model: OpenAI model to use for parsing
+        temperature: LLM temperature for response generation
+        limit: Maximum number of call logs to fetch per request
+        output_schema: Pydantic model class for structured LLM output
+    """
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    parse_with_llm: bool = Field(default_factory=lambda: current_config.vlogs_parse_with_llm)
+    llm_model: str = Field(default_factory=lambda: current_config.vlogs_llm_model)
+    temperature: float = Field(default_factory=lambda: current_config.vlogs_temperature)
+    limit: int = Field(default_factory=lambda: current_config.vlogs_fetch_limit)
+    output_schema: Optional[Any] = Field(default=None)  # Type[BaseModel], use Any to avoid circular imports

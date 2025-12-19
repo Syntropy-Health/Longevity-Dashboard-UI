@@ -1,14 +1,17 @@
-import reflex as rx
+"""Authentication state management."""
+
+from __future__ import annotations
+
+# Standard library
 import asyncio
-from typing import TypedDict, Optional
+from typing import Optional
 
+# Third-party
+import reflex as rx
 
-class User(TypedDict):
-    id: str
-    username: str
-    email: str
-    role: str
-    full_name: str
+# Local application
+from longevity_clinic.app.data.state_schemas import User
+from longevity_clinic.app.functions.utils import format_phone_display
 
 
 class AuthState(rx.State):
@@ -31,27 +34,32 @@ class AuthState(rx.State):
     async def login(self, form_data: dict):
         self.is_loading = True
         self.login_error = ""
-        await asyncio.sleep(1)
         username = form_data.get("username", "")
         password = form_data.get("password", "")
+
+        from longevity_clinic.app.config import current_config
+
+        demo = current_config.demo_user
+
         if username == "admin" and password == "admin":
             self.user = {
-                "id": "1",
+                "id": str(demo.admin_id),
                 "username": "admin",
-                "email": "admin@clinic.com",
+                "email": "admin@longevityclinic.com",
                 "role": "admin",
-                "full_name": "Dr. Sarah Administrator",
+                "full_name": "Dr. Admin",
             }
             self.is_authenticated = True
             self.is_loading = False
             return rx.redirect("/admin/dashboard")
         elif username == "patient" and password == "patient":
             self.user = {
-                "id": "2",
+                "id": str(demo.patient_id),
                 "username": "patient",
-                "email": "patient@example.com",
+                "email": demo.email,
                 "role": "patient",
-                "full_name": "John Doe",
+                "full_name": demo.full_name,
+                "phone": demo.phone.strip(),
             }
             self.is_authenticated = True
             self.is_loading = False
@@ -66,6 +74,12 @@ class AuthState(rx.State):
         self.is_authenticated = False
         self.show_mobile_menu = False
         return rx.redirect("/")
+
+    @rx.event
+    def check_auth(self):
+        """Check if user is authenticated and redirect to login if not."""
+        if not self.is_authenticated:
+            return rx.redirect("/login")
 
     @rx.event
     async def register(self, form_data: dict):
@@ -87,11 +101,50 @@ class AuthState(rx.State):
         return self.user["full_name"][:2].upper()
 
     @rx.var
+    def user_first_name(self) -> str:
+        if not self.user:
+            return "Guest"
+        name_parts = self.user["full_name"].split(" ")
+        return name_parts[0] if name_parts else "Guest"
+
+    @rx.var
     def is_admin(self) -> bool:
         return self.user is not None and self.user["role"] in ["admin", "staff"]
+
+    @rx.var
+    def user_id(self) -> int:
+        """Get user's database ID as integer."""
+        if not self.user:
+            return 0
+        try:
+            return int(self.user.get("id", "0"))
+        except (ValueError, TypeError):
+            return 0
 
     @rx.var
     def role_label(self) -> str:
         if not self.user:
             return ""
         return self.user["role"].capitalize()
+
+    @rx.var
+    def user_full_name(self) -> str:
+        """Get user's full name safely."""
+        if not self.user:
+            return ""
+        return self.user.get("full_name", "")
+
+    @rx.var
+    def user_phone(self) -> str:
+        """Get user's phone number for API calls."""
+        if not self.user:
+            return ""
+        return self.user.get("phone", "")
+
+    @rx.var
+    def user_phone_formatted(self) -> str:
+        """Get user's phone number formatted for display (e.g., +1 (123) 456-7890)."""
+        phone = self.user_phone
+        if not phone:
+            return ""
+        return format_phone_display(phone)

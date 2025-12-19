@@ -1,103 +1,23 @@
 import reflex as rx
-from typing import TypedDict, Optional
+from typing import Optional
 import random
 from datetime import datetime, timedelta
 
+from ...config import get_logger
+from ...data.state_schemas import Patient
+from ...functions.patients.patients import load_all_patient_data
 
-class Patient(TypedDict):
-    id: str
-    full_name: str
-    email: str
-    phone: str
-    age: int
-    gender: str
-    last_visit: str
-    status: str
-    biomarker_score: int
-    medical_history: str
-    next_appointment: str
-    assigned_treatments: list[dict]
-
-
-class ChartData(TypedDict):
-    name: str
-    value: int
-    value2: int
+logger = get_logger("longevity_clinic.patient_state")
 
 
 class PatientState(rx.State):
-    patients: list[Patient] = [
-        {
-            "id": "P001",
-            "full_name": "John Doe",
-            "email": "john.doe@example.com",
-            "phone": "(555) 123-4567",
-            "age": 45,
-            "gender": "Male",
-            "last_visit": "2023-10-15",
-            "status": "Active",
-            "biomarker_score": 85,
-            "medical_history": "Hypertension, Vitamin D deficiency",
-            "next_appointment": "2023-11-20",
-            "assigned_treatments": [],
-        },
-        {
-            "id": "P002",
-            "full_name": "Jane Smith",
-            "email": "jane.smith@example.com",
-            "phone": "(555) 987-6543",
-            "age": 38,
-            "gender": "Female",
-            "last_visit": "2023-10-28",
-            "status": "Active",
-            "biomarker_score": 92,
-            "medical_history": "None",
-            "next_appointment": "2023-11-15",
-            "assigned_treatments": [],
-        },
-        {
-            "id": "P003",
-            "full_name": "Robert Johnson",
-            "email": "robert.j@example.com",
-            "phone": "(555) 456-7890",
-            "age": 52,
-            "gender": "Male",
-            "last_visit": "2023-09-10",
-            "status": "Inactive",
-            "biomarker_score": 68,
-            "medical_history": "Type 2 Diabetes Pre-cursor",
-            "next_appointment": "Pending",
-            "assigned_treatments": [],
-        },
-        {
-            "id": "P004",
-            "full_name": "Emily Davis",
-            "email": "emily.d@example.com",
-            "phone": "(555) 222-3333",
-            "age": 29,
-            "gender": "Female",
-            "last_visit": "2023-11-01",
-            "status": "Onboarding",
-            "biomarker_score": 0,
-            "medical_history": "Anemia",
-            "next_appointment": "2023-11-12",
-            "assigned_treatments": [],
-        },
-        {
-            "id": "P005",
-            "full_name": "Michael Wilson",
-            "email": "michael.w@example.com",
-            "phone": "(555) 444-5555",
-            "age": 61,
-            "gender": "Male",
-            "last_visit": "2023-10-05",
-            "status": "Active",
-            "biomarker_score": 74,
-            "medical_history": "High Cholesterol",
-            "next_appointment": "2023-11-25",
-            "assigned_treatments": [],
-        },
-    ]
+    """State for patient management (CRUD operations).
+
+    Data is loaded via load_patients() which respects the IS_DEMO
+    environment variable.
+    """
+
+    patients: list[Patient] = []
     search_query: str = ""
     status_filter: str = "All"
     sort_key: str = "name"
@@ -110,28 +30,13 @@ class PatientState(rx.State):
     new_patient_age: str = ""
     new_patient_gender: str = ""
     new_patient_history: str = ""
-    trend_data: list[dict] = [
-        {"name": "Jan", "active": 120, "new": 15},
-        {"name": "Feb", "active": 132, "new": 18},
-        {"name": "Mar", "active": 145, "new": 20},
-        {"name": "Apr", "active": 160, "new": 25},
-        {"name": "May", "active": 178, "new": 22},
-        {"name": "Jun", "active": 195, "new": 30},
-    ]
-    treatment_data: list[dict] = [
-        {"name": "IV Therapy", "count": 45},
-        {"name": "Cryo", "count": 30},
-        {"name": "Supplements", "count": 85},
-        {"name": "Hormone", "count": 25},
-        {"name": "Physio", "count": 15},
-    ]
-    biomarker_data: list[dict] = [
-        {"name": "Wk 1", "score": 65},
-        {"name": "Wk 4", "score": 72},
-        {"name": "Wk 8", "score": 78},
-        {"name": "Wk 12", "score": 82},
-        {"name": "Wk 16", "score": 88},
-    ]
+    trend_data: list[dict] = []
+    treatment_data: list[dict] = []
+    biomarker_data: list[dict] = []
+
+    # Loading state
+    is_loading: bool = False
+    _data_loaded: bool = False
 
     @rx.var
     def filtered_patients(self) -> list[Patient]:
@@ -156,6 +61,40 @@ class PatientState(rx.State):
                 patients, key=lambda x: x["biomarker_score"], reverse=True
             )
         return patients
+
+    @rx.event(background=True)
+    async def load_patients(self):
+        """Load patient data.
+
+        Respects IS_DEMO env var: when True, returns demo data;
+        when False, calls the API.
+        """
+        # Prevent duplicate loads
+        async with self:
+            if self._data_loaded:
+                logger.debug("load_patients: Data already loaded, skipping")
+                return
+            self.is_loading = True
+
+        logger.info("load_patients: Starting")
+
+        try:
+            # Fetch data using extracted function (respects IS_DEMO config)
+            data = await load_all_patient_data()
+
+            async with self:
+                self.patients = data["patients"]
+                self.trend_data = data["trend_data"]
+                self.treatment_data = data["treatment_data"]
+                self.biomarker_data = data["biomarker_data"]
+                self.is_loading = False
+                self._data_loaded = True
+
+            logger.info("load_patients: Complete (%d patients)", len(data["patients"]))
+        except Exception as e:
+            logger.error("load_patients: Failed - %s", e)
+            async with self:
+                self.is_loading = False
 
     @rx.event
     def set_search_query(self, query: str):
@@ -184,6 +123,12 @@ class PatientState(rx.State):
         self.new_patient_history = ""
 
     @rx.event
+    def handle_add_patient_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.close_add_patient()
+
+    @rx.event
     def open_view_patient(self, patient: Patient):
         self.selected_patient = patient
         self.is_view_patient_open = True
@@ -192,6 +137,13 @@ class PatientState(rx.State):
     def close_view_patient(self):
         self.is_view_patient_open = False
         self.selected_patient = None
+
+    @rx.event
+    def handle_view_patient_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.is_view_patient_open = False
+            self.selected_patient = None
 
     @rx.event
     def add_patient(self):
@@ -214,6 +166,30 @@ class PatientState(rx.State):
         }
         self.patients.append(new_patient)
         self.close_add_patient()
+
+    @rx.event
+    def set_new_patient_name(self, value: str):
+        self.new_patient_name = value
+
+    @rx.event
+    def set_new_patient_email(self, value: str):
+        self.new_patient_email = value
+
+    @rx.event
+    def set_new_patient_phone(self, value: str):
+        self.new_patient_phone = value
+
+    @rx.event
+    def set_new_patient_age(self, value: float):
+        self.new_patient_age = value
+
+    @rx.event
+    def set_new_patient_gender(self, value: str):
+        self.new_patient_gender = value
+
+    @rx.event
+    def set_new_patient_history(self, value: str):
+        self.new_patient_history = value
 
     @rx.event
     def assign_treatment_to_patient(self, patient_id: str, treatment: dict):

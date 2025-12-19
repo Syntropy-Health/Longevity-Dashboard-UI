@@ -1,6 +1,6 @@
 import reflex as rx
 from typing import Optional
-from .treatment_state import TreatmentState, TreatmentProtocol
+from .treatment_state import TreatmentProtocol
 
 
 class TreatmentSearchState(rx.State):
@@ -97,6 +97,13 @@ class TreatmentSearchState(rx.State):
     def close_details(self):
         self.is_details_open = False
         self.selected_protocol = None
+
+    @rx.event
+    def handle_details_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.is_details_open = False
+            self.selected_protocol = None
 
     @rx.event
     def set_request_note(self, note: str):

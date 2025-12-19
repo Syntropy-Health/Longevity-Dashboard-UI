@@ -1,75 +1,74 @@
-import reflex as rx
-from typing import TypedDict, Optional
-import random
+import asyncio
 import logging
+import random
+from typing import Optional
 
-from .patient_state import PatientState
+import reflex as rx
+from sqlmodel import Session, select
+
+from ..patient.state import PatientState
+from ...data.model import Treatment
+from ...data.state_schemas import TreatmentProtocol
 
 
-class TreatmentProtocol(TypedDict):
-    id: str
-    name: str
-    category: str
-    description: str
-    duration: str
-    frequency: str
-    cost: float
-    status: str
+def _fetch_protocols_sync() -> list[TreatmentProtocol]:
+    """Fetch treatment protocols from DB synchronously."""
+    engine = rx.model.get_engine()
+    with Session(engine) as session:
+        treatments = session.exec(select(Treatment)).all()
+        return [
+            TreatmentProtocol(
+                id=t.treatment_id,
+                name=t.name,
+                category=t.category,
+                description=t.description,
+                duration=t.duration,
+                frequency=t.frequency,
+                cost=t.cost,
+                status=t.status,
+            )
+            for t in treatments
+        ]
+
+
+# Default fallback protocols if DB is empty
+DEFAULT_PROTOCOLS: list[TreatmentProtocol] = [
+    {
+        "id": "T001",
+        "name": "Vitamin C IV Mega-Dose",
+        "category": "IV Therapy",
+        "description": "High-dose Vitamin C infusion to boost immune system and antioxidant levels.",
+        "duration": "60 mins",
+        "frequency": "Weekly",
+        "cost": 150.0,
+        "status": "Active",
+    },
+    {
+        "id": "T002",
+        "name": "Whole Body Cryotherapy",
+        "category": "Cryotherapy",
+        "description": "Exposure to ultra-low temperatures to reduce inflammation and improve recovery.",
+        "duration": "3 mins",
+        "frequency": "Daily",
+        "cost": 45.0,
+        "status": "Active",
+    },
+    {
+        "id": "T003",
+        "name": "NAD+ Optimization",
+        "category": "Supplements",
+        "description": "Supplement protocol to enhance cellular energy and DNA repair.",
+        "duration": "N/A",
+        "frequency": "Daily",
+        "cost": 120.0,
+        "status": "Active",
+    },
+]
 
 
 class TreatmentState(rx.State):
-    protocols: list[TreatmentProtocol] = [
-        {
-            "id": "T001",
-            "name": "Vitamin C IV Mega-Dose",
-            "category": "IV Therapy",
-            "description": "High-dose Vitamin C infusion to boost immune system and antioxidant levels.",
-            "duration": "60 mins",
-            "frequency": "Weekly",
-            "cost": 150.0,
-            "status": "Active",
-        },
-        {
-            "id": "T002",
-            "name": "Whole Body Cryotherapy",
-            "category": "Cryotherapy",
-            "description": "Exposure to ultra-low temperatures to reduce inflammation and improve recovery.",
-            "duration": "3 mins",
-            "frequency": "Daily",
-            "cost": 45.0,
-            "status": "Active",
-        },
-        {
-            "id": "T003",
-            "name": "Nad+ Optimization",
-            "category": "Supplements",
-            "description": "Supplement protocol to enhance cellular energy and DNA repair.",
-            "duration": "N/A",
-            "frequency": "Daily",
-            "cost": 120.0,
-            "status": "Active",
-        },
-        {
-            "id": "T004",
-            "name": "Testosterone Replacement",
-            "category": "Hormone Therapy",
-            "description": "Bio-identical hormone replacement for optimal levels.",
-            "duration": "15 mins",
-            "frequency": "Monthly",
-            "cost": 200.0,
-            "status": "Active",
-        },
-        {
-            "id": "T005",
-            "name": "Deep Tissue Massage",
-            "category": "Spa Services",
-            "description": "Therapeutic massage focusing on realigning deeper layers of muscles.",
-            "duration": "60 mins",
-            "frequency": "As-needed",
-            "cost": 90.0,
-            "status": "Active",
-        },
-    ]
+    protocols: list[TreatmentProtocol] = []
+    _loaded: bool = False
     search_query: str = ""
     category_filter: str = "All"
     is_editor_open: bool = False
@@ -84,6 +83,24 @@ class TreatmentState(rx.State):
     is_assign_open: bool = False
     protocol_to_assign: Optional[TreatmentProtocol] = None
     selected_patient_id_for_assignment: str = ""
+
+    @rx.event
+    async def load_protocols(self):
+        """Load treatment protocols from database."""
+        if self._loaded:
+            return
+        try:
+            db_protocols = await asyncio.to_thread(_fetch_protocols_sync)
+            if db_protocols:
+                self.protocols = db_protocols
+            else:
+                # Fallback to defaults if DB is empty
+                self.protocols = DEFAULT_PROTOCOLS
+            self._loaded = True
+        except Exception as e:
+            logging.error(f"Error loading protocols from DB: {e}")
+            self.protocols = DEFAULT_PROTOCOLS
+            self._loaded = True
 
     @rx.var
     def filtered_protocols(self) -> list[TreatmentProtocol]:
@@ -136,6 +153,12 @@ class TreatmentState(rx.State):
         self.is_editor_open = False
 
     @rx.event
+    def handle_editor_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.is_editor_open = False
+
+    @rx.event
     def save_protocol(self):
         cost_val = 0.0
         try:
@@ -182,6 +205,13 @@ class TreatmentState(rx.State):
     def close_assign_modal(self):
         self.is_assign_open = False
         self.protocol_to_assign = None
+
+    @rx.event
+    def handle_assign_open_change(self, is_open: bool):
+        """Handler for radix dialog open state changes."""
+        if not is_open:
+            self.is_assign_open = False
+            self.protocol_to_assign = None
 
     @rx.event
     async def confirm_assignment(self):

@@ -1,0 +1,25 @@
+"""Notifications page main entry point.
+
+This module contains the main page function for the notifications page.
+"""
+
+import reflex as rx
+
+from ....components.layout import authenticated_layout
+from ....states import NotificationState
+from .views import notifications_content
+
+
+def notifications_page() -> rx.Component:
+    """Notifications page component.
+
+    Returns:
+        The complete notifications page with authenticated layout
+    """
+    return authenticated_layout(
+        rx.box(
+            notifications_content(),
+            class_name="p-6 max-w-4xl mx-auto",
+            on_mount=NotificationState.load_notifications_for_role,
+        )
+    )

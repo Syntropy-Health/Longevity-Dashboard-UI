@@ -1,11 +1,29 @@
 import reflex as rx
-from .app.config import current_config
-from .app.pages.auth import auth_page
-from .app.pages.admin import admin_dashboard
-from .app.pages.patient import patient_portal
-from .app.pages.treatments import treatments_page
-from .app.pages.patient_analytics import analytics_page
-from .app.pages.patient_treatment_search import treatment_search_page
+
+# Pages - Admin
+from .app.pages.admin import admin_dashboard, patient_health_page, treatments_page
+
+# Pages - Patient
+from .app.pages.patient import (
+    patient_portal,
+    checkins_page,
+    checkins_page_wrapper,
+    settings_page,
+    analytics_page,
+    treatment_search_page,
+)
+
+# Pages - Shared
+from .app.pages.shared import auth_page, notifications_page, appointments_page
+
+# States
+from .app.states import (
+    BiomarkerState,
+    HealthDashboardState,
+    CheckinState,
+    TreatmentState,
+    TreatmentSearchState,
+)
 
 app = rx.App(
     theme=rx.theme(appearance="light"),
@@ -17,11 +35,51 @@ app = rx.App(
             rel="stylesheet",
         ),
     ],
+    # stylesheets=[
+    #     "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
+    #     "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap",
+    # ],
 )
 app.add_page(auth_page, route="/")
 app.add_page(auth_page, route="/login")
+
+# Admin
 app.add_page(admin_dashboard, route="/admin/dashboard")
+app.add_page(patient_health_page, route="/admin/patient-health")
+app.add_page(
+    checkins_page,
+    route="/admin/checkins",
+    on_load=[CheckinState.load_admin_checkins],
+)
+app.add_page(
+    treatments_page,
+    route="/admin/treatments",
+    on_load=[TreatmentState.load_protocols],
+)
+
+# Patient
 app.add_page(patient_portal, route="/patient/portal")
-app.add_page(treatments_page, route="/admin/treatments")
+app.add_page(
+    checkins_page_wrapper,
+    route="/patient/checkins",
+    on_load=[
+        BiomarkerState.load_biomarkers,
+        HealthDashboardState.load_dashboard_data,
+        CheckinState.refresh_call_logs,
+    ],
+)
+app.add_page(settings_page, route="/patient/settings")
 app.add_page(analytics_page, route="/patient/analytics")
-app.add_page(treatment_search_page, route="/patient/treatment-search")
+app.add_page(
+    treatment_search_page,
+    route="/patient/treatment-search",
+    on_load=[TreatmentSearchState.load_treatments],
+)
+
+# Shared
+app.add_page(
+    notifications_page, route="/notifications", title="Notifications - Longevity Clinic"
+)
+app.add_page(
+    appointments_page, route="/appointments", title="Appointments | Longevity Clinic"
+)

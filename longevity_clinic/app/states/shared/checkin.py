@@ -380,11 +380,8 @@ class CheckinState(rx.State):
         self.selected_checkin = checkin
         self.show_checkin_detail_modal = True
 
-    def close_checkin_detail(self):
-        self.show_checkin_detail_modal = False
-        self.selected_checkin = {}  # type: ignore[assignment]
-
     def set_show_checkin_detail_modal(self, value: bool):
+        """Set modal visibility and clear selection when closing."""
         self.show_checkin_detail_modal = value
         if not value:
             self.selected_checkin = {}  # type: ignore[assignment]

@@ -56,7 +56,6 @@ def checkin_detail_modal(
         rx.radix.primitives.dialog.portal(
             rx.radix.primitives.dialog.overlay(
                 class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-50",
-                on_click=on_close,  # Click overlay to close
             ),
             rx.radix.primitives.dialog.content(
                 rx.el.div(
@@ -235,11 +234,8 @@ def checkin_detail_modal(
                     class_name="p-6",
                 ),
                 class_name=f"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg {GlassStyles.MODAL} z-50",
-                on_escape_key_down=on_close,
-                on_pointer_down_outside=on_close,
             ),
         ),
         open=show_modal,
         on_open_change=on_close,
-        modal=False,  # Prevent scroll lock/restore behavior
     )

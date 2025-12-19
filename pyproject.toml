@@ -12,6 +12,8 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "jinja2>=3.0.0",
     "reflex-audio-capture",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.3.0",
 ]
 
 [project.optional-dependencies]

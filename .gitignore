@@ -13,3 +13,15 @@ wheels/
 
 # Virtual environments
 .venv
+
+# packages
+reflex-audio-capture/
+
+# Environment secrets (never commit)
+# envs/.env.secrets
+.env
+.env.prod
+.env.dev
+.env.secrets
+# .env.local
+# .env.*.local

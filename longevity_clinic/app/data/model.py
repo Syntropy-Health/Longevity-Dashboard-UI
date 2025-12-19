@@ -71,7 +71,7 @@ class CallTranscript(rx.Model, table=True):
 
 class CallSummary(rx.Model, table=True):
     """AI-generated summary and extracted data from a call.
-    
+
     DEPRECATED: This table is kept for backward compatibility.
     New code should use CheckIn.is_processed and health entry tables directly.
     The CheckIn table now stores processing metadata (is_processed, llm_model, etc.)
@@ -108,7 +108,7 @@ class CallSummary(rx.Model, table=True):
 
 class CheckIn(rx.Model, table=True):
     """Patient check-in record (manual, voice, or from call).
-    
+
     Consolidates check-in data with LLM-processing metadata.
     Health entries (medications, food, symptoms) link back to this table.
     """

@@ -258,7 +258,8 @@ def checkin_modal() -> rx.Component:
                         ),
                         rx.el.button(
                             rx.cond(
-                                VoiceTranscriptionState.processing | CheckinState.checkin_saving,
+                                VoiceTranscriptionState.processing
+                                | CheckinState.checkin_saving,
                                 rx.fragment(
                                     rx.icon(
                                         "loader-circle",
@@ -273,7 +274,8 @@ def checkin_modal() -> rx.Component:
                                 "Save Check-in",
                             ),
                             on_click=CheckinState.save_checkin_with_voice,
-                            disabled=VoiceTranscriptionState.processing | CheckinState.checkin_saving,
+                            disabled=VoiceTranscriptionState.processing
+                            | CheckinState.checkin_saving,
                             class_name=GlassStyles.BUTTON_PRIMARY
                             + " disabled:opacity-50 disabled:cursor-not-allowed",
                         ),

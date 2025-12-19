@@ -116,19 +116,19 @@ class VlogsAgent:
         content: str, checkin_type: str = "text", patient_name: str = ""
     ) -> CallLogsOutput:
         """Parse user-entered text into CallLogsOutput with full health extraction.
-        
+
         This method extracts not just the check-in summary, but also:
         - Medications mentioned
         - Food/nutrition items
         - Symptoms reported
-        
+
         Use this for voice/text check-ins when you want to persist health data to DB.
-        
+
         Args:
             content: The transcript or text content
             checkin_type: "voice" or "text"
             patient_name: Patient's display name
-            
+
         Returns:
             CallLogsOutput with checkin summary and health entries
         """
@@ -173,12 +173,12 @@ class VlogsAgent:
             result.checkin.patient_name = patient_name or result.checkin.patient_name
             result.checkin.summary = result.checkin.summary or content[:500]
             result.checkin.key_topics = result.checkin.key_topics or []
-            
+
             # Ensure flags are set correctly
             result.has_medications = len(result.medications_entries) > 0
             result.has_nutrition = len(result.food_entries) > 0
             result.has_symptoms = len(result.symptom_entries) > 0
-            
+
             logger.info(
                 "Parsed checkin with health data: %d meds, %d foods, %d symptoms",
                 len(result.medications_entries),

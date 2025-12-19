@@ -163,7 +163,7 @@ def sync_single_to_db(
     """Sync a single processed call log to database.
 
     DEPRECATED: Use sync_raw_log_to_db + update_call_log_metrics instead.
-    
+
     This function combines raw sync and processing in one step.
     The preferred approach is the CDC pattern:
     1. sync_raw_log_to_db() - sync raw call log
@@ -184,7 +184,7 @@ def sync_single_to_db(
                 call_log_id = existing.id
             else:
                 return None
-    
+
     # Then process with LLM output
     llm_model = config.llm_model if config.extract_with_llm else None
     if update_call_log_metrics(call_log_id, output, llm_model or ""):
@@ -196,17 +196,17 @@ def update_call_log_metrics(
     call_log_id: int, output: CallLogsOutput, llm_model: str
 ) -> bool:
     """Process call log with LLM output: create/update CheckIn and health entries.
-    
+
     This is the main processing function for call logs. It:
     1. Creates or updates a CheckIn record with processing metadata
     2. Creates normalized health entries (medications, food, symptoms)
     3. Marks the call log as processed
-    
+
     Args:
         call_log_id: Database ID of the call log
         output: LLM-extracted CallLogsOutput with checkin and health data
         llm_model: Name of the LLM model used for extraction
-        
+
     Returns:
         True if successful, False otherwise
     """
@@ -235,11 +235,14 @@ def update_call_log_metrics(
             now = datetime.now(timezone.utc)
 
             # Get transcript for raw_content
-            transcript_text = session.exec(
-                select(CallTranscript.raw_transcript).where(
-                    CallTranscript.call_log_id == call_log_id
-                )
-            ).first() or ""
+            transcript_text = (
+                session.exec(
+                    select(CallTranscript.raw_transcript).where(
+                        CallTranscript.call_log_id == call_log_id
+                    )
+                ).first()
+                or ""
+            )
 
             # Check if CheckIn exists for this call
             existing_checkin = session.exec(
@@ -364,10 +367,10 @@ def create_checkin_with_health_data(
     llm_model: Optional[str] = None,
 ) -> Optional[int]:
     """Create a CheckIn with associated health entries from voice/text input.
-    
+
     This function is used for manual/voice check-ins (not call logs).
     It creates a CheckIn record and linked health entries in a single transaction.
-    
+
     Args:
         user_id: Database user ID
         patient_name: Patient's display name
@@ -375,7 +378,7 @@ def create_checkin_with_health_data(
         raw_content: Original transcript/text
         output: LLM-extracted CallLogsOutput with checkin and health data
         llm_model: Name of the LLM model used (if any)
-        
+
     Returns:
         The CheckIn database ID if successful, None otherwise
     """
@@ -383,7 +386,7 @@ def create_checkin_with_health_data(
         with rx.session() as session:
             checkin_data = output.checkin
             now = datetime.now(timezone.utc)
-            
+
             # Prepare data
             summary_text = checkin_data.summary or raw_content[:500]
             key_topics = checkin_data.key_topics or []

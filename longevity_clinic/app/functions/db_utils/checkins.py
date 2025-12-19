@@ -21,9 +21,16 @@ def get_checkins_sync(
     """Get check-ins from database."""
     try:
         with rx.session() as session:
-            query = select(CheckIn, CallTranscript).join(
-                CallTranscript, CheckIn.id == CallTranscript.call_log_id, isouter=True
-            ).order_by(CheckIn.timestamp.desc()).limit(limit)
+            query = (
+                select(CheckIn, CallTranscript)
+                .join(
+                    CallTranscript,
+                    CheckIn.id == CallTranscript.call_log_id,
+                    isouter=True,
+                )
+                .order_by(CheckIn.timestamp.desc())
+                .limit(limit)
+            )
 
             if status and status != "all":
                 query = query.where(CheckIn.status == status)

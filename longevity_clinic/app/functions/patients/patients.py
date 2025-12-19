@@ -68,11 +68,11 @@ async def fetch_patients(
 
     # Fetch from database
     from longevity_clinic.app.functions.db_utils import get_all_patients_sync
-    
+
     try:
         users = await asyncio.to_thread(get_all_patients_sync)
         patients: List[Patient] = []
-        
+
         for user in users:
             # Convert User model to Patient TypedDict
             patient: Patient = {
@@ -83,8 +83,7 @@ async def fetch_patients(
                 "age": user.age or 0,
                 "gender": user.gender or "",
                 "last_visit": (
-                    user.updated_at.strftime("%Y-%m-%d") 
-                    if user.updated_at else ""
+                    user.updated_at.strftime("%Y-%m-%d") if user.updated_at else ""
                 ),
                 "status": user.status or "Active",
                 "biomarker_score": 0,  # Would need to compute from actual biomarkers
@@ -93,7 +92,7 @@ async def fetch_patients(
                 "assigned_treatments": [],
             }
             patients.append(patient)
-        
+
         logger.info("fetch_patients: Returning %d patients from DB", len(patients))
         return patients
     except Exception as e:

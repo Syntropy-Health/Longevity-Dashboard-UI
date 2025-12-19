@@ -73,4 +73,6 @@ def load_appointments(engine: "Engine", user_id_map: dict[str, int]) -> SeedResu
 
         session.commit()
 
-    return SeedResult(name="appointments", loaded=loaded, skipped=skipped, errors=errors)
+    return SeedResult(
+        name="appointments", loaded=loaded, skipped=skipped, errors=errors
+    )

@@ -16,6 +16,7 @@ from ...styles.constants import GlassStyles
 # Admin Components
 # =====================================
 
+
 def admin_checkin_card(checkin: dict) -> rx.Component:
     """Admin check-in card using centralized component."""
     return _admin_checkin_card(
@@ -80,7 +81,10 @@ def admin_checkins_view() -> rx.Component:
         rx.el.div(
             *[
                 status_filter_button(
-                    label, status, count, color,
+                    label,
+                    status,
+                    count,
+                    color,
                     CheckinState.active_status_tab,
                     CheckinState.set_active_status_tab,
                 )
@@ -91,10 +95,13 @@ def admin_checkins_view() -> rx.Component:
         # Check-ins List
         rx.match(
             CheckinState.filtered_checkins.length() > 0,
-            (True, rx.el.div(
-                rx.foreach(CheckinState.filtered_checkins, admin_checkin_card),
-                class_name="space-y-4",
-            )),
+            (
+                True,
+                rx.el.div(
+                    rx.foreach(CheckinState.filtered_checkins, admin_checkin_card),
+                    class_name="space-y-4",
+                ),
+            ),
             rx.el.div(
                 rx.icon("inbox", class_name="w-12 h-12 text-slate-600 mb-4"),
                 rx.el.p("No check-ins found", class_name="text-slate-400"),

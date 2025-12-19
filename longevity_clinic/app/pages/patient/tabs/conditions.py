@@ -113,9 +113,7 @@ def conditions_tab() -> rx.Component:
             ),
             rx.el.button(
                 f"Resolved ({HealthDashboardState.resolved_conditions_count})",
-                on_click=lambda: HealthDashboardState.set_conditions_filter(
-                    "resolved"
-                ),
+                on_click=lambda: HealthDashboardState.set_conditions_filter("resolved"),
                 class_name=rx.cond(
                     HealthDashboardState.conditions_filter == "resolved",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-slate-500/20 text-slate-300 border border-slate-500/30",

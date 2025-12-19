@@ -254,12 +254,12 @@ class CheckinState(rx.State):
         self, checkin_summary, raw_transcript: str = "", persist_to_db: bool = True
     ) -> CheckInWithTranscript:
         """Create CheckInWithTranscript from parsed summary and optionally persist to DB.
-        
+
         Args:
             checkin_summary: Parsed CheckinSummary from VlogsAgent
             raw_transcript: Original transcript text
             persist_to_db: If True, save to database (default: True)
-            
+
         Returns:
             CheckInWithTranscript dict for state
         """
@@ -276,16 +276,21 @@ class CheckinState(rx.State):
             "patient_name": checkin_summary.patient_name,
             "status": "pending",
         }
-        
+
         # Persist to database if requested
         if persist_to_db:
             auth_state = await self.get_state(AuthState)
             user_id = auth_state.user_id if auth_state.user_id else None
-            
+
             # Serialize health_topics to JSON string for DB
             import json
-            health_topics_json = json.dumps(checkin_summary.key_topics) if checkin_summary.key_topics else None
-            
+
+            health_topics_json = (
+                json.dumps(checkin_summary.key_topics)
+                if checkin_summary.key_topics
+                else None
+            )
+
             db_result = create_checkin_sync(
                 checkin_id=checkin_id,
                 patient_name=checkin_summary.patient_name,
@@ -299,7 +304,7 @@ class CheckinState(rx.State):
                 logger.info("Persisted checkin %s to database", checkin_id)
             else:
                 logger.warning("Failed to persist checkin %s to database", checkin_id)
-        
+
         return checkin_data
 
     @rx.event
@@ -564,7 +569,7 @@ class CheckinState(rx.State):
             async with self:
                 auth_state = await self.get_state(AuthState)
                 is_admin = auth_state.is_admin
-            
+
             if is_admin:
                 checkins_from_db = await self._load_all_checkins_from_db()
             else:
@@ -645,7 +650,7 @@ class CheckinState(rx.State):
                     async with self:
                         auth_state = await self.get_state(AuthState)
                         is_admin = auth_state.is_admin
-                    
+
                     if is_admin:
                         checkins_from_db = await self._load_all_checkins_from_db()
                     else:

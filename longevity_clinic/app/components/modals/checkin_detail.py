@@ -180,7 +180,8 @@ def checkin_detail_modal(
                     ),
                     # Raw transcript section (optional, for admin view)
                     rx.cond(
-                        checkin_raw_transcript is not None and checkin_raw_transcript != "",
+                        checkin_raw_transcript is not None
+                        and checkin_raw_transcript != "",
                         rx.el.div(
                             rx.el.p(
                                 "Full Transcript",
@@ -196,7 +197,9 @@ def checkin_detail_modal(
                             class_name=f"{GlassStyles.PANEL} p-4 mb-4",
                         ),
                         rx.fragment(),
-                    ) if checkin_raw_transcript is not None else rx.fragment(),
+                    )
+                    if checkin_raw_transcript is not None
+                    else rx.fragment(),
                     # Actions
                     rx.el.div(
                         rx.radix.primitives.dialog.close(
@@ -210,13 +213,17 @@ def checkin_detail_modal(
                                 rx.el.button(
                                     rx.icon("flag", class_name="w-4 h-4 mr-2"),
                                     "Flag",
-                                    on_click=lambda: on_flag(checkin_id) if on_flag else None,  # type: ignore[arg-type]
+                                    on_click=lambda: on_flag(checkin_id)
+                                    if on_flag
+                                    else None,  # type: ignore[arg-type]
                                     class_name="px-4 py-2 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center",
                                 ),
                                 rx.el.button(
                                     rx.icon("check", class_name="w-4 h-4 mr-2"),
                                     "Mark Reviewed",
-                                    on_click=lambda: on_mark_reviewed(checkin_id) if on_mark_reviewed else None,  # type: ignore[arg-type]
+                                    on_click=lambda: on_mark_reviewed(checkin_id)
+                                    if on_mark_reviewed
+                                    else None,  # type: ignore[arg-type]
                                     class_name=f"{GlassStyles.BUTTON_PRIMARY} flex items-center",
                                 ),
                                 class_name="flex gap-3",

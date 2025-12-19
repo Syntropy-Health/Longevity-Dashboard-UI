@@ -14,7 +14,7 @@ def search_input(
     class_name: str = "",
 ) -> rx.Component:
     """Reusable search input with icon.
-    
+
     Args:
         value: Reactive value for the input
         on_change: Event handler for input changes
@@ -41,7 +41,7 @@ def patient_select_item(
     on_click: rx.EventHandler,
 ) -> rx.Component:
     """Patient selection item for dropdowns.
-    
+
     Args:
         patient: Patient dict with full_name and email
         on_click: Click handler
@@ -80,7 +80,7 @@ def stat_metric_card(
     icon_color: str = "teal",
 ) -> rx.Component:
     """Compact metric card for displaying a single stat.
-    
+
     Args:
         title: Metric title/label
         value: Metric value (can be reactive)
@@ -99,7 +99,7 @@ def stat_metric_card(
     }
     colors = color_map.get(icon_color, color_map["teal"])
     icon_text_color = colors.split()[0]
-    
+
     return rx.el.div(
         rx.el.div(
             rx.icon(icon, class_name=f"w-5 h-5 {icon_text_color}"),
@@ -119,7 +119,7 @@ def stat_metric_card(
 
 def loading_spinner(message: str = "Loading...") -> rx.Component:
     """Loading spinner with optional message.
-    
+
     Args:
         message: Loading message to display
     """
@@ -135,7 +135,7 @@ def empty_state(
     message: str = "No data found",
 ) -> rx.Component:
     """Empty state placeholder.
-    
+
     Args:
         icon: Lucide icon name
         message: Message to display

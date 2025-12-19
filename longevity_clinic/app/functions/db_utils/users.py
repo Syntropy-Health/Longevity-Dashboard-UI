@@ -98,27 +98,29 @@ def get_primary_demo_user_id() -> Optional[int]:
 
 def get_recently_active_patients_sync(limit: int = 5) -> List[User]:
     """Get most recently active patients based on check-in activity.
-    
+
     Args:
         limit: Maximum number of patients to return
-        
+
     Returns:
         List of User objects ordered by most recent activity
     """
     from longevity_clinic.app.data.model import CheckIn
     from sqlmodel import desc, func
-    
+
     try:
         with rx.session() as session:
             # Get patients with most recent check-ins
             # Uses a subquery to get latest check-in per user
             subquery = (
-                select(CheckIn.user_id, func.max(CheckIn.timestamp).label('last_activity'))
+                select(
+                    CheckIn.user_id, func.max(CheckIn.timestamp).label("last_activity")
+                )
                 .where(CheckIn.user_id.isnot(None))
                 .group_by(CheckIn.user_id)
                 .subquery()
             )
-            
+
             result = session.exec(
                 select(User)
                 .join(subquery, User.id == subquery.c.user_id)
@@ -126,7 +128,7 @@ def get_recently_active_patients_sync(limit: int = 5) -> List[User]:
                 .order_by(desc(subquery.c.last_activity))
                 .limit(limit)
             ).all()
-            
+
             return list(result)
     except Exception as e:
         logger.error("Failed to get recently active patients: %s", e)

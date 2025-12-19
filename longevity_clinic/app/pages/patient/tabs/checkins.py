@@ -7,7 +7,10 @@ import reflex as rx
 from ....states.shared.checkin import CheckinState
 from ....styles.constants import GlassStyles
 from ....components.modals import transcript_modal
-from ....components.shared import patient_checkin_card as _patient_checkin_card, stat_card
+from ....components.shared import (
+    patient_checkin_card as _patient_checkin_card,
+    stat_card,
+)
 
 
 def patient_checkin_card(checkin: dict) -> rx.Component:

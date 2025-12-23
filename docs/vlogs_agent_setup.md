@@ -168,19 +168,18 @@ The agent returns three items:
 
 ```python
 new_count: int  # Number of newly processed logs
-outputs: list[CallLogsOutput]  # Structured health data
+outputs: list[MetricLogsOutput]  # Structured health data
 summaries: list[TranscriptSummary]  # UI-ready summaries
 ```
 
-### CallLogsOutput Schema
+### MetricLogsOutput Schema
 
 ```python
-class CallLogsOutput(BaseModel):
+class MetricLogsOutput(BaseModel):
     checkin: CheckInSummary  # Summary data
-    medications: List[MedicationEntry]  # Extracted medications
+    medications_entries: List[MedicationEntry]  # Extracted medications
     food_entries: List[FoodEntry]  # Extracted nutrition
-    has_medications: bool  # Flag for medication discussion
-    has_nutrition: bool  # Flag for nutrition discussion
+    symptom_entries: List[Symptom]  # Extracted symptoms
 ```
 
 ### TranscriptSummary Schema
@@ -242,7 +241,7 @@ class PatientDashboardState(rx.State):
 
 ## Troubleshooting
 
-### Issue: AttributeError on CallLogsOutput
+### Issue: AttributeError on MetricLogsOutput
 
 **Solution**: Use correct attribute names:
 - ✅ `output.checkin` (not `checkin_data`)

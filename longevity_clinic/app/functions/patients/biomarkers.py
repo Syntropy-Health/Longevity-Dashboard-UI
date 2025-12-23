@@ -1,23 +1,38 @@
 """Biomarker data fetching and processing functions.
 
 This module contains functions for fetching and processing biomarker data.
-When is_demo=True, returns demo data. Otherwise fetches from database.
+All data is loaded from the database.
+Seed data with: python scripts/load_seed_data.py
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from longevity_clinic.app.config import current_config, get_logger
-from longevity_clinic.app.data.seed import (
-    PORTAL_APPOINTMENTS_SEED,
-    PORTAL_BIOMARKERS_SEED,
-    PORTAL_TREATMENTS_SEED,
-)
+from longevity_clinic.app.config import get_logger
 from longevity_clinic.app.data.db_helpers import get_patient_biomarkers_sync
 from longevity_clinic.app.data.state_schemas import Biomarker, BiomarkerDataPoint
 
 logger = get_logger("longevity_clinic.biomarkers")
+
+
+# =============================================================================
+# Seed data getters for treatments and appointments (chart/display data)
+# =============================================================================
+
+
+def _get_portal_treatments_seed() -> list[dict[str, Any]]:
+    """Get portal treatments seed data for patient display."""
+    from longevity_clinic.app.data.seed import PORTAL_TREATMENTS_SEED
+
+    return PORTAL_TREATMENTS_SEED
+
+
+def _get_portal_appointments_seed() -> list[dict[str, Any]]:
+    """Get portal appointments seed data for patient display."""
+    from longevity_clinic.app.data.seed import PORTAL_APPOINTMENTS_SEED
+
+    return PORTAL_APPOINTMENTS_SEED
 
 
 # =============================================================================
@@ -26,30 +41,22 @@ logger = get_logger("longevity_clinic.biomarkers")
 
 
 async def fetch_biomarkers(
-    patient_id: Optional[str] = None,
-    is_demo: Optional[bool] = None,
-) -> List[Biomarker]:
-    """Fetch biomarker data for a patient.
+    patient_id: str | None = None,
+) -> list[Biomarker]:
+    """Fetch biomarker data for a patient from database.
 
     Args:
         patient_id: Patient external ID (e.g., 'P001') or None for current
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         List of biomarker records
+
+    Note: Requires seeded database. Run: python scripts/load_seed_data.py
     """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
     logger.info(
-        "Fetching biomarkers for patient: %s (demo=%s)",
+        "Fetching biomarkers for patient: %s",
         patient_id or "current",
-        is_demo,
     )
-
-    if is_demo:
-        logger.debug("fetch_biomarkers: Returning demo data")
-        return PORTAL_BIOMARKERS_SEED
 
     # Fetch from database
     external_id = patient_id or "P001"  # Default to primary demo user
@@ -59,190 +66,91 @@ async def fetch_biomarkers(
         logger.info("fetch_biomarkers: Loaded %d biomarkers from DB", len(biomarkers))
         return biomarkers
 
-    logger.warning("fetch_biomarkers: No data in DB, falling back to demo")
-    return PORTAL_BIOMARKERS_SEED
+    logger.warning(
+        "No biomarker data found in database. "
+        "Run 'python scripts/load_seed_data.py' to seed data."
+    )
+    return []
 
 
 async def fetch_biomarker_history(
     biomarker_id: str,
-    patient_id: Optional[str] = None,
+    patient_id: str | None = None,
     days: int = 365,
-    is_demo: Optional[bool] = None,
-) -> List[BiomarkerDataPoint]:
-    """Fetch historical data points for a specific biomarker.
+) -> list[BiomarkerDataPoint]:
+    """Fetch historical data points for a specific biomarker from database.
 
     Args:
         biomarker_id: The biomarker to fetch history for
         patient_id: Patient ID (None = current patient)
         days: Number of days of history to fetch
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         List of biomarker data points with dates and values
-    """
-    if is_demo is None:
-        is_demo = current_config.is_demo
 
+    Note: Requires seeded database. Run: python scripts/load_seed_data.py
+    """
     logger.info(
-        "Fetching biomarker history: %s for patient %s (%d days, demo=%s)",
+        "Fetching biomarker history: %s for patient %s (%d days)",
         biomarker_id,
         patient_id or "current",
         days,
-        is_demo,
     )
 
-    if is_demo:
-        # Find the biomarker in demo data and return its history
-        for biomarker in PORTAL_BIOMARKERS_SEED:
-            if (
-                biomarker.get("id") == biomarker_id
-                or biomarker.get("name") == biomarker_id
-            ):
-                return biomarker.get("history", [])
-        return []
+    # Fetch all biomarkers and find the specific one
+    biomarkers = await fetch_biomarkers(patient_id)
+    for biomarker in biomarkers:
+        if biomarker.get("id") == biomarker_id or biomarker.get("name") == biomarker_id:
+            return biomarker.get("history", [])
 
-    # TODO: Implement API call
-    # async with httpx.AsyncClient() as client:
-    #     response = await client.get(
-    #         f"{config.biomarker_api_base}/biomarkers/{biomarker_id}/history",
-    #         params={"patient_id": patient_id, "days": days},
-    #     )
-    #     return response.json()["data"]
-
-    logger.warning("fetch_biomarker_history: API not implemented, returning empty list")
+    logger.warning("Biomarker %s not found", biomarker_id)
     return []
 
 
 async def fetch_treatments(
-    patient_id: Optional[str] = None,
-    is_demo: Optional[bool] = None,
-) -> List[Dict[str, Any]]:
+    patient_id: str | None = None,
+) -> list[dict[str, Any]]:
     """Fetch treatments assigned to a patient.
 
     Args:
         patient_id: Patient ID (None = current patient)
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        List of treatment records
+        List of treatment records from seed data
     """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
     logger.info(
-        "Fetching treatments for patient: %s (demo=%s)",
+        "Fetching treatments for patient: %s",
         patient_id or "current",
-        is_demo,
     )
-
-    if is_demo:
-        logger.debug("fetch_treatments: Returning demo data")
-        return PORTAL_TREATMENTS_SEED
-
-    # TODO: Implement API call
-    logger.warning("fetch_treatments: API not implemented, returning empty list")
-    return []
+    # TODO: Implement DB lookup when Treatment-Patient assignment model exists
+    return _get_portal_treatments_seed()
 
 
 async def fetch_appointments(
-    patient_id: Optional[str] = None,
+    patient_id: str | None = None,
     upcoming_only: bool = True,
-    is_demo: Optional[bool] = None,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Fetch appointments for a patient.
 
     Args:
         patient_id: Patient ID (None = current patient)
         upcoming_only: If True, only return future appointments
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
-        List of appointment records
+        List of appointment records from seed data
     """
-    if is_demo is None:
-        is_demo = current_config.is_demo
-
     logger.info(
-        "Fetching appointments for patient: %s (upcoming=%s, demo=%s)",
+        "Fetching appointments for patient: %s (upcoming=%s)",
         patient_id or "current",
         upcoming_only,
-        is_demo,
     )
-
-    if is_demo:
-        logger.debug("fetch_appointments: Returning demo data")
-        return PORTAL_APPOINTMENTS_SEED
-
-    # TODO: Implement API call
-    logger.warning("fetch_appointments: API not implemented, returning empty list")
-    return []
-
-
-def calculate_biomarker_status(
-    value: float,
-    optimal_min: float,
-    optimal_max: float,
-) -> str:
-    """Calculate biomarker status based on value and optimal range.
-
-    Args:
-        value: Current biomarker value
-        optimal_min: Lower bound of optimal range
-        optimal_max: Upper bound of optimal range
-
-    Returns:
-        Status string: 'optimal', 'low', 'high', or 'critical'
-    """
-    if optimal_min <= value <= optimal_max:
-        return "optimal"
-
-    # Calculate how far outside range
-    if value < optimal_min:
-        deviation = (optimal_min - value) / optimal_min
-        return "critical" if deviation > 0.3 else "low"
-    else:
-        deviation = (value - optimal_max) / optimal_max
-        return "critical" if deviation > 0.3 else "high"
-
-
-def calculate_biomarker_trend(
-    history: List[BiomarkerDataPoint],
-    lookback_points: int = 5,
-) -> str:
-    """Calculate trend direction from biomarker history.
-
-    Args:
-        history: List of historical data points (newest first)
-        lookback_points: Number of points to consider
-
-    Returns:
-        Trend string: 'improving', 'stable', 'declining'
-    """
-    if len(history) < 2:
-        return "stable"
-
-    recent = history[:lookback_points]
-    if len(recent) < 2:
-        return "stable"
-
-    # Simple linear trend: compare first and last
-    first_value = recent[-1].get("value", 0)
-    last_value = recent[0].get("value", 0)
-
-    change_pct = (last_value - first_value) / first_value if first_value else 0
-
-    if abs(change_pct) < 0.05:
-        return "stable"
-    elif change_pct > 0:
-        return "improving"
-    else:
-        return "declining"
+    # TODO: Implement DB lookup when fully migrated
+    return _get_portal_appointments_seed()
 
 
 async def load_all_biomarker_data(
-    patient_id: Optional[str] = None,
-    is_demo: Optional[bool] = None,
-) -> Dict[str, Any]:
+    patient_id: str | None = None,
+) -> dict[str, Any]:
     """Load all biomarker-related data for a patient dashboard.
 
     This is a convenience function that fetches biomarkers, treatments,
@@ -250,24 +158,21 @@ async def load_all_biomarker_data(
 
     Args:
         patient_id: Patient ID (None = current patient)
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         Dict with keys: 'biomarkers', 'treatments', 'appointments'
-    """
-    if is_demo is None:
-        is_demo = current_config.is_demo
 
+    Note: Requires seeded database. Run: python scripts/load_seed_data.py
+    """
     logger.info(
-        "Loading all biomarker data for patient: %s (demo=%s)",
+        "Loading all biomarker data for patient: %s",
         patient_id or "current",
-        is_demo,
     )
 
-    # Fetch all data with the same is_demo setting
-    biomarkers = await fetch_biomarkers(patient_id, is_demo=is_demo)
-    treatments = await fetch_treatments(patient_id, is_demo=is_demo)
-    appointments = await fetch_appointments(patient_id, is_demo=is_demo)
+    # Fetch all data
+    biomarkers = await fetch_biomarkers(patient_id)
+    treatments = await fetch_treatments(patient_id)
+    appointments = await fetch_appointments(patient_id)
 
     return {
         "biomarkers": biomarkers,

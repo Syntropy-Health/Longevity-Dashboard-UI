@@ -81,22 +81,32 @@ def appointment_card(appointment: dict, on_click=None) -> rx.Component:
     """
     return rx.box(
         rx.hstack(
+            # Date/time column
             rx.box(
-                rx.icon("calendar", class_name="text-teal-400 w-5 h-5"),
-                class_name="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center",
+                rx.el.div(
+                    rx.text(
+                        appointment.get("date", "N/A"),
+                        class_name="text-xs font-bold text-teal-400 uppercase tracking-wide",
+                    ),
+                    rx.text(
+                        appointment.get("time", "N/A"),
+                        class_name="text-xs text-slate-400",
+                    ),
+                    class_name="text-center",
+                ),
+                class_name="w-20 shrink-0 bg-teal-500/10 rounded-lg py-2 px-2 border border-teal-500/20",
             ),
+            # Appointment details
             rx.vstack(
                 rx.text(
-                    appointment.get("type", "Consultation"),
+                    appointment.get(
+                        "title", appointment.get("treatment_type", "Appointment")
+                    ),
                     class_name="text-white font-medium text-sm",
                 ),
                 rx.text(
-                    f"{appointment.get('date', 'N/A')} at {appointment.get('time', 'N/A')}",
+                    f"{appointment.get('treatment_type', 'Consultation')} with {appointment.get('provider', 'Dr. Staff')}",
                     class_name="text-slate-400 text-xs",
-                ),
-                rx.text(
-                    f"Dr. {appointment.get('doctor', 'Smith')}",
-                    class_name="text-slate-500 text-xs",
                 ),
                 spacing="1",
                 align_items="start",

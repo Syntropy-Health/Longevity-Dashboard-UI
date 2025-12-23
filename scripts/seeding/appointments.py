@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 
 
-def load_appointments(engine: "Engine", user_id_map: dict[str, int]) -> SeedResult:
+def load_appointments(engine: Engine, user_id_map: dict[str, int]) -> SeedResult:
     """Load appointment seed data into database.
 
     Args:

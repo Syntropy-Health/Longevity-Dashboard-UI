@@ -1,16 +1,10 @@
 """Biomarker seed data for the Longevity Clinic.
 
-Contains:
-- Biomarker metric seed data (for biomarker state)
-- Biomarker chart data (for dashboard charts)
-- Portal biomarkers (patient-facing detailed view)
+Uses dict format compatible with SQLModel.model_validate() for type safety.
 """
 
 from __future__ import annotations
 
-from typing import Dict, List
-
-# Import biomarker types
 from ..biomarkers import (
     BiomarkerCategoryEnum,
     BiomarkerMetricName,
@@ -19,12 +13,11 @@ from ..biomarkers import (
     MeasurementUnit,
 )
 
-
 # =============================================================================
 # Biomarker Metric Seed Data (organized by category)
 # =============================================================================
 
-BIOMARKER_METRIC_SEED_DATA: Dict[BiomarkerCategoryEnum, List[BiomarkerMetricSeed]] = {
+BIOMARKER_METRIC_SEED_DATA: dict[BiomarkerCategoryEnum, list[BiomarkerMetricSeed]] = {
     BiomarkerCategoryEnum.CBC: [
         {
             "metric": BiomarkerMetricName.RED_BLOOD_CELLS,
@@ -223,12 +216,11 @@ BIOMARKER_METRIC_SEED_DATA: Dict[BiomarkerCategoryEnum, List[BiomarkerMetricSeed
     ],
 }
 
-
 # =============================================================================
-# Biomarker Chart Seed Data (simple score format)
+# Biomarker Chart Seed Data
 # =============================================================================
 
-BIOMARKER_CHART_SEED: List[dict] = [
+BIOMARKER_CHART_SEED: list[dict] = [
     {"name": "Wk 1", "score": 65},
     {"name": "Wk 4", "score": 72},
     {"name": "Wk 8", "score": 78},
@@ -236,122 +228,366 @@ BIOMARKER_CHART_SEED: List[dict] = [
     {"name": "Wk 16", "score": 88},
 ]
 
+# =============================================================================
+# Helper to create biomarker dicts (compatible with BiomarkerDefinition.model_validate())
+# =============================================================================
+
+
+def _bio(
+    id: str,
+    name: str,
+    category: str,
+    unit: str,
+    desc: str,
+    optimal: tuple,
+    critical: tuple,
+    history: list,
+    status: str = "Optimal",
+    trend: str = "stable",
+) -> dict:
+    """Create biomarker seed dict compatible with BiomarkerDefinition model."""
+    months = ["Jan", "Mar", "May", "Jul", "Sep"]
+    return {
+        "id": id,
+        "name": name,
+        "category": category,
+        "unit": unit,
+        "description": desc,
+        "optimal_min": optimal[0],
+        "optimal_max": optimal[1],
+        "critical_min": critical[0],
+        "critical_max": critical[1],
+        "current_value": history[-1],
+        "status": status,
+        "trend": trend,
+        "history": [
+            {"date": m, "value": v} for m, v in zip(months, history, strict=False)
+        ],
+    }
+
 
 # =============================================================================
-# Portal Biomarkers Seed (patient-facing detailed view)
+# Portal Biomarkers Seed - Compatible with BiomarkerDefinition.model_validate()
 # =============================================================================
 
-PORTAL_BIOMARKERS_SEED: List[dict] = [
-    {
-        "id": "bio_1",
-        "name": "Vitamin D (25-OH)",
-        "category": "Metabolic",
-        "unit": "ng/mL",
-        "description": "Crucial for bone health, immune function, and mood regulation.",
-        "optimal_min": 40.0,
-        "optimal_max": 80.0,
-        "critical_min": 20.0,
-        "critical_max": 100.0,
-        "current_value": 45.2,
-        "status": "Optimal",
-        "trend": "up",
-        "history": [
-            {"date": "Jan", "value": 28.5},
-            {"date": "Mar", "value": 32.1},
-            {"date": "May", "value": 38.4},
-            {"date": "Jul", "value": 42.0},
-            {"date": "Sep", "value": 45.2},
-        ],
-    },
-    {
-        "id": "bio_2",
-        "name": "hs-CRP",
-        "category": "Inflammation",
-        "unit": "mg/L",
-        "description": "High-sensitivity C-reactive protein, a marker of systemic inflammation.",
-        "optimal_min": 0.0,
-        "optimal_max": 1.0,
-        "critical_min": 0.0,
-        "critical_max": 3.0,
-        "current_value": 0.8,
-        "status": "Optimal",
-        "trend": "down",
-        "history": [
-            {"date": "Jan", "value": 2.4},
-            {"date": "Mar", "value": 1.8},
-            {"date": "May", "value": 1.2},
-            {"date": "Jul", "value": 0.9},
-            {"date": "Sep", "value": 0.8},
-        ],
-    },
-    {
-        "id": "bio_3",
-        "name": "Total Testosterone",
-        "category": "Hormones",
-        "unit": "ng/dL",
-        "description": "Primary male sex hormone, vital for muscle mass, density, and libido.",
-        "optimal_min": 600.0,
-        "optimal_max": 900.0,
-        "critical_min": 300.0,
-        "critical_max": 1200.0,
-        "current_value": 550.0,
-        "status": "Warning",
-        "trend": "stable",
-        "history": [
-            {"date": "Jan", "value": 480.0},
-            {"date": "Mar", "value": 510.0},
-            {"date": "May", "value": 530.0},
-            {"date": "Jul", "value": 545.0},
-            {"date": "Sep", "value": 550.0},
-        ],
-    },
-    {
-        "id": "bio_4",
-        "name": "HbA1c",
-        "category": "Metabolic",
-        "unit": "%",
-        "description": "Average blood sugar (glucose) levels over the past two to three months.",
-        "optimal_min": 4.0,
-        "optimal_max": 5.6,
-        "critical_min": 3.0,
-        "critical_max": 6.5,
-        "current_value": 5.2,
-        "status": "Optimal",
-        "trend": "stable",
-        "history": [
-            {"date": "Jan", "value": 5.4},
-            {"date": "Mar", "value": 5.3},
-            {"date": "May", "value": 5.3},
-            {"date": "Jul", "value": 5.2},
-            {"date": "Sep", "value": 5.2},
-        ],
-    },
-    {
-        "id": "bio_5",
-        "name": "Cortisol (AM)",
-        "category": "Hormones",
-        "unit": "mcg/dL",
-        "description": "Stress hormone. High levels can indicate chronic stress or adrenal issues.",
-        "optimal_min": 10.0,
-        "optimal_max": 20.0,
-        "critical_min": 5.0,
-        "critical_max": 25.0,
-        "current_value": 22.5,
-        "status": "Critical",
-        "trend": "up",
-        "history": [
-            {"date": "Jan", "value": 16.0},
-            {"date": "Mar", "value": 18.5},
-            {"date": "May", "value": 19.0},
-            {"date": "Jul", "value": 21.2},
-            {"date": "Sep", "value": 22.5},
-        ],
-    },
+PORTAL_BIOMARKERS_SEED: list[dict] = [
+    # Metabolic Panel
+    _bio(
+        "bio_1",
+        "Vitamin D (25-OH)",
+        "Metabolic",
+        "ng/mL",
+        "Crucial for bone health, immune function, and mood regulation.",
+        (40.0, 80.0),
+        (20.0, 100.0),
+        [28.5, 32.1, 38.4, 42.0, 45.2],
+        "Optimal",
+        "up",
+    ),
+    _bio(
+        "bio_4",
+        "HbA1c",
+        "Metabolic",
+        "%",
+        "Average blood sugar (glucose) levels over the past two to three months.",
+        (4.0, 5.6),
+        (3.0, 6.5),
+        [5.4, 5.3, 5.3, 5.2, 5.2],
+    ),
+    _bio(
+        "bio_fasting_glucose",
+        "Fasting Glucose",
+        "Metabolic",
+        "mg/dL",
+        "Blood sugar level after overnight fasting, key indicator of diabetes risk.",
+        (70.0, 99.0),
+        (50.0, 126.0),
+        [98.0, 95.0, 93.0, 91.0, 92.0],
+    ),
+    _bio(
+        "bio_insulin",
+        "Fasting Insulin",
+        "Metabolic",
+        "µIU/mL",
+        "Insulin resistance marker. High levels may indicate pre-diabetes.",
+        (2.0, 10.0),
+        (0.5, 25.0),
+        [12.5, 10.2, 8.5, 7.2, 6.8],
+        "Optimal",
+        "down",
+    ),
+    # Inflammation Markers
+    _bio(
+        "bio_2",
+        "hs-CRP",
+        "Inflammation",
+        "mg/L",
+        "High-sensitivity C-reactive protein, a marker of systemic inflammation.",
+        (0.0, 1.0),
+        (0.0, 3.0),
+        [2.4, 1.8, 1.2, 0.9, 0.8],
+        "Optimal",
+        "down",
+    ),
+    _bio(
+        "bio_homocysteine",
+        "Homocysteine",
+        "Inflammation",
+        "µmol/L",
+        "Cardiovascular risk marker. Elevated levels linked to heart disease.",
+        (5.0, 10.0),
+        (2.0, 15.0),
+        [11.5, 10.2, 9.1, 8.5, 8.2],
+    ),
+    _bio(
+        "bio_esr",
+        "ESR (Sed Rate)",
+        "Inflammation",
+        "mm/hr",
+        "Erythrocyte sedimentation rate, general inflammation marker.",
+        (0.0, 15.0),
+        (0.0, 30.0),
+        [12.0, 10.0, 9.0, 8.5, 8.0],
+    ),
+    # Hormones
+    _bio(
+        "bio_3",
+        "Total Testosterone",
+        "Hormones",
+        "ng/dL",
+        "Primary male sex hormone, vital for muscle mass, density, and libido.",
+        (600.0, 900.0),
+        (300.0, 1200.0),
+        [480.0, 510.0, 530.0, 545.0, 550.0],
+        "Warning",
+    ),
+    _bio(
+        "bio_5",
+        "Cortisol (AM)",
+        "Hormones",
+        "mcg/dL",
+        "Stress hormone. High levels can indicate chronic stress or adrenal issues.",
+        (10.0, 20.0),
+        (5.0, 25.0),
+        [16.0, 18.5, 19.0, 21.2, 22.5],
+        "Critical",
+        "up",
+    ),
+    _bio(
+        "bio_dhea_s",
+        "DHEA-S",
+        "Hormones",
+        "µg/dL",
+        "Adrenal hormone precursor, declines with age. Marker of adrenal function.",
+        (200.0, 400.0),
+        (100.0, 600.0),
+        [265.0, 270.0, 278.0, 282.0, 285.0],
+    ),
+    _bio(
+        "bio_free_t3",
+        "Free T3",
+        "Hormones",
+        "pg/mL",
+        "Active thyroid hormone. Low levels affect metabolism and energy.",
+        (2.5, 4.0),
+        (1.5, 5.0),
+        [3.0, 3.1, 3.2, 3.1, 3.2],
+    ),
+    # Thyroid Panel
+    _bio(
+        "bio_tsh",
+        "TSH",
+        "Thyroid",
+        "mIU/L",
+        "Thyroid stimulating hormone. Primary marker of thyroid function.",
+        (0.5, 2.5),
+        (0.1, 4.5),
+        [2.2, 2.0, 1.9, 1.8, 1.8],
+    ),
+    _bio(
+        "bio_free_t4",
+        "Free T4",
+        "Thyroid",
+        "ng/dL",
+        "Inactive thyroid hormone precursor. Key for metabolism regulation.",
+        (1.0, 1.5),
+        (0.7, 2.0),
+        [1.1, 1.15, 1.18, 1.2, 1.2],
+    ),
+    _bio(
+        "bio_reverse_t3",
+        "Reverse T3",
+        "Thyroid",
+        "ng/dL",
+        "Inactive form of T3. High levels can indicate stress or illness.",
+        (10.0, 20.0),
+        (5.0, 30.0),
+        [18.0, 16.5, 15.5, 15.2, 15.0],
+    ),
+    # Liver Function
+    _bio(
+        "bio_alt",
+        "ALT (SGPT)",
+        "Liver Function",
+        "U/L",
+        "Alanine aminotransferase. Elevated levels may indicate liver damage.",
+        (7.0, 35.0),
+        (0.0, 56.0),
+        [28.0, 25.0, 23.0, 22.0, 22.0],
+    ),
+    _bio(
+        "bio_ast",
+        "AST (SGOT)",
+        "Liver Function",
+        "U/L",
+        "Aspartate aminotransferase. Marker of liver and muscle health.",
+        (8.0, 33.0),
+        (0.0, 50.0),
+        [30.0, 27.0, 25.0, 24.0, 24.0],
+    ),
+    _bio(
+        "bio_ggt",
+        "GGT",
+        "Liver Function",
+        "U/L",
+        "Gamma-glutamyl transferase. Sensitive marker for liver/bile duct issues.",
+        (9.0, 48.0),
+        (0.0, 100.0),
+        [42.0, 38.0, 32.0, 29.0, 28.0],
+        "Optimal",
+        "down",
+    ),
+    # Kidney Function
+    _bio(
+        "bio_creatinine",
+        "Creatinine",
+        "Kidney Function",
+        "mg/dL",
+        "Waste product filtered by kidneys. Key marker of kidney function.",
+        (0.7, 1.2),
+        (0.5, 1.5),
+        [1.0, 0.98, 0.96, 0.95, 0.95],
+    ),
+    _bio(
+        "bio_bun",
+        "BUN",
+        "Kidney Function",
+        "mg/dL",
+        "Blood urea nitrogen. Reflects kidney function and hydration status.",
+        (7.0, 20.0),
+        (5.0, 30.0),
+        [16.0, 15.0, 14.5, 14.2, 14.0],
+    ),
+    _bio(
+        "bio_egfr",
+        "eGFR",
+        "Kidney Function",
+        "mL/min/1.73m²",
+        "Estimated glomerular filtration rate. Key indicator of kidney health.",
+        (90.0, 120.0),
+        (60.0, 150.0),
+        [95.0, 96.0, 97.0, 97.5, 98.0],
+    ),
+    # Lipid Panel
+    _bio(
+        "bio_ldl",
+        "LDL Cholesterol",
+        "Lipid Panel",
+        "mg/dL",
+        "Low-density lipoprotein. 'Bad' cholesterol linked to heart disease.",
+        (0.0, 100.0),
+        (0.0, 160.0),
+        [135.0, 125.0, 115.0, 108.0, 105.0],
+        "Warning",
+        "down",
+    ),
+    _bio(
+        "bio_hdl",
+        "HDL Cholesterol",
+        "Lipid Panel",
+        "mg/dL",
+        "High-density lipoprotein. 'Good' cholesterol that protects the heart.",
+        (50.0, 100.0),
+        (40.0, 120.0),
+        [52.0, 55.0, 58.0, 60.0, 62.0],
+        "Optimal",
+        "up",
+    ),
+    _bio(
+        "bio_triglycerides",
+        "Triglycerides",
+        "Lipid Panel",
+        "mg/dL",
+        "Blood fats. Elevated levels increase cardiovascular risk.",
+        (0.0, 100.0),
+        (0.0, 200.0),
+        [145.0, 125.0, 105.0, 92.0, 85.0],
+        "Optimal",
+        "down",
+    ),
+    _bio(
+        "bio_apob",
+        "ApoB",
+        "Lipid Panel",
+        "mg/dL",
+        "Apolipoprotein B. More accurate cardiovascular risk marker than LDL.",
+        (0.0, 90.0),
+        (0.0, 130.0),
+        [105.0, 98.0, 90.0, 85.0, 82.0],
+        "Optimal",
+        "down",
+    ),
+    # Vitamins & Minerals
+    _bio(
+        "bio_b12",
+        "Vitamin B12",
+        "Vitamins & Minerals",
+        "pg/mL",
+        "Essential for nerve function and DNA synthesis. Deficiency causes fatigue.",
+        (400.0, 900.0),
+        (200.0, 1200.0),
+        [420.0, 510.0, 580.0, 620.0, 650.0],
+        "Optimal",
+        "up",
+    ),
+    _bio(
+        "bio_ferritin",
+        "Ferritin",
+        "Vitamins & Minerals",
+        "ng/mL",
+        "Iron storage protein. Low levels indicate iron deficiency.",
+        (50.0, 200.0),
+        (15.0, 400.0),
+        [45.0, 58.0, 70.0, 78.0, 85.0],
+        "Optimal",
+        "up",
+    ),
+    _bio(
+        "bio_magnesium",
+        "Magnesium (RBC)",
+        "Vitamins & Minerals",
+        "mg/dL",
+        "Intracellular magnesium. Essential for 300+ enzymatic reactions.",
+        (4.5, 6.5),
+        (3.5, 7.5),
+        [4.2, 4.5, 4.8, 5.0, 5.2],
+        "Optimal",
+        "up",
+    ),
+    _bio(
+        "bio_zinc",
+        "Zinc (Serum)",
+        "Vitamins & Minerals",
+        "µg/dL",
+        "Essential mineral for immune function, wound healing, and taste.",
+        (80.0, 120.0),
+        (60.0, 150.0),
+        [88.0, 90.0, 92.0, 94.0, 95.0],
+    ),
 ]
 
-
 __all__ = [
-    "BIOMARKER_METRIC_SEED_DATA",
     "BIOMARKER_CHART_SEED",
+    "BIOMARKER_METRIC_SEED_DATA",
     "PORTAL_BIOMARKERS_SEED",
 ]

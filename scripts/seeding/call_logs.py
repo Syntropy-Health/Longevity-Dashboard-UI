@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
 from longevity_clinic.app.data.model import (
     CallLog,
-    CallSummary,
     CallTranscript,
+    CheckIn,
     User,
 )
 
@@ -90,7 +90,7 @@ def load_call_logs(session: Session, user_id_map: dict[str, int]) -> SeedResult:
 
         # Find user_id from phone
         user_id = None
-        for ext_id, db_id in user_id_map.items():
+        for _ext_id, db_id in user_id_map.items():
             user = session.exec(select(User).where(User.id == db_id)).first()
             if user and user.phone == call_data["phone_number"]:
                 user_id = db_id
@@ -118,21 +118,27 @@ def load_call_logs(session: Session, user_id_map: dict[str, int]) -> SeedResult:
         )
         session.add(transcript)
 
-        # Create summary
-        summary = CallSummary(
+        # Create CheckIn (replaces deprecated CallSummary)
+        checkin = CheckIn(
+            checkin_id=f"CHK-{call_data['call_id']}",
+            user_id=user_id,
             call_log_id=call_log.id,
-            call_id=call_data["call_id"],
+            patient_name=primary_name,
+            checkin_type="call",
             summary=call_data["summary"],
+            raw_content=call_data["transcript"],
             health_topics=json.dumps(call_data["health_topics"]),
             urgency_level="routine",
-            has_medications="medications" in call_data["health_topics"],
-            has_nutrition="nutrition" in call_data["health_topics"],
-            has_symptoms="symptoms" in call_data["health_topics"],
+            is_processed=True,
             llm_model="seed-data",
+            processed_at=datetime.now(UTC),
+            timestamp=call_data["started_at"],
+            status="pending",
+            provider_reviewed=False,
         )
-        session.add(summary)
+        session.add(checkin)
         result.loaded += 1
 
     session.commit()
-    print(f"  ✓ Loaded {result.loaded} call logs with transcripts and summaries")
+    print(f"  ✓ Loaded {result.loaded} call logs with transcripts and check-ins")
     return result

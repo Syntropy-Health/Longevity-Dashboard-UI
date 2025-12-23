@@ -7,33 +7,33 @@ This module provides the notifications interface with:
 - Detail modal
 """
 
-from .page import notifications_page
 from .components import (
+    empty_state,
+    filter_tabs,
+    notification_card,
     notification_icon,
     notification_type_badge,
-    notification_card,
-    filter_tabs,
-    empty_state,
 )
 from .modals import notification_detail_modal
+from .page import notifications_page
 from .views import (
     admin_notifications_view,
-    patient_notifications_view,
     notifications_content,
+    patient_notifications_view,
 )
 
 __all__ = [
-    "notifications_page",
+    # Views
+    "admin_notifications_view",
+    "empty_state",
+    "filter_tabs",
+    "notification_card",
+    # Modals
+    "notification_detail_modal",
     # Components
     "notification_icon",
     "notification_type_badge",
-    "notification_card",
-    "filter_tabs",
-    "empty_state",
-    # Modals
-    "notification_detail_modal",
-    # Views
-    "admin_notifications_view",
-    "patient_notifications_view",
     "notifications_content",
+    "notifications_page",
+    "patient_notifications_view",
 ]

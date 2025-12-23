@@ -1,8 +1,8 @@
 """Settings tab component for patient portal."""
 
 import reflex as rx
-from ....states import AuthState
-from ....states import HealthDashboardState
+
+from ....states import AuthState, HealthDashboardState
 from ....styles.constants import GlassStyles
 
 

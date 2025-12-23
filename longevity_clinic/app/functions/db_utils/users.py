@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 import reflex as rx
 from sqlmodel import select
 
@@ -14,7 +12,7 @@ from longevity_clinic.app.functions.utils import normalize_phone
 logger = get_logger("longevity_clinic.db_utils.users")
 
 
-def get_user_by_phone_sync(phone: str) -> Optional[User]:
+def get_user_by_phone_sync(phone: str) -> User | None:
     """Get user by phone number (sync)."""
     if not phone:
         return None
@@ -37,7 +35,7 @@ def get_user_by_phone_sync(phone: str) -> Optional[User]:
         return None
 
 
-def get_user_by_external_id_sync(external_id: str) -> Optional[User]:
+def get_user_by_external_id_sync(external_id: str) -> User | None:
     """Get user by external ID (e.g., 'P001')."""
     try:
         with rx.session() as session:
@@ -49,7 +47,7 @@ def get_user_by_external_id_sync(external_id: str) -> Optional[User]:
         return None
 
 
-def get_user_by_id_sync(user_id: int) -> Optional[User]:
+def get_user_by_id_sync(user_id: int) -> User | None:
     """Get user by database ID."""
     try:
         with rx.session() as session:
@@ -67,7 +65,7 @@ def get_patient_name_by_phone(phone: str, fallback: str = "Unknown Patient") -> 
     return fallback if fallback != "Unknown Patient" else f"Patient ({phone})"
 
 
-def get_all_patients_sync() -> List[User]:
+def get_all_patients_sync() -> list[User]:
     """Get all patient users from database."""
     try:
         with rx.session() as session:
@@ -77,7 +75,7 @@ def get_all_patients_sync() -> List[User]:
         return []
 
 
-def get_phone_to_patient_map() -> Dict[str, str]:
+def get_phone_to_patient_map() -> dict[str, str]:
     """Build phone-to-patient-name mapping from database."""
     try:
         with rx.session() as session:
@@ -90,14 +88,10 @@ def get_phone_to_patient_map() -> Dict[str, str]:
         return {}
 
 
-def get_primary_demo_user_id() -> Optional[int]:
-    """Get the database ID of the primary demo user (Sarah Chen / P001)."""
-    user = get_user_by_external_id_sync("P001")
-    return user.id if user else None
-
-
-def get_recently_active_patients_sync(limit: int = 5) -> List[User]:
+def get_recently_active_patients_sync(limit: int = 5) -> list[User]:
     """Get most recently active patients based on check-in activity.
+
+    Falls back to all patients sorted by updated_at if no check-ins exist.
 
     Args:
         limit: Maximum number of patients to return
@@ -105,8 +99,9 @@ def get_recently_active_patients_sync(limit: int = 5) -> List[User]:
     Returns:
         List of User objects ordered by most recent activity
     """
-    from longevity_clinic.app.data.model import CheckIn
     from sqlmodel import desc, func
+
+    from longevity_clinic.app.data.model import CheckIn
 
     try:
         with rx.session() as session:
@@ -129,7 +124,19 @@ def get_recently_active_patients_sync(limit: int = 5) -> List[User]:
                 .limit(limit)
             ).all()
 
-            return list(result)
+            # If no patients with check-ins, fallback to all patients
+            if result:
+                return list(result)
+
+            logger.info("No check-ins found, falling back to all patients")
+            return list(
+                session.exec(
+                    select(User)
+                    .where(User.role == "patient")
+                    .order_by(desc(User.updated_at))
+                    .limit(limit)
+                ).all()
+            )
     except Exception as e:
         logger.error("Failed to get recently active patients: %s", e)
         # Fallback: return all patients sorted by updated_at

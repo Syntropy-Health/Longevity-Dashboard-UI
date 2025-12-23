@@ -1,13 +1,13 @@
 """Voice transcription state using OpenAI Whisper."""
 
 import os
-from urllib.request import urlopen
-from pathlib import Path
-
-import reflex as rx
 
 # Add the custom component path
 import sys
+from pathlib import Path
+from urllib.request import urlopen
+
+import reflex as rx
 
 custom_component_path = str(
     Path(__file__).parent.parent.parent.parent
@@ -18,7 +18,6 @@ if custom_component_path not in sys.path:
     sys.path.insert(0, custom_component_path)
 
 from reflex_audio_capture import AudioRecorderPolyfill, get_codec, strip_codec_part
-
 
 # Lazy-initialize OpenAI client to avoid import-time errors when API key is missing
 _openai_client = None
@@ -60,7 +59,7 @@ class VoiceTranscriptionState(rx.State):
     async def on_data_available(self, chunk: str):
         """Handle incoming audio data and transcribe with Whisper."""
         # Get the codec/mime type from the data URI
-        mime_type, _, codec = get_codec(chunk).partition(";")
+        mime_type, _, _codec = get_codec(chunk).partition(";")
         audio_type = mime_type.partition("/")[2]
         if audio_type == "mpeg":
             audio_type = "mp3"
@@ -106,11 +105,6 @@ class VoiceTranscriptionState(rx.State):
                     self.transcript = transcription.text
 
     @rx.event
-    def set_transcript(self, value: str):
-        """Set the transcript value."""
-        self.transcript = value
-
-    @rx.event
     def clear_transcript(self):
         """Clear the transcript."""
         self.transcript = ""
@@ -118,20 +112,9 @@ class VoiceTranscriptionState(rx.State):
         self.error_message = ""
 
     @rx.event
-    def set_timeslice(self, value: list[int | float]):
-        """Set the timeslice for audio chunks."""
-        self.timeslice = int(value[0])
-
-    @rx.event
-    def set_device_id(self, value: str):
-        """Set the audio input device."""
-        self.device_id = value
-        yield audio_capture.stop()
-
-    @rx.event
     def on_error(self, err):
         """Handle recording errors."""
-        print(f"Recording error: {err}")  # noqa: T201
+        print(f"Recording error: {err}")
         self.has_error = True
         self.error_message = str(err)
 
@@ -142,10 +125,16 @@ class VoiceTranscriptionState(rx.State):
         self.error_message = ""
         return audio_capture.start()
 
-    @rx.event
-    def stop_recording(self):
-        """Stop audio recording."""
-        return audio_capture.stop()
+    @rx.event(background=True)
+    async def stop_recording(self):
+        """Stop audio recording (background event for non-blocking UI).
+
+        Sets processing=True immediately for instant UI feedback.
+        The actual transcription happens in on_data_available (background).
+        """
+        async with self:
+            self.processing = True  # Show processing state immediately
+        yield audio_capture.stop()
 
 
 # Create the audio capture component instance

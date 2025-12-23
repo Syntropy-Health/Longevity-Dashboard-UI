@@ -6,7 +6,6 @@ Common functionality shared across all seed loaders.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 import reflex as rx
 from sqlmodel import SQLModel

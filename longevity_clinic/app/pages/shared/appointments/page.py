@@ -6,11 +6,16 @@ Uses shared AppointmentState from states/shared/appointment.py.
 
 import reflex as rx
 
-from ....styles.constants import GlassStyles
 from ....components.layout import authenticated_layout
 from ....states import AppointmentState
-from .sections import appointments_sidebar, appointments_content
+from ....styles.constants import GlassStyles
 from .modals import details_modal
+from .sections import (
+    appointments_for_date_section,
+    calendar_sidebar,
+    past_appointments_section,
+    upcoming_appointments_list,
+)
 
 
 def appointments_page() -> rx.Component:
@@ -33,15 +38,36 @@ def appointments_page() -> rx.Component:
                 ),
                 class_name="mb-6",
             ),
-            # Main layout with calendar sidebar and content
+            # Top row: Calendar sidebar + Today's appointments
             rx.el.div(
-                # Left sidebar with calendar
-                appointments_sidebar(AppointmentState),
-                # Main content area
-                appointments_content(AppointmentState),
-                class_name="flex flex-col lg:flex-row gap-6",
+                # Left: Calendar and stats
+                rx.el.div(
+                    calendar_sidebar(AppointmentState),
+                    class_name="w-full lg:w-80 flex-shrink-0",
+                ),
+                # Right: Today's/Selected date appointments
+                rx.el.div(
+                    appointments_for_date_section(AppointmentState),
+                    class_name="flex-1 min-w-0",
+                ),
+                class_name="flex flex-col lg:flex-row gap-6 items-start",
+            ),
+            # Bottom row: Upcoming and Past appointments side by side (full width)
+            rx.el.div(
+                # Upcoming appointments
+                rx.el.div(
+                    upcoming_appointments_list(AppointmentState),
+                    class_name="flex-1 min-w-0",
+                ),
+                # Past appointments
+                rx.el.div(
+                    past_appointments_section(AppointmentState),
+                    class_name="flex-1 min-w-0",
+                ),
+                class_name="flex flex-col lg:flex-row gap-6 mt-6",
             ),
             # Details modal
             details_modal(AppointmentState),
+            class_name="max-w-7xl mx-auto",
         )
     )

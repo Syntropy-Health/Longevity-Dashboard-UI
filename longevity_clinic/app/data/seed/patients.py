@@ -10,10 +10,7 @@ Contains:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-if TYPE_CHECKING:
-    from ...config import DemoUserConfig
+from typing import Any
 
 # Import Patient type from state_schemas
 from ..state_schemas import Patient
@@ -30,7 +27,7 @@ class DemoPatientSeed:
     external_id: str
     name: str
     email: str
-    phone: Optional[str] = None
+    phone: str | None = None
     age: int = 35
     gender: str = "Female"
     status: str = "Active"
@@ -39,7 +36,7 @@ class DemoPatientSeed:
     is_primary: bool = False  # True for the main demo user
 
     @classmethod
-    def from_demo_config(cls) -> "DemoPatientSeed":
+    def from_demo_config(cls) -> DemoPatientSeed:
         """Create primary demo patient from DemoUserConfig."""
         from ...config import current_config
 
@@ -57,7 +54,7 @@ class DemoPatientSeed:
             is_primary=True,
         )
 
-    def to_user_dict(self) -> Dict[str, Any]:
+    def to_user_dict(self) -> dict[str, Any]:
         """Convert to dict for User model creation."""
         return {
             "id": self.external_id,
@@ -66,7 +63,7 @@ class DemoPatientSeed:
             "phone": self.phone,
         }
 
-    def to_patient_state_dict(self) -> Dict[str, Any]:
+    def to_patient_state_dict(self) -> dict[str, Any]:
         """Convert to dict for DEMO_PATIENTS_STATE format."""
         return {
             "id": self.external_id,
@@ -100,7 +97,7 @@ def _get_demo_phone_number() -> str:
 # Secondary Demo Patients
 # =============================================================================
 
-SECONDARY_DEMO_PATIENTS: List[DemoPatientSeed] = [
+SECONDARY_DEMO_PATIENTS: list[DemoPatientSeed] = [
     DemoPatientSeed(
         external_id="P002",
         name="Marcus Williams",
@@ -148,12 +145,12 @@ SECONDARY_DEMO_PATIENTS: List[DemoPatientSeed] = [
 ]
 
 
-def get_all_demo_patients() -> List[DemoPatientSeed]:
+def get_all_demo_patients() -> list[DemoPatientSeed]:
     """Get all demo patients (primary + secondary)."""
-    return [_get_primary_demo_patient()] + SECONDARY_DEMO_PATIENTS
+    return [_get_primary_demo_patient(), *SECONDARY_DEMO_PATIENTS]
 
 
-def get_phone_to_patient_seed() -> Dict[str, str]:
+def get_phone_to_patient_seed() -> dict[str, str]:
     """Build phone-to-patient name mapping from all demo patients."""
     mapping = {}
     for patient in get_all_demo_patients():
@@ -167,10 +164,10 @@ def get_phone_to_patient_seed() -> Dict[str, str]:
 # =============================================================================
 
 # Phone to patient mapping - computed from demo patients
-PHONE_TO_PATIENT_SEED: Dict[str, str] = get_phone_to_patient_seed()
+PHONE_TO_PATIENT_SEED: dict[str, str] = get_phone_to_patient_seed()
 
 # Demo patients list (basic format)
-DEMO_PATIENTS: List[Dict[str, Any]] = [
+DEMO_PATIENTS: list[dict[str, Any]] = [
     p.to_user_dict() for p in get_all_demo_patients()
 ]
 
@@ -178,21 +175,21 @@ DEMO_PATIENTS: List[Dict[str, Any]] = [
 DEMO_PHONE_NUMBER: str = _get_demo_phone_number()
 
 
-def _build_demo_patients_state() -> List[Patient]:
+def _build_demo_patients_state() -> list[Patient]:
     """Build DEMO_PATIENTS_STATE from DemoPatientSeed objects."""
     return [p.to_patient_state_dict() for p in get_all_demo_patients()]
 
 
-DEMO_PATIENTS_STATE: List[Patient] = _build_demo_patients_state()
+DEMO_PATIENTS_STATE: list[Patient] = _build_demo_patients_state()
 
 
 __all__ = [
-    "DemoPatientSeed",
-    "SECONDARY_DEMO_PATIENTS",
-    "PHONE_TO_PATIENT_SEED",
     "DEMO_PATIENTS",
-    "DEMO_PHONE_NUMBER",
     "DEMO_PATIENTS_STATE",
+    "DEMO_PHONE_NUMBER",
+    "PHONE_TO_PATIENT_SEED",
+    "SECONDARY_DEMO_PATIENTS",
+    "DemoPatientSeed",
     "get_all_demo_patients",
     "get_phone_to_patient_seed",
 ]

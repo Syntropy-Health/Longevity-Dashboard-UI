@@ -1,6 +1,7 @@
 """Admin dashboard modal components."""
 
 import reflex as rx
+
 from ...states import PatientState
 from ...styles import GlassStyles
 
@@ -159,18 +160,18 @@ def view_patient_modal() -> rx.Component:
                         rx.el.div(
                             rx.el.div(
                                 rx.el.span(
-                                    "P",
+                                    PatientState.selected_patient["full_name"][0],
                                     class_name="text-2xl font-bold text-teal-300",
                                 ),
-                                class_name="h-16 w-16 rounded-full bg-teal-500/20 flex items-center justify-center mb-4 mx-auto border border-teal-500/30",
+                                class_name="h-16 w-16 rounded-full bg-teal-500/15 flex items-center justify-center mb-4 mx-auto border border-teal-500/30",
                             ),
                             rx.el.h4(
                                 PatientState.selected_patient["full_name"],
-                                class_name="text-xl font-bold text-white text-center",
+                                class_name="text-xl font-bold text-gray-900 text-center",
                             ),
                             rx.el.p(
                                 PatientState.selected_patient["status"],
-                                class_name="text-sm text-center text-teal-400 font-medium mt-1",
+                                class_name="text-sm text-center text-teal-600 font-medium mt-1",
                             ),
                             class_name="mb-6",
                         ),
@@ -179,26 +180,26 @@ def view_patient_modal() -> rx.Component:
                             rx.el.div(
                                 rx.el.p(
                                     "Contact Information",
-                                    class_name="font-semibold text-white mb-2",
+                                    class_name="font-semibold text-gray-800 mb-2",
                                 ),
                                 rx.el.div(
                                     rx.icon(
-                                        "mail", class_name="w-4 h-4 text-slate-400 mr-2"
+                                        "mail", class_name="w-4 h-4 text-teal-500 mr-2"
                                     ),
                                     rx.el.span(
                                         PatientState.selected_patient["email"],
-                                        class_name="text-sm text-slate-300",
+                                        class_name="text-sm text-gray-600",
                                     ),
                                     class_name="flex items-center mb-1",
                                 ),
                                 rx.el.div(
                                     rx.icon(
                                         "phone",
-                                        class_name="w-4 h-4 text-slate-400 mr-2",
+                                        class_name="w-4 h-4 text-teal-500 mr-2",
                                     ),
                                     rx.el.span(
                                         PatientState.selected_patient["phone"],
-                                        class_name="text-sm text-slate-300",
+                                        class_name="text-sm text-gray-600",
                                     ),
                                     class_name="flex items-center",
                                 ),
@@ -207,25 +208,25 @@ def view_patient_modal() -> rx.Component:
                             rx.el.div(
                                 rx.el.p(
                                     "Medical Details",
-                                    class_name="font-semibold text-white mb-2",
+                                    class_name="font-semibold text-gray-800 mb-2",
                                 ),
                                 rx.el.p(
                                     f"Age: {PatientState.selected_patient['age']} • Gender: {PatientState.selected_patient['gender']}",
-                                    class_name="text-sm text-slate-300 mb-1",
+                                    class_name="text-sm text-gray-600 mb-1",
                                 ),
                                 rx.el.p(
                                     f"History: {PatientState.selected_patient['medical_history']}",
-                                    class_name="text-sm text-slate-300",
+                                    class_name="text-sm text-gray-600",
                                 ),
                                 class_name="mb-4",
                             ),
-                            class_name="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50",
+                            class_name="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-teal-50/50 p-4 rounded-xl border border-teal-100/60",
                         ),
                         # Assigned Treatments section
                         rx.el.div(
                             rx.el.h4(
                                 "Assigned Treatments",
-                                class_name="text-md font-semibold text-white mb-3 mt-2",
+                                class_name="text-md font-semibold text-gray-800 mb-3 mt-2",
                             ),
                             rx.cond(
                                 PatientState.selected_patient[
@@ -241,35 +242,35 @@ def view_patient_modal() -> rx.Component:
                                             rx.el.div(
                                                 rx.el.p(
                                                     t["name"],
-                                                    class_name="font-medium text-white text-sm",
+                                                    class_name="font-medium text-gray-800 text-sm",
                                                 ),
                                                 rx.el.p(
                                                     f"{t['frequency']} • {t['duration']}",
-                                                    class_name="text-xs text-slate-400",
+                                                    class_name="text-xs text-gray-500",
                                                 ),
                                             ),
                                             rx.el.button(
                                                 rx.icon(
                                                     "trash-2",
-                                                    class_name="w-4 h-4 text-red-400",
+                                                    class_name="w-4 h-4 text-red-500",
                                                 ),
                                                 on_click=lambda: PatientState.remove_treatment_from_patient(
                                                     PatientState.selected_patient["id"],
                                                     t["id"],
                                                 ),
-                                                class_name="p-1 hover:bg-red-500/20 rounded-full transition-colors",
+                                                class_name="p-1.5 hover:bg-red-100 rounded-full transition-colors",
                                             ),
-                                            class_name="flex justify-between items-center p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl",
+                                            class_name="flex justify-between items-center p-3 bg-white/60 border border-teal-100/50 rounded-xl",
                                         ),
                                     ),
                                     class_name="space-y-2",
                                 ),
                                 rx.el.p(
                                     "No active treatments assigned.",
-                                    class_name="text-sm text-slate-500 italic",
+                                    class_name="text-sm text-gray-400 italic",
                                 ),
                             ),
-                            class_name="bg-slate-800/30 p-4 rounded-xl border border-slate-700/30 mt-4",
+                            class_name="bg-teal-50/30 p-4 rounded-xl border border-teal-100/40 mt-4",
                         ),
                         # Footer
                         rx.el.div(

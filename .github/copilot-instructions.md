@@ -144,8 +144,6 @@ Data organization:
 - `demo.py` - **Seed data only** with `DemoPatientSeed` class
 - `state_schemas.py` - State-level TypedDicts
 
-**Demo mode**: Set `IS_DEMO=true` (default) to use demo data, `IS_DEMO=false` for database.
-
 ### Demo User Configuration
 
 The primary demo user is defined in `config.py` via `DemoUserConfig`:
@@ -164,11 +162,12 @@ Demo data in `demo.py` derives from this config:
 - `PHONE_TO_PATIENT_SEED` - built from demo patients
 - All demo check-ins/appointments reference the primary user
 
+**Authentication**: Always use `AuthState.user_id` for the current user's database ID. Do NOT use hardcoded demo user lookups.
+
 ### Configuration Classes
 
 `config.py` has modular configuration:
 ```python
-current_config.is_demo          # True = demo data, False = database
 current_config.demo_user.phone  # Demo user's phone number
 current_config.glass.panel_style  # Modularized glass styles (GlassStyleConfig)
 ```

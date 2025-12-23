@@ -11,7 +11,7 @@ provide only static/default data for things not yet in the DB.
 from __future__ import annotations
 
 # Standard library
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Local application
 from longevity_clinic.app.config import get_logger
@@ -38,8 +38,8 @@ logger = get_logger("longevity_clinic.dashboard_functions")
 
 
 async def fetch_conditions(
-    patient_id: Optional[str] = None,
-) -> List[Condition]:
+    patient_id: str | None = None,
+) -> list[Condition]:
     """Fetch medical conditions for a patient.
 
     Args:
@@ -62,9 +62,9 @@ async def fetch_conditions(
 
 
 async def fetch_symptoms(
-    patient_id: Optional[str] = None,
+    patient_id: str | None = None,
     days: int = 30,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch symptom data for a patient.
 
     Args:
@@ -98,8 +98,8 @@ async def fetch_symptoms(
 
 
 async def fetch_data_sources(
-    patient_id: Optional[str] = None,
-) -> List[DataSource]:
+    patient_id: str | None = None,
+) -> list[DataSource]:
     """Fetch connected data sources for a patient.
 
     Args:
@@ -122,30 +122,8 @@ async def fetch_data_sources(
     return data_sources
 
 
-async def sync_data_source(
-    source_id: str,
-    patient_id: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Trigger sync for a connected data source.
-
-    Args:
-        source_id: Data source to sync
-        patient_id: Patient ID (None = current patient)
-
-    Returns:
-        Sync result with status and any new data
-    """
-    logger.info(
-        "Syncing data source %s for patient: %s", source_id, patient_id or "current"
-    )
-
-    # TODO: Implement API call
-    logger.debug("sync_data_source: Not implemented")
-    return {"status": "pending", "message": "Sync not implemented"}
-
-
 def calculate_medication_adherence(
-    medications: List[Dict[str, Any]],
+    medications: list[dict[str, Any]],
 ) -> float:
     """Calculate overall medication adherence percentage.
 
@@ -167,8 +145,8 @@ def calculate_medication_adherence(
 
 
 async def fetch_reminders(
-    patient_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    patient_id: str | None = None,
+) -> list[dict[str, Any]]:
     """Fetch reminders for a patient.
 
     Args:
@@ -190,8 +168,8 @@ async def fetch_reminders(
 
 
 async def load_all_dashboard_data(
-    patient_id: Optional[str] = None,
-) -> Dict[str, Any]:
+    patient_id: str | None = None,
+) -> dict[str, Any]:
     """Load static dashboard data for a patient.
 
     NOTE: Medications, food entries, and symptoms are now loaded from

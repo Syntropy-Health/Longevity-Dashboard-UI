@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 # Standard library
-import asyncio
-from typing import Optional
-
 # Third-party
 import reflex as rx
 
@@ -15,10 +12,8 @@ from longevity_clinic.app.functions.utils import format_phone_display
 
 
 class AuthState(rx.State):
-    user: Optional[User] = None
-    is_authenticated: bool = False
+    user: User | None = None
     login_error: str = ""
-    register_error: str = ""
     is_loading: bool = False
     show_mobile_menu: bool = False
 
@@ -49,7 +44,6 @@ class AuthState(rx.State):
                 "role": "admin",
                 "full_name": "Dr. Admin",
             }
-            self.is_authenticated = True
             self.is_loading = False
             return rx.redirect("/admin/dashboard")
         elif username == "patient" and password == "patient":
@@ -61,7 +55,6 @@ class AuthState(rx.State):
                 "full_name": demo.full_name,
                 "phone": demo.phone.strip(),
             }
-            self.is_authenticated = True
             self.is_loading = False
             return rx.redirect("/patient/portal")
         else:
@@ -71,25 +64,8 @@ class AuthState(rx.State):
     @rx.event
     def logout(self):
         self.user = None
-        self.is_authenticated = False
         self.show_mobile_menu = False
         return rx.redirect("/")
-
-    @rx.event
-    def check_auth(self):
-        """Check if user is authenticated and redirect to login if not."""
-        if not self.is_authenticated:
-            return rx.redirect("/login")
-
-    @rx.event
-    async def register(self, form_data: dict):
-        self.is_loading = True
-        self.register_error = ""
-        await asyncio.sleep(1)
-        self.register_error = (
-            "Registration is closed for this demo. Please use the login form."
-        )
-        self.is_loading = False
 
     @rx.var
     def user_initials(self) -> str:

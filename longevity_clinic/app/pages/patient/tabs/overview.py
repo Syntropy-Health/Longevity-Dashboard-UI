@@ -1,14 +1,15 @@
 """Overview tab component for patient portal."""
 
 import reflex as rx
+
 from ....states import AppointmentState, BiomarkerState
 from ....styles.constants import GlassStyles
 from ..components import (
+    appointment_item,
     biomarker_card,
     biomarker_detail_panel,
-    treatment_card,
-    appointment_item,
     static_metric_card,
+    treatment_card,
 )
 
 
@@ -42,15 +43,38 @@ def overview_tab() -> rx.Component:
                 class_name="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8",
             ),
         ),
-        # Biomarker Intelligence
+        # Biomarker Intelligence - Shows biomarkers needing attention
         rx.el.div(
-            rx.el.h2(
-                "Biomarker Intelligence",
-                class_name="text-lg font-semibold text-white mb-4",
-            ),
             rx.el.div(
-                rx.foreach(BiomarkerState.biomarkers, biomarker_card),
-                class_name="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6",
+                rx.el.h2(
+                    "Biomarker Intelligence",
+                    class_name="text-lg font-semibold text-white",
+                ),
+                rx.cond(
+                    BiomarkerState.highlighted_count > 0,
+                    rx.el.span(
+                        rx.text(BiomarkerState.highlighted_count, " need attention"),
+                        class_name="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-1 rounded-full border border-amber-500/20",
+                    ),
+                    rx.el.span(
+                        "All optimal",
+                        class_name="text-xs font-medium text-teal-400 bg-teal-500/10 px-2 py-1 rounded-full border border-teal-500/20",
+                    ),
+                ),
+                class_name="flex items-center justify-between mb-4",
+            ),
+            rx.cond(
+                BiomarkerState.has_highlighted_biomarkers,
+                # Show highlighted (non-optimal/non-stable) biomarkers
+                rx.el.div(
+                    rx.foreach(BiomarkerState.highlighted_biomarkers, biomarker_card),
+                    class_name="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6",
+                ),
+                # Fallback: show first 6 biomarkers if all are optimal
+                rx.el.div(
+                    rx.foreach(BiomarkerState.biomarkers[:6], biomarker_card),
+                    class_name="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6",
+                ),
             ),
             biomarker_detail_panel(),
             class_name="mb-10",
@@ -81,7 +105,7 @@ def overview_tab() -> rx.Component:
                         ),
                         rx.el.a(
                             "View Full Calendar",
-                            href="/patient/appointments",
+                            href="/appointments",
                             class_name="block w-full mt-4 py-2 text-sm text-center text-teal-400 font-medium hover:text-teal-300 border border-teal-500/30 rounded-xl hover:bg-teal-500/10 transition-colors",
                         ),
                         class_name=f"{GlassStyles.PANEL} p-5",

@@ -9,14 +9,11 @@ Contains:
 
 from __future__ import annotations
 
-from typing import List
-
-
 # =============================================================================
 # Patient Trend Seed Data (for line charts)
 # =============================================================================
 
-PATIENT_TREND_SEED: List[dict] = [
+PATIENT_TREND_SEED: list[dict] = [
     {"name": "Jan", "active": 120, "new": 15},
     {"name": "Feb", "active": 132, "new": 18},
     {"name": "Mar", "active": 145, "new": 20},
@@ -30,7 +27,7 @@ PATIENT_TREND_SEED: List[dict] = [
 # Patient Visit Seed Data (for PatientVisit model)
 # =============================================================================
 
-PATIENT_VISIT_SEED: List[dict] = [
+PATIENT_VISIT_SEED: list[dict] = [
     {
         "period": "Jan",
         "period_type": "month",
@@ -80,7 +77,7 @@ PATIENT_VISIT_SEED: List[dict] = [
 # Provider Metrics Seed Data
 # =============================================================================
 
-PROVIDER_METRICS_SEED: List[dict] = [
+PROVIDER_METRICS_SEED: list[dict] = [
     {
         "provider_name": "Dr. Johnson",
         "period_type": "month",
@@ -121,7 +118,7 @@ PROVIDER_METRICS_SEED: List[dict] = [
 # =============================================================================
 
 # Hourly patient flow data
-HOURLY_FLOW_SEED: List[dict] = [
+HOURLY_FLOW_SEED: list[dict] = [
     {
         "hour": 8,
         "scheduled_appointments": 4,
@@ -185,7 +182,7 @@ HOURLY_FLOW_SEED: List[dict] = [
 ]
 
 # Room utilization data
-ROOM_UTILIZATION_SEED: List[dict] = [
+ROOM_UTILIZATION_SEED: list[dict] = [
     {"room_id": "Room 1", "room_occupancy_pct": 92.0, "treatments_completed": 18},
     {"room_id": "Room 2", "room_occupancy_pct": 87.0, "treatments_completed": 16},
     {"room_id": "Room 3", "room_occupancy_pct": 78.0, "treatments_completed": 14},
@@ -195,14 +192,14 @@ ROOM_UTILIZATION_SEED: List[dict] = [
 ]
 
 # Combined daily metrics
-DAILY_METRICS_SEED: List[dict] = HOURLY_FLOW_SEED + ROOM_UTILIZATION_SEED
+DAILY_METRICS_SEED: list[dict] = HOURLY_FLOW_SEED + ROOM_UTILIZATION_SEED
 
 
 # =============================================================================
 # Biomarker Aggregate Seed Data
 # =============================================================================
 
-BIOMARKER_AGGREGATE_SEED: List[dict] = [
+BIOMARKER_AGGREGATE_SEED: list[dict] = [
     {
         "period": "Wk 1",
         "period_type": "week",
@@ -242,11 +239,11 @@ BIOMARKER_AGGREGATE_SEED: List[dict] = [
 
 
 __all__ = [
+    "BIOMARKER_AGGREGATE_SEED",
+    "DAILY_METRICS_SEED",
+    "HOURLY_FLOW_SEED",
     "PATIENT_TREND_SEED",
     "PATIENT_VISIT_SEED",
     "PROVIDER_METRICS_SEED",
-    "HOURLY_FLOW_SEED",
     "ROOM_UTILIZATION_SEED",
-    "DAILY_METRICS_SEED",
-    "BIOMARKER_AGGREGATE_SEED",
 ]

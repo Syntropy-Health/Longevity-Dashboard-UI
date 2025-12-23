@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import reflex as rx
 from sqlmodel import select
@@ -31,7 +31,7 @@ logger = get_logger("longevity_clinic.db_utils.health")
 def get_medications_sync(
     user_id: int,
     limit: int = 100,
-) -> List[MedicationEntry]:
+) -> list[MedicationEntry]:
     """Get medications for a user from database."""
     try:
         with rx.session() as session:
@@ -65,7 +65,7 @@ def create_medication_sync(
     frequency: str,
     status: str = "active",
     adherence_rate: float = 1.0,
-) -> Optional[MedicationEntry]:
+) -> MedicationEntry | None:
     """Create a medication entry for a user."""
     try:
         with rx.session() as session:
@@ -97,7 +97,7 @@ def create_medication_sync(
 def update_medication_sync(
     medication_id: int,
     **updates: Any,
-) -> Optional[MedicationEntry]:
+) -> MedicationEntry | None:
     """Update a medication entry."""
     try:
         with rx.session() as session:
@@ -151,7 +151,7 @@ def delete_medication_sync(medication_id: int) -> bool:
 def get_food_entries_sync(
     user_id: int,
     limit: int = 100,
-) -> List[FoodEntry]:
+) -> list[FoodEntry]:
     """Get food log entries for a user from database."""
     try:
         with rx.session() as session:
@@ -188,8 +188,8 @@ def create_food_entry_sync(
     protein: float = 0.0,
     carbs: float = 0.0,
     fat: float = 0.0,
-    consumed_at: Optional[str] = None,
-) -> Optional[FoodEntry]:
+    consumed_at: str | None = None,
+) -> FoodEntry | None:
     """Create a food log entry for a user."""
     try:
         with rx.session() as session:
@@ -246,7 +246,7 @@ def delete_food_entry_sync(entry_id: int) -> bool:
 def get_symptoms_sync(
     user_id: int,
     limit: int = 100,
-) -> List[Symptom]:
+) -> list[Symptom]:
     """Get symptom entries for a user from database."""
     try:
         with rx.session() as session:
@@ -278,7 +278,7 @@ def create_symptom_sync(
     severity: str = "",
     frequency: str = "",
     trend: str = "stable",
-) -> Optional[Symptom]:
+) -> Symptom | None:
     """Create a symptom entry for a user."""
     try:
         with rx.session() as session:
@@ -326,7 +326,7 @@ def delete_symptom_sync(symptom_id: int) -> bool:
 # ============================================================================
 
 
-def get_conditions_sync(user_id: int) -> List[Dict[str, Any]]:
+def get_conditions_sync(user_id: int) -> list[dict[str, Any]]:
     """Get conditions for a user from database.
 
     Conditions are stored in the User.conditions JSON field.
@@ -355,11 +355,12 @@ def get_conditions_sync(user_id: int) -> List[Dict[str, Any]]:
 
 def update_conditions_sync(
     user_id: int,
-    conditions: List[Dict[str, Any]],
+    conditions: list[dict[str, Any]],
 ) -> bool:
     """Update conditions for a user in database."""
-    from longevity_clinic.app.data.model import User
     import json
+
+    from longevity_clinic.app.data.model import User
 
     try:
         with rx.session() as session:
@@ -369,7 +370,7 @@ def update_conditions_sync(
                 return False
 
             user.conditions = json.dumps(conditions)
-            user.updated_at = datetime.now(timezone.utc)
+            user.updated_at = datetime.now(UTC)
             session.add(user)
             session.commit()
             return True

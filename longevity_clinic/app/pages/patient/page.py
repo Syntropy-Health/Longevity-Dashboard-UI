@@ -1,25 +1,25 @@
 """Patient portal main page."""
 
 import reflex as rx
+
 from ...components.layout import authenticated_layout
-from ...states import AuthState
-from ...states import HealthDashboardState
+from ...states import AuthState, HealthDashboardState
 from ...styles.constants import GlassStyles
 from .components import patient_portal_tabs
+from .modals import (
+    add_food_modal,
+    checkin_modal,
+    condition_modal,
+    connect_source_modal,
+    medication_modal,
+    symptom_modal,
+)
 from .tabs import (
-    overview_tab,
+    conditions_tab,
     food_tracker_tab,
     medications_tab,
-    conditions_tab,
+    overview_tab,
     symptoms_tab,
-)
-from .modals import (
-    checkin_modal,
-    medication_modal,
-    condition_modal,
-    symptom_modal,
-    connect_source_modal,
-    add_food_modal,
 )
 
 
@@ -65,11 +65,8 @@ def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
             symptom_modal(),
             connect_source_modal(),
             add_food_modal(),
-            on_mount=[
-                # BiomarkerState.load_biomarkers,
-                # HealthDashboardState.load_dashboard_data,
-                lambda: HealthDashboardState.set_active_tab(initial_tab),
-            ],
+            # on_mount sets initial tab only; data loading is in on_load (longevity_clinic.py)
+            on_mount=lambda: HealthDashboardState.set_active_tab(initial_tab),
         )
     )
 

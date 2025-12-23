@@ -1,40 +1,34 @@
 """Admin check-in functions.
 
 Functions for processing and managing admin check-in data.
-When is_demo=True, returns demo data. Otherwise queries the database.
+All data is loaded from the database.
+Seed data with: python scripts/load_seed_data.py
 """
 
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any
 
-from ...config import get_logger, current_config
+from ...config import get_logger
+from ...data.categories import HealthKeyword
 from ..db_utils import (
-    normalize_phone,
-    get_patient_name_by_phone,
     get_checkins_sync,
+    get_patient_name_by_phone,
+    normalize_phone,
     update_checkin_status_sync,
 )
-from ...data.categories import HealthKeyword
 
 logger = get_logger("longevity_clinic.admin_functions")
 
 
-def _get_demo_admin_checkins():
-    """Lazy-load demo admin checkins."""
-    from ...data.seed import ADMIN_CHECKINS_SEED
-
-    return ADMIN_CHECKINS_SEED
-
-
 # Re-export normalize_phone from db_helpers for backwards compatibility
 __all__ = [
-    "normalize_phone",
-    "get_patient_name_from_phone",
+    "count_checkins_by_status",
     "extract_health_topics",
     "fetch_all_checkins",
-    "update_checkin_status",
     "filter_checkins",
-    "count_checkins_by_status",
+    "get_patient_name_from_phone",
+    "normalize_phone",
+    "update_checkin_status",
 ]
 
 
@@ -52,7 +46,7 @@ def get_patient_name_from_phone(phone: str) -> str:
     return get_patient_name_by_phone(phone, fallback=f"Patient ({phone})")
 
 
-def extract_health_topics(text: str, max_topics: int = 5) -> List[str]:
+def extract_health_topics(text: str, max_topics: int = 5) -> list[str]:
     """Extract health topics from text.
 
     Args:
@@ -68,47 +62,42 @@ def extract_health_topics(text: str, max_topics: int = 5) -> List[str]:
 
 
 async def fetch_all_checkins(
-    status_filter: Optional[str] = None,
+    status_filter: str | None = None,
     limit: int = 100,
-    is_demo: Optional[bool] = None,
-) -> List[Dict[str, Any]]:
-    """Fetch all check-ins for admin view.
+) -> list[dict[str, Any]]:
+    """Fetch all check-ins for admin view from database.
 
     Args:
         status_filter: Filter by status ('pending', 'reviewed', 'flagged')
         limit: Maximum number of check-ins to return
-        is_demo: If True, return demo data. Defaults to config.is_demo.
 
     Returns:
         List of admin check-in records
-    """
-    if is_demo is None:
-        is_demo = current_config.is_demo
 
+    Note: Requires seeded database. Run: python scripts/load_seed_data.py
+    """
     logger.info(
-        "Fetching admin checkins (status=%s, limit=%d, demo=%s)",
+        "Fetching admin checkins (status=%s, limit=%d)",
         status_filter,
         limit,
-        is_demo,
     )
-
-    if is_demo:
-        logger.debug("fetch_all_checkins: Returning demo data")
-        checkins = _get_demo_admin_checkins()[:limit]
-        if status_filter:
-            checkins = [c for c in checkins if c.get("status") == status_filter]
-        return checkins
 
     # Query from database
     logger.debug("fetch_all_checkins: Querying database")
-    return get_checkins_sync(status=status_filter, limit=limit)
+    checkins = get_checkins_sync(status=status_filter, limit=limit)
+    if not checkins:
+        logger.warning(
+            "No check-ins found in database. "
+            "Run 'python scripts/load_seed_data.py' to seed data."
+        )
+    return checkins
 
 
 async def update_checkin_status(
     checkin_id: str,
     status: str,
     reviewed_by: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Update check-in status.
 
     Args:
@@ -139,10 +128,10 @@ async def update_checkin_status(
 
 
 def filter_checkins(
-    checkins: List[Dict[str, Any]],
-    status: Optional[str] = None,
-    search_query: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    checkins: list[dict[str, Any]],
+    status: str | None = None,
+    search_query: str | None = None,
+) -> list[dict[str, Any]]:
     """Filter check-ins by status and search query.
 
     Args:
@@ -175,8 +164,8 @@ def filter_checkins(
 
 
 def count_checkins_by_status(
-    checkins: List[Dict[str, Any]],
-) -> Dict[str, int]:
+    checkins: list[dict[str, Any]],
+) -> dict[str, int]:
     """Count check-ins by status.
 
     Args:

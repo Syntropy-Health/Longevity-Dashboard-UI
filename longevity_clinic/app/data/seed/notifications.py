@@ -5,14 +5,11 @@ Contains admin and patient notification seed data for database initialization.
 
 from __future__ import annotations
 
-from typing import List
-
-
 # =============================================================================
 # Admin Notifications Seed Data
 # =============================================================================
 
-ADMIN_NOTIFICATIONS_SEED: List[dict] = [
+ADMIN_NOTIFICATIONS_SEED: list[dict] = [
     {
         "id": "1",
         "title": "New Patient Registration",
@@ -80,7 +77,7 @@ ADMIN_NOTIFICATIONS_SEED: List[dict] = [
 # Patient Notifications Seed Data
 # =============================================================================
 
-PATIENT_NOTIFICATIONS_SEED: List[dict] = [
+PATIENT_NOTIFICATIONS_SEED: list[dict] = [
     {
         "id": "101",
         "title": "Upcoming Appointment Reminder",

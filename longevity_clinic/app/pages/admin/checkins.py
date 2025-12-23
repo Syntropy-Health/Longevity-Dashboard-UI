@@ -1,16 +1,16 @@
 """Admin check-ins page - manages all patient check-ins."""
 
 import reflex as rx
+
 from ...components.layout import authenticated_layout
 from ...components.modals import checkin_detail_modal
+from ...components.paginated_view import paginated_list_with_filters
 from ...components.shared import (
     admin_checkin_card as _admin_checkin_card,
-    status_filter_button,
     search_input,
 )
 from ...states.shared.checkin import CheckinState
 from ...styles.constants import GlassStyles
-
 
 # =====================================
 # Admin Components
@@ -36,7 +36,7 @@ def admin_checkin_detail_modal() -> rx.Component:
         checkin_summary=CheckinState.selected_checkin_summary,
         checkin_topics=CheckinState.selected_checkin_topics,
         checkin_id=CheckinState.selected_checkin_id,
-        on_close=CheckinState.set_show_checkin_detail_modal,
+        on_close=CheckinState.close_checkin_detail,
         on_flag=CheckinState.flag_checkin,
         on_mark_reviewed=CheckinState.mark_as_reviewed,
         show_patient_name=True,
@@ -52,12 +52,14 @@ def admin_checkin_detail_modal() -> rx.Component:
 
 def admin_checkins_view() -> rx.Component:
     """Admin view for managing all patient check-ins."""
+    # Define filter tabs: (label, value, count, color)
     status_tabs = [
         ("Pending", "pending", CheckinState.pending_count, "amber"),
         ("Reviewed", "reviewed", CheckinState.reviewed_count, "teal"),
         ("Flagged", "flagged", CheckinState.flagged_count, "red"),
         ("All", "all", CheckinState.total_count, "white"),
     ]
+
     return rx.el.div(
         # Header
         rx.el.div(
@@ -77,35 +79,23 @@ def admin_checkins_view() -> rx.Component:
             value=CheckinState.search_query,
             on_change=CheckinState.set_search_query,
         ),
-        # Status Tabs
+        # Paginated list with filter tabs
         rx.el.div(
-            *[
-                status_filter_button(
-                    label,
-                    status,
-                    count,
-                    color,
-                    CheckinState.active_status_tab,
-                    CheckinState.set_active_status_tab,
-                )
-                for label, status, count, color in status_tabs
-            ],
-            class_name="flex gap-2 mt-6 mb-6",
-        ),
-        # Check-ins List
-        rx.match(
-            CheckinState.filtered_checkins.length() > 0,
-            (
-                True,
-                rx.el.div(
-                    rx.foreach(CheckinState.filtered_checkins, admin_checkin_card),
-                    class_name="space-y-4",
-                ),
-            ),
-            rx.el.div(
-                rx.icon("inbox", class_name="w-12 h-12 text-slate-600 mb-4"),
-                rx.el.p("No check-ins found", class_name="text-slate-400"),
-                class_name="flex flex-col items-center justify-center py-12",
+            paginated_list_with_filters(
+                items=CheckinState.paginated_checkins,
+                item_renderer=admin_checkin_card,
+                filter_tabs=status_tabs,
+                active_filter=CheckinState.active_status_tab,
+                on_filter_change=CheckinState.set_active_status_tab,
+                has_previous=CheckinState.has_previous_page,
+                has_next=CheckinState.has_next_page,
+                page_info=CheckinState.page_info,
+                showing_info=CheckinState.showing_info,
+                on_previous=CheckinState.previous_page,
+                on_next=CheckinState.next_page,
+                empty_icon="inbox",
+                empty_message="No check-ins found",
+                filter_class="flex gap-2 mt-6 mb-6",
             ),
         ),
         admin_checkin_detail_modal(),

@@ -5,24 +5,25 @@ from .app.pages.admin import admin_dashboard, patient_health_page, treatments_pa
 
 # Pages - Patient
 from .app.pages.patient import (
-    patient_portal,
+    analytics_page,
     checkins_page,
     checkins_page_wrapper,
+    patient_portal,
     settings_page,
-    analytics_page,
     treatment_search_page,
 )
 
 # Pages - Shared
-from .app.pages.shared import auth_page, notifications_page, appointments_page
+from .app.pages.shared import appointments_page, auth_page, notifications_page
 
 # States
 from .app.states import (
+    AppointmentState,
     BiomarkerState,
-    HealthDashboardState,
     CheckinState,
-    TreatmentState,
+    HealthDashboardState,
     TreatmentSearchState,
+    TreatmentState,
 )
 
 app = rx.App(
@@ -58,13 +59,22 @@ app.add_page(
 )
 
 # Patient
-app.add_page(patient_portal, route="/patient/portal")
+app.add_page(
+    patient_portal,
+    route="/patient/portal",
+    on_load=[
+        BiomarkerState.load_biomarkers,
+        HealthDashboardState.load_dashboard_data,
+        AppointmentState.load_appointments,
+    ],
+)
 app.add_page(
     checkins_page_wrapper,
     route="/patient/checkins",
     on_load=[
         BiomarkerState.load_biomarkers,
         HealthDashboardState.load_dashboard_data,
+        HealthDashboardState.load_health_data_from_db,
         CheckinState.refresh_call_logs,
     ],
 )
@@ -81,5 +91,8 @@ app.add_page(
     notifications_page, route="/notifications", title="Notifications - Longevity Clinic"
 )
 app.add_page(
-    appointments_page, route="/appointments", title="Appointments | Longevity Clinic"
+    appointments_page,
+    route="/appointments",
+    title="Appointments | Longevity Clinic",
+    on_load=[AppointmentState.load_appointments],
 )

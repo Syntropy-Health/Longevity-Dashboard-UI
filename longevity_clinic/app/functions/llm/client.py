@@ -1,7 +1,7 @@
 """LLM client initialization and structured output helpers."""
 
 import os
-from typing import Any, Optional, Type, TypeVar
+from typing import Optional, TypeVar
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -45,11 +45,11 @@ def get_chat_model(
     return ChatOpenAI(model=model, temperature=temperature)
 
 
-def get_structured_output_model(
-    output_schema: Type[T],
+def get_structured_output_model[T: BaseModel](
+    output_schema: type[T],
     model: str = DEFAULT_MODEL,
     temperature: float = DEFAULT_TEMPERATURE,
-) -> Optional[BaseChatModel]:
+) -> BaseChatModel | None:
     """Get a chat model configured for structured output.
 
     Args:
@@ -66,14 +66,14 @@ def get_structured_output_model(
     return llm.with_structured_output(output_schema)
 
 
-async def parse_with_structured_output(
+async def parse_with_structured_output[T: BaseModel](
     content: str,
-    output_schema: Type[T],
+    output_schema: type[T],
     system_prompt: str,
     model: str = DEFAULT_MODEL,
     temperature: float = DEFAULT_TEMPERATURE,
     max_content_length: int = 4000,
-) -> Optional[T]:
+) -> T | None:
     """Parse content using LLM with structured output.
 
     Args:

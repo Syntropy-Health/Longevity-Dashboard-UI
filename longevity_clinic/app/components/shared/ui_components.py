@@ -4,6 +4,7 @@ This module contains reusable components used across both patient and admin view
 """
 
 import reflex as rx
+
 from ...styles.constants import GlassStyles
 
 
@@ -117,6 +118,185 @@ def stat_metric_card(
     )
 
 
+def static_metric_card(
+    name: str,
+    value: str,
+    unit: str,
+    icon: str,
+    trend: str,
+    trend_value: str,
+) -> rx.Component:
+    """Static metric card with trend indicator for dashboard overview.
+
+    Args:
+        name: Metric name/label
+        value: Display value
+        unit: Unit suffix (e.g., "bpm", "mg/dL")
+        icon: Lucide icon name
+        trend: Trend direction ("up", "down", "stable")
+        trend_value: Trend description text (e.g., "+5% this week")
+
+    Returns:
+        Styled metric card component
+    """
+    return rx.el.div(
+        rx.el.div(
+            rx.icon(
+                icon,
+                class_name="w-5 h-5 text-teal-400",
+            ),
+            rx.el.span(
+                name,
+                class_name="text-xs text-slate-400 uppercase tracking-wider font-semibold ml-2",
+            ),
+            class_name="flex items-center mb-3",
+        ),
+        rx.el.div(
+            rx.el.span(
+                value,
+                class_name="text-3xl font-bold text-white",
+            ),
+            rx.el.span(
+                unit,
+                class_name="text-sm text-slate-400 ml-1",
+            ),
+            class_name="flex items-baseline mb-2",
+        ),
+        rx.el.div(
+            rx.icon(
+                (
+                    "trending-up"
+                    if trend == "up"
+                    else ("trending-down" if trend == "down" else "minus")
+                ),
+                class_name=f"w-3 h-3 {'text-teal-400' if trend in ['up', 'down'] else 'text-slate-500'} mr-1",
+            ),
+            rx.el.span(
+                trend_value,
+                class_name="text-xs text-slate-400",
+            ),
+            class_name="flex items-center",
+        ),
+        class_name=f"{GlassStyles.PANEL} p-5 hover:bg-white/10 transition-all cursor-pointer",
+    )
+
+
+def dashboard_stat_card(
+    title: str,
+    value: str | rx.Var,
+    trend: str | rx.Var,
+    trend_up: bool | rx.Var,
+    icon: str,
+) -> rx.Component:
+    """Stats card with trend indicator for admin dashboards.
+
+    Args:
+        title: Metric title
+        value: Display value (can be reactive)
+        trend: Trend text (e.g., "+12%")
+        trend_up: Whether trend is positive (affects color)
+        icon: Lucide icon name
+
+    Returns:
+        Dashboard stat card component
+    """
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.el.p(
+                    title, class_name="text-sm font-medium text-slate-400 truncate"
+                ),
+                rx.el.p(
+                    value,
+                    class_name="mt-1 text-3xl font-bold text-white tracking-tight",
+                ),
+            ),
+            rx.el.div(
+                rx.icon(icon, class_name="w-6 h-6 text-teal-400"),
+                class_name="p-3 bg-teal-500/10 rounded-2xl border border-teal-500/20",
+            ),
+            class_name="flex justify-between items-start",
+        ),
+        rx.el.div(
+            rx.el.span(
+                trend,
+                class_name=rx.cond(
+                    trend_up,
+                    "text-teal-400 text-sm font-medium",
+                    "text-red-400 text-sm font-medium",
+                ),
+            ),
+            rx.el.span(" from last month", class_name="text-sm text-slate-500 ml-2"),
+            class_name="mt-4",
+        ),
+        class_name=f"{GlassStyles.CARD_INTERACTIVE} p-5",
+    )
+
+
+def efficiency_stat_card(
+    title: str,
+    value: str | rx.Var,
+    subtitle: str,
+    icon: str,
+    color: str = "teal",
+) -> rx.Component:
+    """Stat card for clinical efficiency metrics.
+
+    Args:
+        title: Metric title
+        value: Display value (can be reactive)
+        subtitle: Additional context text
+        icon: Lucide icon name
+        color: Color theme (teal, blue, purple, amber, emerald)
+
+    Returns:
+        Efficiency stat card component
+    """
+    color_classes = {
+        "teal": "text-teal-400 bg-teal-500/10 border-teal-500/20",
+        "blue": "text-blue-400 bg-blue-500/10 border-blue-500/20",
+        "purple": "text-purple-400 bg-purple-500/10 border-purple-500/20",
+        "amber": "text-amber-400 bg-amber-500/10 border-amber-500/20",
+        "emerald": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    }
+
+    return rx.el.div(
+        rx.el.div(
+            rx.icon(
+                icon,
+                class_name=f"w-5 h-5 {color_classes.get(color, color_classes['teal']).split()[0]}",
+            ),
+            class_name=f"p-2.5 rounded-xl border {color_classes.get(color, color_classes['teal'])}",
+        ),
+        rx.el.div(
+            rx.el.p(
+                value,
+                class_name="text-2xl font-bold text-white mt-3",
+            ),
+            rx.el.p(title, class_name="text-sm font-medium text-slate-300 mt-1"),
+            rx.el.p(subtitle, class_name="text-xs text-slate-500 mt-0.5"),
+        ),
+        class_name=f"{GlassStyles.PANEL} p-4 hover:border-teal-500/30 transition-all",
+    )
+
+
+def chart_card(title: str, chart: rx.Component) -> rx.Component:
+    """Card wrapper for charts with title.
+
+    Args:
+        title: Chart title
+        chart: Chart component to wrap
+
+    Returns:
+        Card-wrapped chart component
+    """
+    return rx.el.div(
+        rx.el.h3(title, class_name="text-lg font-bold text-white mb-6"),
+        rx.el.div(chart, class_name="w-full h-64"),
+        class_name=f"{GlassStyles.PANEL} p-6",
+    )
+
+
 def loading_spinner(message: str = "Loading...") -> rx.Component:
     """Loading spinner with optional message.
 
@@ -133,15 +313,93 @@ def loading_spinner(message: str = "Loading...") -> rx.Component:
 def empty_state(
     icon: str = "inbox",
     message: str = "No data found",
+    subtitle: str = "",
+    icon_size: str = "w-12 h-12",
+    center_full: bool = False,
 ) -> rx.Component:
-    """Empty state placeholder.
+    """Empty state placeholder with optional subtitle.
 
     Args:
         icon: Lucide icon name
-        message: Message to display
+        message: Primary message to display
+        subtitle: Optional secondary message
+        icon_size: Icon size classes (default "w-12 h-12")
+        center_full: If True, centers in both x and y with min-height
     """
+    container_class = (
+        "flex flex-col items-center justify-center min-h-[200px] h-full"
+        if center_full
+        else "flex flex-col items-center justify-center py-12"
+    )
+
     return rx.el.div(
-        rx.icon(icon, class_name="w-16 h-16 text-slate-600 mb-4"),
-        rx.el.p(message, class_name="text-slate-500 text-center"),
-        class_name="flex flex-col items-center justify-center py-12",
+        rx.icon(icon, class_name=f"{icon_size} text-slate-500 mb-4"),
+        rx.el.p(message, class_name="text-slate-400 text-sm text-center"),
+        rx.cond(
+            subtitle != "",
+            rx.el.p(subtitle, class_name="text-slate-500 text-xs mt-1 text-center"),
+            rx.fragment(),
+        ),
+        class_name=container_class,
+    )
+
+
+def sidebar_item_with_tag(
+    text: str,
+    icon_name: str,
+    href: str = "#",
+    tag: str = "",
+    tag_color: str = "amber",
+    is_active: bool = False,
+    is_disabled: bool = False,
+) -> rx.Component:
+    """A sidebar navigation item with an optional tag badge.
+
+    Args:
+        text: Label text for the nav item
+        icon_name: Lucide icon name
+        href: Navigation URL (default "#" for disabled items)
+        tag: Tag text (e.g., "coming soon", "beta", "new")
+        tag_color: Color theme for tag ("amber", "teal", "purple", "red")
+        is_active: Whether this item is currently active
+        is_disabled: Whether this item is disabled/non-clickable
+
+    Returns:
+        Sidebar navigation component with optional tag
+    """
+    tag_colors = {
+        "amber": "bg-amber-500/20 text-amber-400 border-amber-500/30",
+        "teal": "bg-teal-500/20 text-teal-400 border-teal-500/30",
+        "purple": "bg-purple-500/20 text-purple-400 border-purple-500/30",
+        "red": "bg-red-500/20 text-red-400 border-red-500/30",
+        "blue": "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    }
+    tag_style = tag_colors.get(tag_color, tag_colors["amber"])
+
+    disabled_class = "opacity-50 cursor-not-allowed" if is_disabled else ""
+    active_class = (
+        "bg-teal-500/10 text-white border border-teal-500/20"
+        if is_active
+        else "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
+    )
+
+    return rx.el.a(
+        rx.el.div(
+            rx.icon(
+                icon_name,
+                class_name=f"w-5 h-5 mr-3 transition-colors {('text-teal-400' if is_active else 'text-slate-400 group-hover:text-teal-300')}",
+            ),
+            rx.el.span(text, class_name="flex-1"),
+            rx.cond(
+                tag != "",
+                rx.el.span(
+                    tag,
+                    class_name=f"ml-2 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border {tag_style}",
+                ),
+                rx.fragment(),
+            ),
+            class_name="flex items-center w-full",
+        ),
+        href=href if not is_disabled else None,
+        class_name=f"flex items-center px-4 py-3 mb-1 rounded-xl text-sm font-medium transition-all duration-200 group {active_class} {disabled_class}",
     )

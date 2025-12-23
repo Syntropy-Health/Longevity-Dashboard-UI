@@ -10,6 +10,7 @@ This package contains modular seed data for database initialization:
 - appointments.py: Appointment and provider seed data
 - clinic_metrics.py: Admin dashboard chart data
 
+Seed data uses dict format compatible with SQLModel.model_validate() for type safety.
 For database loading, use scripts/load_seed_data.py.
 
 Architecture:
@@ -20,117 +21,112 @@ Architecture:
 
 from __future__ import annotations
 
-# Re-export all seed data from submodules
-from .patients import (
-    DemoPatientSeed,
-    SECONDARY_DEMO_PATIENTS,
-    PHONE_TO_PATIENT_SEED,
-    DEMO_PATIENTS,
-    DEMO_PHONE_NUMBER,
-    DEMO_PATIENTS_STATE,
-    get_all_demo_patients,
-    get_phone_to_patient_seed,
+from .appointments import (
+    APPOINTMENTS_SEED,
+    PORTAL_APPOINTMENTS_SEED,
+    PROVIDERS,
+    TREATMENT_TYPES,
 )
-
+from .biomarkers import (
+    BIOMARKER_CHART_SEED,
+    BIOMARKER_METRIC_SEED_DATA,
+    PORTAL_BIOMARKERS_SEED,
+)
+from .checkins import (
+    ADMIN_CHECKINS_SEED,
+    CHECKIN_SEED_DATA,
+)
+from .clinic_metrics import (
+    BIOMARKER_AGGREGATE_SEED,
+    DAILY_METRICS_SEED,
+    HOURLY_FLOW_SEED,
+    PATIENT_TREND_SEED,
+    PATIENT_VISIT_SEED,
+    PROVIDER_METRICS_SEED,
+    ROOM_UTILIZATION_SEED,
+)
 from .notifications import (
     ADMIN_NOTIFICATIONS_SEED,
     PATIENT_NOTIFICATIONS_SEED,
 )
-
-from .checkins import (
-    CHECKIN_SEED_DATA,
-    ADMIN_CHECKINS_SEED,
-)
-
-from .treatments import (
-    TREATMENT_CATALOG_SEED,
-    TREATMENT_PROTOCOL_METRICS_SEED,
-    TREATMENT_CHART_SEED,
-    PORTAL_TREATMENTS_SEED,
-)
-
-from .biomarkers import (
-    BIOMARKER_METRIC_SEED_DATA,
-    BIOMARKER_CHART_SEED,
-    PORTAL_BIOMARKERS_SEED,
-)
-
 from .nutrition import (
-    NUTRITION_SUMMARY_SEED,
+    CONDITIONS_SEED,
+    DATA_SOURCES_SEED,
     FOOD_ENTRIES_SEED,
     MEDICATIONS_SEED,
-    CONDITIONS_SEED,
-    SYMPTOMS_SEED,
-    SYMPTOM_LOGS_SEED,
+    NUTRITION_SUMMARY_SEED,
     REMINDERS_SEED,
+    SYMPTOM_LOGS_SEED,
     SYMPTOM_TRENDS_SEED,
-    DATA_SOURCES_SEED,
+    SYMPTOMS_SEED,
 )
 
-from .appointments import (
-    APPOINTMENTS_SEED,
-    PORTAL_APPOINTMENTS_SEED,
-    TREATMENT_TYPES,
-    PROVIDERS,
+# Re-export all seed data from submodules
+from .patients import (
+    DEMO_PATIENTS,
+    DEMO_PATIENTS_STATE,
+    DEMO_PHONE_NUMBER,
+    PHONE_TO_PATIENT_SEED,
+    SECONDARY_DEMO_PATIENTS,
+    DemoPatientSeed,
+    get_all_demo_patients,
+    get_phone_to_patient_seed,
 )
-
-from .clinic_metrics import (
-    PATIENT_TREND_SEED,
-    PATIENT_VISIT_SEED,
-    PROVIDER_METRICS_SEED,
-    DAILY_METRICS_SEED,
-    BIOMARKER_AGGREGATE_SEED,
-    HOURLY_FLOW_SEED,
-    ROOM_UTILIZATION_SEED,
+from .treatments import (
+    PATIENT_TREATMENT_ASSIGNMENTS_SEED,
+    PORTAL_TREATMENTS_SEED,
+    TREATMENT_CATALOG_SEED,
+    TREATMENT_CHART_SEED,
+    TREATMENT_PROTOCOL_METRICS_SEED,
 )
-
 
 __all__ = [
-    # Patients
-    "DemoPatientSeed",
-    "SECONDARY_DEMO_PATIENTS",
-    "PHONE_TO_PATIENT_SEED",
-    "DEMO_PATIENTS",
-    "DEMO_PHONE_NUMBER",
-    "DEMO_PATIENTS_STATE",
-    "get_all_demo_patients",
-    "get_phone_to_patient_seed",
+    "ADMIN_CHECKINS_SEED",
     # Notifications
     "ADMIN_NOTIFICATIONS_SEED",
-    "PATIENT_NOTIFICATIONS_SEED",
-    # Check-ins
-    "CHECKIN_SEED_DATA",
-    "ADMIN_CHECKINS_SEED",
-    # Treatments
-    "TREATMENT_CATALOG_SEED",
-    "TREATMENT_PROTOCOL_METRICS_SEED",
-    "TREATMENT_CHART_SEED",
-    "PORTAL_TREATMENTS_SEED",
-    # Biomarkers
-    "BIOMARKER_METRIC_SEED_DATA",
-    "BIOMARKER_CHART_SEED",
-    "PORTAL_BIOMARKERS_SEED",
-    # Nutrition/Health
-    "NUTRITION_SUMMARY_SEED",
-    "FOOD_ENTRIES_SEED",
-    "MEDICATIONS_SEED",
-    "CONDITIONS_SEED",
-    "SYMPTOMS_SEED",
-    "SYMPTOM_LOGS_SEED",
-    "REMINDERS_SEED",
-    "SYMPTOM_TRENDS_SEED",
-    "DATA_SOURCES_SEED",
     # Appointments
     "APPOINTMENTS_SEED",
-    "PORTAL_APPOINTMENTS_SEED",
-    "TREATMENT_TYPES",
-    "PROVIDERS",
+    "BIOMARKER_AGGREGATE_SEED",
+    "BIOMARKER_CHART_SEED",
+    # Biomarkers
+    "BIOMARKER_METRIC_SEED_DATA",
+    # Check-ins
+    "CHECKIN_SEED_DATA",
+    "CONDITIONS_SEED",
+    "DAILY_METRICS_SEED",
+    "DATA_SOURCES_SEED",
+    "DEMO_PATIENTS",
+    "DEMO_PATIENTS_STATE",
+    "DEMO_PHONE_NUMBER",
+    "FOOD_ENTRIES_SEED",
+    "HOURLY_FLOW_SEED",
+    "MEDICATIONS_SEED",
+    # Nutrition/Health
+    "NUTRITION_SUMMARY_SEED",
+    "PATIENT_NOTIFICATIONS_SEED",
+    "PATIENT_TREATMENT_ASSIGNMENTS_SEED",
     # Clinic Metrics
     "PATIENT_TREND_SEED",
     "PATIENT_VISIT_SEED",
+    "PHONE_TO_PATIENT_SEED",
+    "PORTAL_APPOINTMENTS_SEED",
+    "PORTAL_BIOMARKERS_SEED",
+    "PORTAL_TREATMENTS_SEED",
+    "PROVIDERS",
     "PROVIDER_METRICS_SEED",
-    "DAILY_METRICS_SEED",
-    "BIOMARKER_AGGREGATE_SEED",
-    "HOURLY_FLOW_SEED",
+    "REMINDERS_SEED",
     "ROOM_UTILIZATION_SEED",
+    "SECONDARY_DEMO_PATIENTS",
+    "SYMPTOMS_SEED",
+    "SYMPTOM_LOGS_SEED",
+    "SYMPTOM_TRENDS_SEED",
+    # Treatments
+    "TREATMENT_CATALOG_SEED",
+    "TREATMENT_CHART_SEED",
+    "TREATMENT_PROTOCOL_METRICS_SEED",
+    "TREATMENT_TYPES",
+    # Patients
+    "DemoPatientSeed",
+    "get_all_demo_patients",
+    "get_phone_to_patient_seed",
 ]

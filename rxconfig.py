@@ -1,6 +1,7 @@
-import reflex as rx
 import os
 from pathlib import Path
+
+import reflex as rx
 
 # =============================================================================
 # Hierarchical Environment Loading
@@ -36,7 +37,6 @@ def load_hierarchical_env():
     # These should not be overridden by .env file loading
     critical_vars = [
         "APP_ENV",
-        "IS_DEMO",
         "REFLEX_API_URL",
         "REFLEX_DEPLOY_URL",
         "CORS_ALLOWED_ORIGINS",

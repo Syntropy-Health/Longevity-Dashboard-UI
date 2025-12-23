@@ -7,24 +7,25 @@ This module provides the treatment protocols management interface with:
 - Assignment modal for assigning protocols to patients
 """
 
-from .page import treatments_page
+# Re-export category_badge from shared for backwards compatibility
+from ....components.shared.treatment_components import category_badge
 from .components import (
-    category_badge,
     protocol_card,
     protocol_filters,
 )
 from .modals import (
-    treatment_editor_modal,
     assignment_modal,
+    treatment_editor_modal,
 )
+from .page import treatments_page
 
 __all__ = [
-    "treatments_page",
+    "assignment_modal",
     # Components
     "category_badge",
     "protocol_card",
     "protocol_filters",
     # Modals
     "treatment_editor_modal",
-    "assignment_modal",
+    "treatments_page",
 ]

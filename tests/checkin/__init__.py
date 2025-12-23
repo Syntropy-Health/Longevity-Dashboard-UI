@@ -1,0 +1,1 @@
+"""Checkin integration tests module."""

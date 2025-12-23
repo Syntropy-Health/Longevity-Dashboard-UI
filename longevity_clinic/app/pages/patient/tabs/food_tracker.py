@@ -1,6 +1,8 @@
 """Food tracker tab component for patient portal."""
 
 import reflex as rx
+
+from ....components.paginated_view import paginated_list
 from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 
@@ -141,9 +143,19 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 class_name="flex justify-between items-center mb-4",
             ),
-            rx.el.div(
-                rx.foreach(HealthDashboardState.food_entries, food_entry_card),
-                class_name="space-y-3",
+            paginated_list(
+                items=HealthDashboardState.food_entries_paginated,
+                item_renderer=food_entry_card,
+                has_previous=HealthDashboardState.food_entries_has_previous,
+                has_next=HealthDashboardState.food_entries_has_next,
+                page_info=HealthDashboardState.food_entries_page_info,
+                showing_info=HealthDashboardState.food_entries_showing_info,
+                on_previous=HealthDashboardState.food_entries_previous_page,
+                on_next=HealthDashboardState.food_entries_next_page,
+                empty_icon="utensils",
+                empty_message="No food entries yet",
+                empty_subtitle="Add your first meal to start tracking",
+                list_class="space-y-3",
             ),
         ),
     )

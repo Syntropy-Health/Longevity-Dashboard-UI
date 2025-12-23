@@ -1,8 +1,9 @@
 """Pytest configuration and shared fixtures."""
 
-import pytest
 import os
 from pathlib import Path
+
+import pytest
 
 # Load environment variables using hierarchical env loading
 try:

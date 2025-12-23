@@ -5,7 +5,6 @@ These tests require a seeded database to pass.
 """
 
 import pytest
-from typing import Any
 
 # Database access
 from sqlmodel import Session, select
@@ -25,7 +24,6 @@ from longevity_clinic.app.data.model import (
 
 # Seed data for comparison
 from longevity_clinic.app.data.seed import (
-    ADMIN_CHECKINS_SEED,
     ADMIN_NOTIFICATIONS_SEED,
     CHECKIN_SEED_DATA,
     FOOD_ENTRIES_SEED,

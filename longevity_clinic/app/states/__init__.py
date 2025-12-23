@@ -14,6 +14,9 @@ separation of concerns and testability.
 
 from __future__ import annotations
 
+# TreatmentProtocol TypedDict (for backwards compatibility)
+from ..data.state_schemas import TreatmentProtocol
+
 # Admin metrics state
 from .admin_metrics_state import AdminMetricsState
 
@@ -23,43 +26,40 @@ from .auth.base import AuthState
 # Patient states
 from .patient.biomarker import BiomarkerState
 from .patient.state import PatientState
+from .shared.appointment import AppointmentState
+from .shared.checkin import CheckinState
 
 # Shared states
 from .shared.dashboard import AdminDashboardState, HealthDashboardState
 from .shared.notification import NotificationState
+from .shared.treatment import TreatmentSearchState, TreatmentState
 from .shared.voice_transcription import (
     VoiceTranscriptionState,
     audio_capture,
     voice_recorder_component,
 )
-from .shared.checkin import CheckinState
-from .shared.appointment import AppointmentState
-from .shared.treatment import TreatmentState, TreatmentSearchState
-
-# TreatmentProtocol TypedDict (for backwards compatibility)
-from ..data.state_schemas import TreatmentProtocol
 
 __all__ = [
+    "AdminDashboardState",
+    # Admin metrics
+    "AdminMetricsState",
+    "AppointmentState",
     # Auth
     "AuthState",
-    # Patient states
-    "PatientState",
     "BiomarkerState",
-    "TreatmentState",
-    "TreatmentSearchState",
-    "TreatmentProtocol",
     # Check-in states (unified)
     "CheckinState",
+    # Dashboard states
+    "HealthDashboardState",
     # Notification & Appointment
     "NotificationState",
-    "AppointmentState",
+    # Patient states
+    "PatientState",
+    "TreatmentProtocol",
+    "TreatmentSearchState",
+    "TreatmentState",
     # Voice
     "VoiceTranscriptionState",
     "audio_capture",
     "voice_recorder_component",
-    # Dashboard states
-    "HealthDashboardState",
-    "AdminDashboardState",
-    # Admin metrics
-    "AdminMetricsState",
 ]

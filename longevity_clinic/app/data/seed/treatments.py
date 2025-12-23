@@ -1,21 +1,15 @@
 """Treatment seed data for the Longevity Clinic.
 
-Contains:
-- Treatment catalog (full definitions for Treatment model)
-- Treatment protocol metrics (for admin dashboard charts)
-- Portal treatments (patient-facing view)
+Uses dict format compatible with SQLModel.model_validate() for type safety.
 """
 
 from __future__ import annotations
 
-from typing import List
-
-
 # =============================================================================
-# Treatment Catalog Seed Data (for Treatment model)
+# Treatment Catalog - Compatible with Treatment.model_validate()
 # =============================================================================
 
-TREATMENT_CATALOG_SEED: List[dict] = [
+TREATMENT_CATALOG_SEED: list[dict] = [
     {
         "treatment_id": "T001",
         "name": "Vitamin C IV Mega-Dose",
@@ -118,12 +112,11 @@ TREATMENT_CATALOG_SEED: List[dict] = [
     },
 ]
 
-
 # =============================================================================
-# Treatment Protocol Metrics Seed (for admin dashboard charts)
+# Treatment Protocol Metrics - Compatible with TreatmentProtocolMetric.model_validate()
 # =============================================================================
 
-TREATMENT_PROTOCOL_METRICS_SEED: List[dict] = [
+TREATMENT_PROTOCOL_METRICS_SEED: list[dict] = [
     {
         "name": "IV Therapy",
         "category": "infusion",
@@ -166,12 +159,11 @@ TREATMENT_PROTOCOL_METRICS_SEED: List[dict] = [
     },
 ]
 
-
 # =============================================================================
-# Treatment Chart Data (simple count format for charts)
+# Treatment Chart Data (for admin dashboard)
 # =============================================================================
 
-TREATMENT_CHART_SEED: List[dict] = [
+TREATMENT_CHART_SEED: list[dict] = [
     {"name": "IV Therapy", "count": 45},
     {"name": "Cryo", "count": 30},
     {"name": "Supplements", "count": 85},
@@ -179,12 +171,11 @@ TREATMENT_CHART_SEED: List[dict] = [
     {"name": "Physio", "count": 15},
 ]
 
-
 # =============================================================================
-# Portal Treatments Seed (patient-facing view)
+# Portal Treatments (patient portal display)
 # =============================================================================
 
-PORTAL_TREATMENTS_SEED: List[dict] = [
+PORTAL_TREATMENTS_SEED: list[dict] = [
     {
         "id": "t1",
         "name": "Vitamin C IV Drip",
@@ -211,10 +202,122 @@ PORTAL_TREATMENTS_SEED: List[dict] = [
     },
 ]
 
+# =============================================================================
+# Patient Treatment Assignments - Compatible with PatientTreatment.model_validate()
+# Note: user_id and treatment_id (DB FKs) resolved at load time from external IDs
+# =============================================================================
+
+PATIENT_TREATMENT_ASSIGNMENTS_SEED: list[dict] = [
+    # Sarah Chen (P001) - 3 active treatments
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T001",
+        "assigned_by": "Dr. Johnson",
+        "status": "active",
+        "notes": "Weekly sessions for immune support",
+        "sessions_completed": 6,
+        "sessions_total": 12,
+    },
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T003",
+        "assigned_by": "Dr. Johnson",
+        "status": "active",
+        "notes": "Daily supplementation for cellular energy",
+        "sessions_completed": 30,
+        "sessions_total": 90,
+    },
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T008",
+        "assigned_by": "Dr. Williams",
+        "status": "active",
+        "notes": "For stress management and sleep quality",
+        "sessions_completed": 45,
+        "sessions_total": None,
+    },
+    # Marcus Williams (P002) - 2 active treatments
+    {
+        "patient_external_id": "P002",
+        "treatment_id": "T002",
+        "assigned_by": "Dr. Johnson",
+        "status": "active",
+        "notes": "Post-workout recovery sessions",
+        "sessions_completed": 12,
+        "sessions_total": 24,
+    },
+    {
+        "patient_external_id": "P002",
+        "treatment_id": "T004",
+        "assigned_by": "Dr. Williams",
+        "status": "active",
+        "notes": "Monthly hormone optimization",
+        "sessions_completed": 3,
+        "sessions_total": 12,
+    },
+    # Elena Rodriguez (P003) - 3 active treatments
+    {
+        "patient_external_id": "P003",
+        "treatment_id": "T006",
+        "assigned_by": "Dr. Johnson",
+        "status": "active",
+        "notes": "Cognitive enhancement protocol",
+        "sessions_completed": 8,
+        "sessions_total": 20,
+    },
+    {
+        "patient_external_id": "P003",
+        "treatment_id": "T010",
+        "assigned_by": "Dr. Williams",
+        "status": "active",
+        "notes": "Daily skin and cellular regeneration",
+        "sessions_completed": 28,
+        "sessions_total": 60,
+    },
+    {
+        "patient_external_id": "P003",
+        "treatment_id": "T003",
+        "assigned_by": "Dr. Johnson",
+        "status": "active",
+        "notes": "Anti-aging and energy protocol",
+        "sessions_completed": 60,
+        "sessions_total": 90,
+    },
+    # James Miller (P004) - 2 active treatments (diabetes pre-cursor focus)
+    {
+        "patient_external_id": "P004",
+        "treatment_id": "T001",
+        "assigned_by": "Dr. Johnson",
+        "status": "active",
+        "notes": "Metabolic support and antioxidant therapy",
+        "sessions_completed": 4,
+        "sessions_total": 12,
+    },
+    {
+        "patient_external_id": "P004",
+        "treatment_id": "T008",
+        "assigned_by": "Dr. Williams",
+        "status": "active",
+        "notes": "Blood sugar regulation support",
+        "sessions_completed": 21,
+        "sessions_total": None,
+    },
+    # Emily Wong (P005 - onboarding) - 1 active treatment
+    {
+        "patient_external_id": "P005",
+        "treatment_id": "T009",
+        "assigned_by": "Dr. Johnson",
+        "status": "active",
+        "notes": "Initial gut health protocol for anemia",
+        "sessions_completed": 2,
+        "sessions_total": 30,
+    },
+]
 
 __all__ = [
-    "TREATMENT_CATALOG_SEED",
-    "TREATMENT_PROTOCOL_METRICS_SEED",
-    "TREATMENT_CHART_SEED",
+    "PATIENT_TREATMENT_ASSIGNMENTS_SEED",
     "PORTAL_TREATMENTS_SEED",
+    "TREATMENT_CATALOG_SEED",
+    "TREATMENT_CHART_SEED",
+    "TREATMENT_PROTOCOL_METRICS_SEED",
 ]

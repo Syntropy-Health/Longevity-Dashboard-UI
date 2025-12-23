@@ -4,6 +4,8 @@ import random
 from enum import StrEnum
 from typing import Final, TypedDict
 
+from longevity_clinic.app.config import get_logger
+
 
 def _enum_values(enum_cls: type[StrEnum]) -> list[str]:
     """Return the string values of a StrEnum for compatibility exports."""
@@ -137,48 +139,26 @@ def generate_history(base_val: float, volatility: float) -> list[dict]:
 
 
 def get_biomarker_panels(user_id: int | None = None) -> list[BiomarkerCategory]:
-    """Get biomarker panels for display.
-
-    In demo mode, returns demo data from seed.
-    Otherwise, fetches from database.
+    """Get biomarker panels for display from database.
 
     Args:
         user_id: Optional user ID for patient-specific readings.
 
     Returns:
         List of biomarker panels grouped by category.
+
+    Note: Requires seeded database. Run: python scripts/load_seed_data.py
     """
-    from longevity_clinic.app.config import current_config
-
-    if current_config.is_demo:
-        # Use demo data from seed
-        from .seed import BIOMARKER_METRIC_SEED_DATA
-
-        panels = []
-        for category in BiomarkerCategoryEnum:
-            metrics = BIOMARKER_METRIC_SEED_DATA.get(category, [])
-            panel_metrics = []
-            for metric in metrics:
-                base, volatility = metric["history_seed"]
-                panel_metrics.append(
-                    {
-                        "name": metric["metric"].value,
-                        "value": metric["value"],
-                        "unit": metric["unit"].value,
-                        "status": metric["status"].value,
-                        "reference_range": metric["reference_range"],
-                        "history": generate_history(base, volatility),
-                    }
-                )
-            panels.append(
-                {
-                    "category": category.value,
-                    "metrics": panel_metrics,
-                }
-            )
-        return panels
-
-    # Fetch from database
     from longevity_clinic.app.functions.db_utils import get_biomarker_panels_sync
 
-    return get_biomarker_panels_sync(user_id=user_id)
+    panels = get_biomarker_panels_sync(user_id=user_id)
+    if not panels:
+        # Return empty panels structure if no data in DB
+
+        logger = get_logger("longevity_clinic.biomarkers")
+        logger.warning(
+            "No biomarker data found in database. "
+            "Run 'python scripts/load_seed_data.py' to seed data."
+        )
+        return [{"category": cat.value, "metrics": []} for cat in BiomarkerCategoryEnum]
+    return panels

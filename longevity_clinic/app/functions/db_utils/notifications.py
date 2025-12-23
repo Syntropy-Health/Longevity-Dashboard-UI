@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import reflex as rx
 from sqlmodel import select
@@ -16,7 +16,7 @@ logger = get_logger("longevity_clinic.db_utils.notifications")
 def get_notifications_for_role_sync(
     role: str,
     limit: int = 50,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get notifications for a specific role (admin or patient).
 
     Args:
@@ -56,7 +56,7 @@ def get_notifications_for_role_sync(
 def get_notifications_for_user_sync(
     user_id: int,
     limit: int = 50,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get notifications for a specific user.
 
     Args:

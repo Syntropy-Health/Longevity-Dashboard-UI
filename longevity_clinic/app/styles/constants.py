@@ -276,10 +276,11 @@ class GlassStyles:
         "shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]"
     )
 
-    # Biomarker metric card (dark mode)
+    # Biomarker metric card (dark mode) - emerald-tinted glass
     BIOMARKER_CARD = (
-        "bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 "
-        "hover:shadow-lg hover:shadow-teal-500/5 hover:border-teal-500/30 "
+        "bg-gradient-to-br from-slate-800/60 to-emerald-900/20 backdrop-blur-xl "
+        "border border-emerald-500/10 rounded-2xl p-6 "
+        "hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-500/25 "
         "transition-all duration-300"
     )
 
@@ -293,10 +294,10 @@ class GlassStyles:
     # Metric unit
     METRIC_UNIT = "text-[10px] text-slate-400 font-semibold uppercase"
 
-    # Status badges for biomarkers
+    # Status badges for biomarkers (emerald for optimal to match theme)
     STATUS_OPTIMAL = (
-        "px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-bold "
-        "border border-teal-400/30 backdrop-blur-md shadow-sm uppercase tracking-wide"
+        "px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold "
+        "border border-emerald-400/30 backdrop-blur-md shadow-sm uppercase tracking-wide"
     )
     STATUS_WARNING = (
         "px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold "
@@ -311,8 +312,8 @@ class GlassStyles:
         "border border-slate-400/30 backdrop-blur-md shadow-sm uppercase tracking-wide"
     )
 
-    # Status indicator dots
-    DOT_OPTIMAL = "h-1.5 w-1.5 rounded-full bg-teal-400 mr-2 shadow-[0_0_8px_rgba(45,212,191,0.4)]"
+    # Status indicator dots (emerald for optimal)
+    DOT_OPTIMAL = "h-1.5 w-1.5 rounded-full bg-emerald-400 mr-2 shadow-[0_0_8px_rgba(52,211,153,0.4)]"
     DOT_WARNING = "h-1.5 w-1.5 rounded-full bg-amber-400 mr-2 shadow-[0_0_8px_rgba(251,191,36,0.4)]"
     DOT_CRITICAL = "h-1.5 w-1.5 rounded-full bg-red-400 mr-2 shadow-[0_0_8px_rgba(248,113,113,0.4)]"
     DOT_DEFAULT = "h-1.5 w-1.5 rounded-full bg-slate-500 mr-2"
@@ -512,16 +513,16 @@ class AppStyles(BaseModel):
 styles = AppStyles()
 
 __all__ = [
+    "AlertStyles",
     "AppStyles",
-    "styles",
-    "ZIndexStyles",
-    "ModalStyles",
+    "BadgeStyles",
     "ButtonStyles",
+    "CardStyles",
     "FormStyles",
     "GridStyles",
-    "CardStyles",
-    "BadgeStyles",
+    "ModalStyles",
     "StatusBadgeStyles",
-    "AlertStyles",
     "TextStyles",
+    "ZIndexStyles",
+    "styles",
 ]

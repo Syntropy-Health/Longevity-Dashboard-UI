@@ -107,15 +107,15 @@ HEALTH_KEYWORDS: Final[list[str]] = _enum_values(HealthKeyword)
 
 
 __all__ = [
-    "TreatmentCategory",
-    "TreatmentFrequency",
-    "TreatmentStatus",
-    "PatientStatus",
-    "HealthKeyword",
+    "HEALTH_KEYWORDS",
+    "PATIENT_STATUSES",
     "TREATMENT_CATEGORIES",
     "TREATMENT_CATEGORY_COLORS",
     "TREATMENT_FREQUENCIES",
     "TREATMENT_STATUSES",
-    "PATIENT_STATUSES",
-    "HEALTH_KEYWORDS",
+    "HealthKeyword",
+    "PatientStatus",
+    "TreatmentCategory",
+    "TreatmentFrequency",
+    "TreatmentStatus",
 ]

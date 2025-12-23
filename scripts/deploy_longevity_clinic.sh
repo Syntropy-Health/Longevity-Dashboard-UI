@@ -2,49 +2,52 @@
 # deploy_longevity_clinic.sh - Deploy Longevity Clinic to Railway
 # Usage: ./scripts/deploy_longevity_clinic.sh [ENVIRONMENT]
 #
-# This is an app-specific wrapper around the generic deploy_all.sh script.
-# It sets app-specific configuration and calls the generic deployment.
+# App-specific wrapper for Railway deployment.
+# Loads env files and delegates to reflex-railway-deploy/deploy_all.sh.
+#
+# Environment: APP_ENV=test (default) | APP_ENV=prod
+# Railway env: test (default) | prod
 
 set -e
 
-# === CONFIG ===
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║ CONFIGURATION                                                      ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+# Railway project settings
 RAILWAY_PROJECT="syntropy"
 RAILWAY_ENVIRONMENT="${1:-test}"
 BACKEND_SERVICE="longevity-clinic-backend"
 FRONTEND_SERVICE="longevity-clinic"
 
-# Variables to sync to Railway (APP_ENV_VARS used by deploy_all.sh)
+# Map Railway environment to APP_ENV
+case "$RAILWAY_ENVIRONMENT" in
+    prod|production) export APP_ENV="prod" ;;
+    *)               export APP_ENV="test" ;;
+esac
+
+# App-specific variables to sync to Railway (from .env files)
 export APP_ENV_VARS="APP_NAME,CLINIC_NAME,ADMIN_ROLE_NAME,PATIENT_ROLE_NAME,THEME_COLOR"
 
-# === LOAD ENVIRONMENT ===
-echo "Loading environment..."
-load_env() { [ -f "$1" ] && { set -a; source "$1"; set +a; echo "  ✓ $1"; } || true; }
-
-# Set APP_ENV based on target environment
-[ "$RAILWAY_ENVIRONMENT" = "prod" ] || [ "$RAILWAY_ENVIRONMENT" = "production" ] && export APP_ENV="prod" || export APP_ENV="prod"
-
-load_env "envs/.env.base"
-load_env "envs/.env.${APP_ENV}"
-load_env "envs/.env.secrets"
-
-# Defaults from .env.base
-export APP_NAME="${APP_NAME:-Vitality Clinic}"
-export CLINIC_NAME="${CLINIC_NAME:-Vitality Health}"
-export ADMIN_ROLE_NAME="${ADMIN_ROLE_NAME:-Administrator}"
-export PATIENT_ROLE_NAME="${PATIENT_ROLE_NAME:-Patient}"
-export THEME_COLOR="${THEME_COLOR:-emerald}"
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║ DEPLOYMENT                                                         ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 echo ""
-echo "=== Longevity Clinic Deployment ==="
-echo "Target: $RAILWAY_ENVIRONMENT | App Env: $APP_ENV"
-echo "Backend: $BACKEND_SERVICE | Frontend: $FRONTEND_SERVICE"
+echo "╔══════════════════════════════════════════════════════════════╗"
+echo "║         LONGEVITY CLINIC DEPLOYMENT                          ║"
+echo "╠══════════════════════════════════════════════════════════════╣"
+echo "║ Railway Project:  $RAILWAY_PROJECT"
+echo "║ Environment:      $RAILWAY_ENVIRONMENT (APP_ENV=$APP_ENV)"
+echo "║ Backend Service:  $BACKEND_SERVICE"
+echo "║ Frontend Service: $FRONTEND_SERVICE"
+echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
-# === DEPLOY ===
-./reflex-railway-deploy/deploy_all.sh \
+# Call the generic deployment script
+# Note: deploy_all.sh handles env file loading via functions/env.sh
+exec ./reflex-railway-deploy/deploy_all.sh \
     -p "$RAILWAY_PROJECT" \
     -e "$RAILWAY_ENVIRONMENT" \
     -b "$BACKEND_SERVICE" \
-    -n "$FRONTEND_SERVICE" \
-    --skip-db \
-    -y
+    -n "$FRONTEND_SERVICE"

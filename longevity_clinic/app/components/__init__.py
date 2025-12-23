@@ -5,74 +5,102 @@ Structure:
 - Shared UI components (search_input, loading_spinner, etc.)
 - Modals (transcript_modal, status_update_modal)
 - Charts (biomarker charts, tooltip configs)
+- Paginated views (paginated_list, paginated_list_with_filters)
+- Indicators (severity_bar, trend_badge)
 """
 
 # Layout components
-from .layout import authenticated_layout
-from .sidebar import sidebar, mobile_menu, sidebar_item
-from .header import header, notification_badge
-
-# Page-level shared components
-from .page_components import page_header, section_header
-
-# Modals - truly reusable, state-agnostic
-from .modals import transcript_modal, status_update_modal, checkin_detail_modal
-
 # Charts - biomarker visualization
 from .charts import (
+    TOOLTIP_PROPS,
     biomarker_history_chart,
     generic_area_chart,
     generic_bar_chart,
     generic_line_chart,
-    TOOLTIP_PROPS,
+)
+
+# Collapsible section components
+from .collapsible import (
+    collapsible_container,
+    collapsible_grid,
+    collapsible_section,
+)
+from .header import header, notification_badge
+
+# Indicator components
+from .indicators import (
+    severity_badge,
+    severity_bar,
+    trend_badge,
+    trend_text,
+)
+from .layout import authenticated_layout
+
+# Modals - truly reusable, state-agnostic
+from .modals import checkin_detail_modal, status_update_modal, transcript_modal
+
+# Page-level shared components
+from .page_components import page_header, section_header
+
+# Paginated view components
+from .paginated_view import (
+    empty_state_box,
+    paginated_list,
+    paginated_list_with_filters,
 )
 
 # Shared UI components
 from .shared import (
-    search_input,
-    patient_select_item,
-    stat_metric_card,
-    loading_spinner,
     empty_state,
-    nutrition_summary_cards,
-    medications_list,
-    conditions_list,
-    symptoms_list,
-    food_entries_list,
     health_metrics_dashboard,
+    loading_spinner,
+    nutrition_summary_cards,
+    patient_select_item,
+    search_input,
+    stat_metric_card,
 )
+from .sidebar import mobile_menu, sidebar, sidebar_item
 
 __all__ = [
+    "TOOLTIP_PROPS",
     # Layout
     "authenticated_layout",
-    "sidebar",
-    "mobile_menu",
-    "sidebar_item",
-    "header",
-    "notification_badge",
-    # Page components
-    "page_header",
-    "section_header",
-    # Modals
-    "transcript_modal",
-    "status_update_modal",
-    "checkin_detail_modal",
     # Charts
     "biomarker_history_chart",
+    "checkin_detail_modal",
+    "collapsible_container",
+    "collapsible_grid",
+    # Collapsible
+    "collapsible_section",
+    "empty_state",
+    "empty_state_box",
     "generic_area_chart",
     "generic_bar_chart",
     "generic_line_chart",
-    "TOOLTIP_PROPS",
+    "header",
+    "health_metrics_dashboard",
+    "loading_spinner",
+    "mobile_menu",
+    "notification_badge",
+    "nutrition_summary_cards",
+    # Page components
+    "page_header",
+    # Paginated views
+    "paginated_list",
+    "paginated_list_with_filters",
+    "patient_select_item",
     # Shared UI
     "search_input",
-    "patient_select_item",
+    "section_header",
+    "severity_badge",
+    # Indicators
+    "severity_bar",
+    "sidebar",
+    "sidebar_item",
     "stat_metric_card",
-    "loading_spinner",
-    "empty_state",
-    "nutrition_summary_cards",
-    "medications_list",
-    "conditions_list",
-    "symptoms_list",
-    "food_entries_list",
-    "health_metrics_dashboard",
+    "status_update_modal",
+    # Modals
+    "transcript_modal",
+    "trend_badge",
+    "trend_text",
 ]

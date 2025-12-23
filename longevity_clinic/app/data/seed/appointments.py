@@ -8,19 +8,17 @@ Contains:
 
 from __future__ import annotations
 
-from typing import List
-
-
 # =============================================================================
 # Full Appointment Seed Data
+# Note: Dates should be in late December 2025 / January 2026 to show as upcoming
 # =============================================================================
 
-APPOINTMENTS_SEED: List[dict] = [
+APPOINTMENTS_SEED: list[dict] = [
     {
         "id": "APT001",
         "title": "NAD+ IV Therapy",
         "description": "Initial NAD+ infusion session - 4 hour treatment",
-        "date": "2025-01-16",
+        "date": "2025-12-23",
         "time": "09:00",
         "duration_minutes": 240,
         "treatment_type": "IV Therapy",
@@ -34,7 +32,7 @@ APPOINTMENTS_SEED: List[dict] = [
         "id": "APT002",
         "title": "Hyperbaric Oxygen Session",
         "description": "Standard HBOT treatment - 90 minutes at 1.5 ATA",
-        "date": "2025-01-16",
+        "date": "2025-12-26",
         "time": "14:00",
         "duration_minutes": 90,
         "treatment_type": "HBOT",
@@ -48,7 +46,7 @@ APPOINTMENTS_SEED: List[dict] = [
         "id": "APT003",
         "title": "Biomarker Assessment",
         "description": "Comprehensive longevity panel and consultation",
-        "date": "2025-01-17",
+        "date": "2025-12-27",
         "time": "10:30",
         "duration_minutes": 60,
         "treatment_type": "Assessment",
@@ -62,7 +60,7 @@ APPOINTMENTS_SEED: List[dict] = [
         "id": "APT004",
         "title": "Stem Cell Consultation",
         "description": "Initial consultation for stem cell therapy options",
-        "date": "2025-01-18",
+        "date": "2025-12-30",
         "time": "11:00",
         "duration_minutes": 45,
         "treatment_type": "Consultation",
@@ -76,7 +74,7 @@ APPOINTMENTS_SEED: List[dict] = [
         "id": "APT005",
         "title": "Peptide Therapy Follow-up",
         "description": "3-month progress review for BPC-157/TB-500 protocol",
-        "date": "2025-01-20",
+        "date": "2026-01-06",
         "time": "15:30",
         "duration_minutes": 30,
         "treatment_type": "Follow-up",
@@ -93,7 +91,7 @@ APPOINTMENTS_SEED: List[dict] = [
 # Portal Appointment Seed Data (patient-facing view)
 # =============================================================================
 
-PORTAL_APPOINTMENTS_SEED: List[dict] = [
+PORTAL_APPOINTMENTS_SEED: list[dict] = [
     {
         "id": "a1",
         "title": "IV Therapy Session",
@@ -125,7 +123,7 @@ PORTAL_APPOINTMENTS_SEED: List[dict] = [
 # Treatment Types and Providers
 # =============================================================================
 
-TREATMENT_TYPES: List[str] = [
+TREATMENT_TYPES: list[str] = [
     "NAD+ IV Therapy",
     "Hyperbaric Oxygen (HBOT)",
     "Stem Cell Therapy",
@@ -138,7 +136,7 @@ TREATMENT_TYPES: List[str] = [
     "Other",
 ]
 
-PROVIDERS: List[str] = [
+PROVIDERS: list[str] = [
     "Dr. Johnson",
     "Dr. Chen",
     "Dr. Patel",
@@ -149,6 +147,6 @@ PROVIDERS: List[str] = [
 __all__ = [
     "APPOINTMENTS_SEED",
     "PORTAL_APPOINTMENTS_SEED",
-    "TREATMENT_TYPES",
     "PROVIDERS",
+    "TREATMENT_TYPES",
 ]

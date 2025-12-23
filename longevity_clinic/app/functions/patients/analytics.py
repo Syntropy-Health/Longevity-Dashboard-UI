@@ -7,7 +7,7 @@ biomarker panels, health scores, and trend analysis.
 from __future__ import annotations
 
 # Standard library
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Local application
 from longevity_clinic.app.config import get_logger
@@ -16,9 +16,9 @@ logger = get_logger("longevity_clinic.analytics")
 
 
 async def fetch_analytics_summary(
-    patient_id: Optional[str] = None,
+    patient_id: str | None = None,
     period_days: int = 30,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch analytics summary for a patient.
 
     Args:
@@ -53,8 +53,8 @@ async def fetch_analytics_summary(
 
 
 def calculate_health_score(
-    biomarkers: List[Dict[str, Any]],
-    weights: Optional[Dict[str, float]] = None,
+    biomarkers: list[dict[str, Any]],
+    weights: dict[str, float] | None = None,
 ) -> float:
     """Calculate overall health score from biomarker data.
 
@@ -95,9 +95,9 @@ def calculate_health_score(
 
 
 def calculate_trend_analysis(
-    data_points: List[Dict[str, Any]],
+    data_points: list[dict[str, Any]],
     metric: str = "value",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Analyze trend in time-series data.
 
     Args:

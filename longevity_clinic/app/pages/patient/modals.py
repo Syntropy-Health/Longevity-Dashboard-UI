@@ -1,16 +1,11 @@
 """Patient portal modal components."""
 
 import reflex as rx
+
+from ...components.modals import delete_confirm_modal, edit_modal
 from ...states import HealthDashboardState, VoiceTranscriptionState, audio_capture
 from ...states.shared.checkin import CheckinState
 from ...styles.constants import GlassStyles
-
-
-def _format_duration(seconds: float) -> str:
-    """Format seconds to MM:SS display."""
-    minutes = int(seconds // 60)
-    remaining = int(seconds % 60)
-    return f"{minutes}:{remaining:02d}"
 
 
 def voice_recording_button() -> rx.Component:
@@ -273,9 +268,17 @@ def checkin_modal() -> rx.Component:
                                 ),
                                 "Save Check-in",
                             ),
-                            on_click=CheckinState.save_checkin_with_voice,
+                            on_click=CheckinState.save_checkin_and_log_health,
+                            # Disable if: processing, saving, or no valid content
+                            # Voice: check transcript is not empty
+                            # Text: check checkin_text is not empty
                             disabled=VoiceTranscriptionState.processing
-                            | CheckinState.checkin_saving,
+                            | CheckinState.checkin_saving
+                            | rx.cond(
+                                CheckinState.checkin_type == "voice",
+                                VoiceTranscriptionState.transcript.strip() == "",
+                                CheckinState.checkin_text.strip() == "",
+                            ),
                             class_name=GlassStyles.BUTTON_PRIMARY
                             + " disabled:opacity-50 disabled:cursor-not-allowed",
                         ),
@@ -288,6 +291,30 @@ def checkin_modal() -> rx.Component:
         ),
         open=CheckinState.show_checkin_modal,
         on_open_change=CheckinState.set_show_checkin_modal,
+    )
+
+
+def edit_checkin_modal() -> rx.Component:
+    """Modal for editing a check-in using shared edit_modal."""
+    return edit_modal(
+        show_modal=CheckinState.show_edit_modal,
+        content_value=CheckinState.edit_checkin_summary,
+        on_content_change=CheckinState.set_edit_checkin_summary,
+        on_save=CheckinState.save_edit_checkin,
+        on_close=CheckinState.close_edit_modal,
+        title="Edit Check-in",
+        placeholder="Edit your check-in content...",
+    )
+
+
+def delete_checkin_confirm_modal() -> rx.Component:
+    """Confirmation dialog for deleting a check-in."""
+    return delete_confirm_modal(
+        show_modal=CheckinState.show_delete_confirm,
+        on_confirm=CheckinState.confirm_delete_checkin,
+        on_close=CheckinState.close_delete_confirm,
+        title="Delete Check-in?",
+        description="This action cannot be undone. The check-in will be permanently deleted.",
     )
 
 

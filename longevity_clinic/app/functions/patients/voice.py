@@ -8,14 +8,10 @@ from __future__ import annotations
 
 # Standard library
 import os
-from typing import TYPE_CHECKING, Optional, Tuple
 from urllib.request import urlopen
 
 # Local application
 from longevity_clinic.app.config import get_logger
-
-if TYPE_CHECKING:
-    from openai import AsyncOpenAI
 
 logger = get_logger("longevity_clinic.voice")
 
@@ -41,7 +37,7 @@ def get_openai_client():
     return _openai_client
 
 
-def parse_audio_codec(data_uri: str) -> Tuple[str, str, str]:
+def parse_audio_codec(data_uri: str) -> tuple[str, str, str]:
     """Parse audio codec information from data URI.
 
     Args:
@@ -55,7 +51,7 @@ def parse_audio_codec(data_uri: str) -> Tuple[str, str, str]:
         from reflex_audio_capture import get_codec
 
         codec_str = get_codec(data_uri)
-        mime_type, _, codec = codec_str.partition(";")
+        mime_type, _, _codec = codec_str.partition(";")
         audio_type = mime_type.partition("/")[2]
         if audio_type == "mpeg":
             audio_type = "mp3"
@@ -100,7 +96,7 @@ def strip_data_uri_codec(data_uri: str) -> str:
 async def transcribe_audio(
     audio_data_uri: str,
     model: str = "whisper-1",
-) -> Tuple[str, Optional[str]]:
+) -> tuple[str, str | None]:
     """Transcribe audio data using OpenAI Whisper.
 
     Args:
@@ -150,7 +146,7 @@ async def transcribe_audio(
 async def transcribe_audio_file(
     file_path: str,
     model: str = "whisper-1",
-) -> Tuple[str, Optional[str]]:
+) -> tuple[str, str | None]:
     """Transcribe an audio file using OpenAI Whisper.
 
     Args:

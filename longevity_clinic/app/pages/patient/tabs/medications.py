@@ -1,6 +1,8 @@
 """Medications tab component for patient portal."""
 
 import reflex as rx
+
+from ....components.paginated_view import paginated_list
 from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 
@@ -102,9 +104,19 @@ def medications_tab() -> rx.Component:
             ),
             class_name="grid grid-cols-2 gap-4 mb-8",
         ),
-        # Medication List
-        rx.el.div(
-            rx.foreach(HealthDashboardState.medications, medication_card),
-            class_name="space-y-4",
+        # Medication List (Paginated)
+        paginated_list(
+            items=HealthDashboardState.medications_paginated,
+            item_renderer=medication_card,
+            has_previous=HealthDashboardState.medications_has_previous,
+            has_next=HealthDashboardState.medications_has_next,
+            page_info=HealthDashboardState.medications_page_info,
+            showing_info=HealthDashboardState.medications_showing_info,
+            on_previous=HealthDashboardState.medications_previous_page,
+            on_next=HealthDashboardState.medications_next_page,
+            empty_icon="pill",
+            empty_message="No medications found",
+            empty_subtitle="Your medication list is empty",
+            list_class="space-y-4",
         ),
     )

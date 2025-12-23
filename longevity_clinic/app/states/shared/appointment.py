@@ -1,21 +1,25 @@
 """Appointment state management with calendar integration."""
 
-from datetime import datetime, date
 import calendar as cal
+from datetime import date, datetime
+
 import reflex as rx
 
-from ...config import current_config
+from ...config import get_logger
 from ...data.seed import (
     APPOINTMENTS_SEED,
     DEMO_PATIENTS,
     PROVIDERS,
-    TREATMENT_TYPES,
 )
 from ...functions.db_utils import (
+    create_appointment_sync,
+    get_appointments_for_user_sync,
     get_appointments_sync,
     update_appointment_status_sync,
-    create_appointment_sync,
 )
+from ..auth import AuthState
+
+logger = get_logger("longevity_clinic.appointment")
 
 
 class AppointmentState(rx.State):
@@ -23,19 +27,16 @@ class AppointmentState(rx.State):
 
     appointments: list[dict] = []
     selected_date: str = ""
+
+    # Loading state
+    is_loading: bool = False
+    _data_loaded: bool = False
     selected_time: str = ""
     selected_appointment: dict = {}
 
     # Calendar navigation
     current_year: int = 2025
     current_month: int = 1
-
-    # Form fields for new appointment
-    new_appointment_title: str = ""
-    new_appointment_description: str = ""
-    new_appointment_treatment: str = ""
-    new_appointment_duration: int = 60
-    new_appointment_notes: str = ""
 
     # Modal state
     show_booking_modal: bool = False
@@ -49,13 +50,9 @@ class AppointmentState(rx.State):
     booking_time: str = ""
     booking_notes: str = ""
 
-    # View mode for admin
-    view_mode: str = "calendar"  # "calendar", "list"
-
-    @rx.var
-    def treatment_types(self) -> list[str]:
-        """Available treatment types."""
-        return TREATMENT_TYPES
+    # Pagination for upcoming appointments
+    upcoming_page: int = 1
+    upcoming_page_size: int = 3
 
     @rx.var
     def providers(self) -> list[str]:
@@ -66,11 +63,6 @@ class AppointmentState(rx.State):
     def demo_patients(self) -> list[dict]:
         """Demo patients for admin booking."""
         return DEMO_PATIENTS
-
-    @rx.var
-    def today_str(self) -> str:
-        """Today's date as ISO string."""
-        return date.today().isoformat()
 
     @rx.var
     def current_month_year(self) -> str:
@@ -133,17 +125,6 @@ class AppointmentState(rx.State):
         return weeks
 
     @rx.var
-    def selected_date_display(self) -> str:
-        """Format selected date for display."""
-        if not self.selected_date:
-            return "Select a date"
-        try:
-            d = datetime.strptime(self.selected_date, "%Y-%m-%d")
-            return d.strftime("%B %d, %Y")
-        except Exception:
-            return self.selected_date
-
-    @rx.var
     def appointments_for_selected_date(self) -> list[dict]:
         """Get appointments for the selected date."""
         if not self.selected_date:
@@ -203,53 +184,6 @@ class AppointmentState(rx.State):
             return time_str
 
     @rx.var
-    def available_time_slots(self) -> list[dict]:
-        """Get available time slots for the selected date."""
-        base_slots = [
-            "08:00",
-            "08:30",
-            "09:00",
-            "09:30",
-            "10:00",
-            "10:30",
-            "11:00",
-            "11:30",
-            "12:00",
-            "12:30",
-            "13:00",
-            "13:30",
-            "14:00",
-            "14:30",
-            "15:00",
-            "15:30",
-            "16:00",
-            "16:30",
-            "17:00",
-        ]
-
-        booked_times = {
-            apt.get("time")
-            for apt in self.appointments_for_selected_date
-            if apt.get("status") != "cancelled"
-        }
-
-        return [
-            {"time": slot, "is_available": slot not in booked_times}
-            for slot in base_slots
-        ]
-
-    @rx.var
-    def dates_with_appointments(self) -> list[str]:
-        """Get list of dates that have appointments."""
-        return list(
-            set(
-                apt.get("date", "")
-                for apt in self.appointments
-                if apt.get("status") != "cancelled"
-            )
-        )
-
-    @rx.var
     def total_appointments_this_month(self) -> int:
         """Get total appointments for current month."""
         month_str = f"{self.current_year}-{self.current_month:02d}"
@@ -265,6 +199,58 @@ class AppointmentState(rx.State):
     def upcoming_count(self) -> int:
         """Count of upcoming appointments."""
         return len(self.upcoming_appointments)
+
+    # ==========================================================================
+    # Pagination computed vars for upcoming appointments
+    # ==========================================================================
+
+    @rx.var
+    def upcoming_total_pages(self) -> int:
+        """Total pages for upcoming appointments."""
+        total = len(self.upcoming_appointments)
+        return max(1, (total + self.upcoming_page_size - 1) // self.upcoming_page_size)
+
+    @rx.var
+    def upcoming_paginated(self) -> list[dict]:
+        """Paginated slice of upcoming appointments."""
+        start = (self.upcoming_page - 1) * self.upcoming_page_size
+        end = start + self.upcoming_page_size
+        return self.upcoming_appointments[start:end]
+
+    @rx.var
+    def upcoming_has_previous(self) -> bool:
+        """Whether there's a previous page of upcoming appointments."""
+        return self.upcoming_page > 1
+
+    @rx.var
+    def upcoming_has_next(self) -> bool:
+        """Whether there's a next page of upcoming appointments."""
+        return self.upcoming_page < self.upcoming_total_pages
+
+    @rx.var
+    def upcoming_page_info(self) -> str:
+        """Page info string for upcoming appointments."""
+        return f"Page {self.upcoming_page} of {self.upcoming_total_pages}"
+
+    @rx.var
+    def upcoming_showing_info(self) -> str:
+        """Showing info string for upcoming appointments."""
+        total = len(self.upcoming_appointments)
+        if total == 0:
+            return "No appointments"
+        start = (self.upcoming_page - 1) * self.upcoming_page_size + 1
+        end = min(self.upcoming_page * self.upcoming_page_size, total)
+        return f"Showing {start}-{end} of {total}"
+
+    def upcoming_previous_page(self):
+        """Go to previous page of upcoming appointments."""
+        if self.upcoming_page > 1:
+            self.upcoming_page -= 1
+
+    def upcoming_next_page(self):
+        """Go to next page of upcoming appointments."""
+        if self.upcoming_page < self.upcoming_total_pages:
+            self.upcoming_page += 1
 
     @rx.var
     def completed_count(self) -> int:
@@ -345,14 +331,59 @@ class AppointmentState(rx.State):
         if apt_id:
             self.cancel_appointment(apt_id)
 
-    def load_appointments(self):
-        """Load appointments data - DB first, fallback to seed."""
-        db_appointments = get_appointments_sync(limit=100)
-        if db_appointments:
-            self.appointments = db_appointments
-        else:
-            self.appointments = list(APPOINTMENTS_SEED)
-        self.selected_date = date.today().isoformat()
+    @rx.event(background=True)
+    async def load_appointments(self):
+        """Load appointments for current authenticated user from DB.
+
+        Falls back to seed data if no appointments found.
+        Note: Requires seeded database. Run: python scripts/load_seed_data.py
+        """
+        # Prevent duplicate loads
+        async with self:
+            if self._data_loaded:
+                logger.debug("load_appointments: Data already loaded, skipping")
+                return
+            self.is_loading = True
+
+            # Get user_id from auth state
+            auth_state = await self.get_state(AuthState)
+            user_id_str = auth_state.user.get("id") if auth_state.user else None
+            user_id = int(user_id_str) if user_id_str else None
+
+        logger.info("load_appointments: Starting for user_id %s", user_id or "all")
+
+        try:
+            # Fetch appointments for specific user if authenticated
+            if user_id:
+                db_appointments = get_appointments_for_user_sync(
+                    user_id=user_id, limit=100
+                )
+            else:
+                # Fallback to all appointments (admin view)
+                db_appointments = get_appointments_sync(limit=100)
+
+            # Fall back to seed data if no DB results
+            if not db_appointments:
+                logger.info("load_appointments: No DB data, using seed data")
+                db_appointments = list(APPOINTMENTS_SEED)
+
+            async with self:
+                self.appointments = db_appointments
+                self.selected_date = date.today().isoformat()
+                # Initialize calendar to current month
+                today = date.today()
+                self.current_year = today.year
+                self.current_month = today.month
+                self.is_loading = False
+                self._data_loaded = True
+
+            logger.info(
+                "load_appointments: Complete (%d appointments)", len(db_appointments)
+            )
+        except Exception as e:
+            logger.error("load_appointments: Failed - %s", e)
+            async with self:
+                self.is_loading = False
 
     def select_date(self, selected_date: str):
         """Handle date selection from calendar."""
@@ -362,33 +393,6 @@ class AppointmentState(rx.State):
     def select_time(self, time_slot: str):
         """Select a time slot for booking."""
         self.selected_time = time_slot
-
-    def open_booking_modal(self):
-        """Open the booking modal."""
-        self.show_booking_modal = True
-        self.new_appointment_title = ""
-        self.new_appointment_description = ""
-        self.new_appointment_treatment = ""
-        self.new_appointment_duration = 60
-        self.new_appointment_notes = ""
-
-    def close_booking_modal(self):
-        """Close the booking modal."""
-        self.show_booking_modal = False
-
-    def handle_booking_modal_open_change(self, is_open: bool):
-        """Handle booking modal open state change."""
-        self.show_booking_modal = is_open
-
-    def open_details_modal(self, appointment: dict):
-        """Open appointment details modal."""
-        self.selected_appointment = appointment
-        self.show_details_modal = True
-
-    def close_details_modal(self):
-        """Close appointment details modal."""
-        self.show_details_modal = False
-        self.selected_appointment = {}
 
     def set_show_booking_modal(self, is_open: bool):
         """Set booking modal open state."""
@@ -408,15 +412,10 @@ class AppointmentState(rx.State):
         if not is_open:
             self.selected_appointment = {}
 
-    def handle_details_modal_open_change(self, is_open: bool):
-        """Handle details modal open state change."""
-        self.show_details_modal = is_open
-        if not is_open:
-            self.selected_appointment = {}
-
-    def set_view_mode(self, mode: str):
-        """Switch between calendar and list view."""
-        self.view_mode = mode
+    def close_details_modal(self):
+        """Close appointment details modal."""
+        self.show_details_modal = False
+        self.selected_appointment = {}
 
     def set_booking_type(self, value: str):
         """Set booking type."""
@@ -442,98 +441,62 @@ class AppointmentState(rx.State):
         """Set booking notes."""
         self.booking_notes = value
 
-    def book_appointment(self):
-        """Create a new appointment from booking form."""
-        if not self.booking_date or not self.booking_time:
-            return
+    @rx.event(background=True)
+    async def book_appointment(self):
+        """Create a new appointment from booking form for authenticated user."""
+        async with self:
+            if not self.booking_date or not self.booking_time:
+                return
 
-        # Find patient name if patient selected
-        patient_name = "Current User"
-        patient_id = "current"
+            # Get user info from auth state
+            auth_state = await self.get_state(AuthState)
+            user = auth_state.user if auth_state.user else {}
+            user_id = int(user.get("id")) if user.get("id") else None
+            user_name = user.get("name", "Current User")
+            user_external_id = user.get("external_id", "current")
 
-        if self.booking_patient:
-            patient_id = self.booking_patient
-            for p in DEMO_PATIENTS:
-                if p["id"] == self.booking_patient:
-                    patient_name = p["name"]
-                    break
+            # For admin booking another patient
+            patient_name = user_name
+            patient_id = user_external_id
 
-        new_id = f"APT{len(self.appointments) + 100}"
-        new_appointment = {
-            "id": new_id,
-            "title": self.booking_type or "Consultation",
-            "description": self.booking_notes,
-            "date": self.booking_date,
-            "time": self.booking_time,
-            "duration_minutes": 60,
-            "treatment_type": self.booking_type or "Consultation",
-            "patient_id": patient_id,
-            "patient_name": patient_name,
-            "provider": self.booking_doctor or "Dr. Johnson",
-            "status": "scheduled",
-            "notes": self.booking_notes,
-        }
+            if self.booking_patient and self.booking_patient != "current":
+                patient_id = self.booking_patient
+                for p in DEMO_PATIENTS:
+                    if p["id"] == self.booking_patient:
+                        patient_name = p["name"]
+                        break
 
-        # Try to persist to DB
-        create_appointment_sync(new_appointment)
+            new_id = f"APT{len(self.appointments) + 100}"
+            new_appointment = {
+                "id": new_id,
+                "title": self.booking_type or "Consultation",
+                "description": self.booking_notes,
+                "date": self.booking_date,
+                "time": self.booking_time,
+                "duration_minutes": 60,
+                "treatment_type": self.booking_type or "Consultation",
+                "patient_id": patient_id,
+                "patient_name": patient_name,
+                "provider": self.booking_doctor or "Dr. Johnson",
+                "status": "scheduled",
+                "notes": self.booking_notes,
+            }
 
-        self.appointments = [*self.appointments, new_appointment]
-        self.show_booking_modal = False
-        # Reset form
-        self.booking_type = ""
-        self.booking_doctor = ""
-        self.booking_patient = ""
-        self.booking_date = ""
-        self.booking_time = ""
-        self.booking_notes = ""
+        # Persist to DB with user_id
+        create_appointment_sync(new_appointment, user_id=user_id)
 
-    def set_new_appointment_title(self, value: str):
-        """Set new appointment title."""
-        self.new_appointment_title = value
+        async with self:
+            self.appointments = [*self.appointments, new_appointment]
+            self.show_booking_modal = False
+            # Reset form
+            self.booking_type = ""
+            self.booking_doctor = ""
+            self.booking_patient = ""
+            self.booking_date = ""
+            self.booking_time = ""
+            self.booking_notes = ""
 
-    def set_new_appointment_description(self, value: str):
-        """Set new appointment description."""
-        self.new_appointment_description = value
-
-    def set_new_appointment_treatment(self, value: str):
-        """Set new appointment treatment type."""
-        self.new_appointment_treatment = value
-
-    def set_new_appointment_duration(self, value: str):
-        """Set new appointment duration."""
-        try:
-            self.new_appointment_duration = int(value)
-        except ValueError:
-            self.new_appointment_duration = 60
-
-    def set_new_appointment_notes(self, value: str):
-        """Set new appointment notes."""
-        self.new_appointment_notes = value
-
-    def create_appointment(self):
-        """Create a new appointment."""
-        if not self.selected_date or not self.selected_time:
-            return
-
-        new_id = f"APT{len(self.appointments) + 100}"
-        new_appointment = {
-            "id": new_id,
-            "title": self.new_appointment_title or self.new_appointment_treatment,
-            "description": self.new_appointment_description,
-            "date": self.selected_date,
-            "time": self.selected_time,
-            "duration_minutes": self.new_appointment_duration,
-            "treatment_type": self.new_appointment_treatment,
-            "patient_id": "current",  # Would be set based on auth state
-            "patient_name": "Current User",
-            "provider": "Dr. Johnson",  # Would be selected
-            "status": "scheduled",
-            "notes": self.new_appointment_notes,
-        }
-
-        self.appointments = [*self.appointments, new_appointment]
-        self.close_booking_modal()
-        self.selected_time = ""
+        logger.info("book_appointment: Created %s for user %s", new_id, user_id)
 
     def cancel_appointment(self, appointment_id: str):
         """Cancel an appointment."""
@@ -544,32 +507,3 @@ class AppointmentState(rx.State):
                 update_appointment_status_sync(appointment_id, "cancelled")
                 break
         self.close_details_modal()
-
-    def confirm_appointment(self, appointment_id: str):
-        """Confirm an appointment."""
-        for i, apt in enumerate(self.appointments):
-            if apt.get("id") == appointment_id:
-                self.appointments[i] = {**apt, "status": "confirmed"}
-                # Sync to DB
-                update_appointment_status_sync(appointment_id, "confirmed")
-                break
-
-    def complete_appointment(self, appointment_id: str):
-        """Mark an appointment as completed."""
-        for i, apt in enumerate(self.appointments):
-            if apt.get("id") == appointment_id:
-                self.appointments[i] = {**apt, "status": "completed"}
-                # Sync to DB
-                update_appointment_status_sync(appointment_id, "completed")
-                break
-        self.close_details_modal()
-
-    def get_status_color(self, status: str) -> str:
-        """Get color class for appointment status."""
-        colors = {
-            "scheduled": "bg-amber-100 text-amber-700",
-            "confirmed": "bg-teal-100 text-teal-700",
-            "completed": "bg-gray-100 text-gray-600",
-            "cancelled": "bg-rose-100 text-rose-600",
-        }
-        return colors.get(status, "bg-gray-100 text-gray-600")

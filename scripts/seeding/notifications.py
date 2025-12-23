@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
@@ -48,7 +48,7 @@ def load_notifications(session: Session, user_id_map: dict[str, int]) -> SeedRes
         try:
             created_at = datetime.fromisoformat(timestamp_str)
         except (ValueError, AttributeError):
-            created_at = datetime.now(timezone.utc)
+            created_at = datetime.now(UTC)
 
         # Map patient_id to user_id
         user_id = None

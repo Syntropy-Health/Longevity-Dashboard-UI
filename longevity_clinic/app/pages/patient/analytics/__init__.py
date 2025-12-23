@@ -2,25 +2,32 @@
 
 This module provides the biomarker analytics interface with:
 - Biomarker metric cards with trend charts
-- Category sections for organizing metrics
+- Category sections for organizing metrics (collapsible)
 - Status badges and indicators
+
+Note: Components are now defined in components/shared/biomarker_components.py
+and re-exported here for backward compatibility.
 """
 
-from .page import analytics_page
 from .components import (
-    trend_chart,
+    category_section,
+    collapsible_category_section,
+    collapsible_panels_container,
+    metric_card,
     status_badge,
     status_dot,
-    metric_card,
-    category_section,
+    trend_chart,
 )
+from .page import analytics_page
 
 __all__ = [
     "analytics_page",
-    # Components
-    "trend_chart",
+    "category_section",
+    "collapsible_category_section",
+    "collapsible_panels_container",
+    "metric_card",
     "status_badge",
     "status_dot",
-    "metric_card",
-    "category_section",
+    # Components (re-exported from shared)
+    "trend_chart",
 ]

@@ -8,10 +8,9 @@ This module contains the role-based view components:
 
 import reflex as rx
 
+from ....states import AuthState, NotificationState
 from ....styles.constants import GlassStyles
-from ....states import NotificationState
-from ....states import AuthState
-from .components import notification_card, filter_tabs, empty_state
+from .components import empty_state, filter_tabs, notification_card
 from .modals import notification_detail_modal
 
 

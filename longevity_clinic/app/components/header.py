@@ -1,6 +1,6 @@
 import reflex as rx
-from ..states import AuthState
-from ..states import NotificationState
+
+from ..states import AuthState, NotificationState
 from ..styles.constants import GlassStyles
 
 

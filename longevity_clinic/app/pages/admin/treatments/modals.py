@@ -1,13 +1,13 @@
 """Treatment page modal components."""
 
 import reflex as rx
+
 from ....data import (
     TREATMENT_CATEGORIES,
     TREATMENT_FREQUENCIES,
     TREATMENT_STATUSES,
 )
-from ....states import PatientState
-from ....states import TreatmentState
+from ....states import PatientState, TreatmentState
 from ....styles import GlassStyles
 
 

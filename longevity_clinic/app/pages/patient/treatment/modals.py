@@ -1,6 +1,7 @@
 """Patient treatment search modals."""
 
 import reflex as rx
+
 from ....states import TreatmentSearchState
 from ....styles import GlassStyles
 

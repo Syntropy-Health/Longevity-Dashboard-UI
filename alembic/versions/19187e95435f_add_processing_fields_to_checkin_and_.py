@@ -6,17 +6,30 @@ Create Date: 2025-12-18 03:20:56.586279
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 import sqlmodel
 
+from alembic import context, op
+
 # revision identifiers, used by Alembic.
 revision: str = "19187e95435f"
-down_revision: Union[str, Sequence[str], None] = "619f1bc3b8ff"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "619f1bc3b8ff"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
+
+def _get_boolean_default(value: bool) -> sa.text:
+    """Get dialect-appropriate boolean default.
+
+    SQLite uses 0/1, PostgreSQL uses 'false'/'true'.
+    """
+    dialect = context.get_context().dialect.name
+    if dialect == "postgresql":
+        return sa.text("'true'" if value else "'false'")
+    else:  # sqlite and others
+        return sa.text("1" if value else "0")
 
 
 def upgrade() -> None:
@@ -71,7 +84,7 @@ def upgrade() -> None:
             sa.Column(
                 "is_processed",
                 sa.Boolean(),
-                server_default=sa.text("0"),
+                server_default=_get_boolean_default(False),
                 nullable=False,
             )
         )

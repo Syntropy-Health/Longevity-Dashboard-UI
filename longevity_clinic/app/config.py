@@ -1,9 +1,8 @@
-import os
 import logging
-from typing import Literal, Type, Optional, Any
+import os
+from typing import Any, Literal
 
-from pydantic import BaseModel, computed_field, Field
-
+from pydantic import BaseModel, Field, computed_field
 
 # =============================================================================
 # Centralized Logging Configuration
@@ -39,10 +38,6 @@ def get_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
         logger.addHandler(console_handler)
 
     return logger
-
-
-# Create default app logger
-app_logger = get_logger("longevity_clinic")
 
 
 # Ensure OpenAI API key is loaded from environment
@@ -150,9 +145,6 @@ class AppConfig(BaseModel):
     patient_role_name: str = os.getenv("PATIENT_ROLE_NAME", "Patient")
     theme_color: str = os.getenv("THEME_COLOR", "emerald")
 
-    # Demo mode flag - when True, uses demo data instead of DB
-    is_demo: bool = os.getenv("IS_DEMO", "true").lower() == "true"
-
     # API Configuration
     openai_api_key: str = OPENAI_API_KEY
     call_api_token: str = CALL_API_TOKEN
@@ -165,6 +157,9 @@ class AppConfig(BaseModel):
     vlogs_llm_model: str = "gpt-4o-mini"
     vlogs_temperature: float = 0.3
     vlogs_fetch_limit: int = 50
+
+    # Background processing configuration
+    background_poll_interval: int = 15  # seconds between CDC processing cycles
 
     # Demo user for UI display
     demo_user: DemoUserConfig = DemoUserConfig()
@@ -182,11 +177,7 @@ class AppConfig(BaseModel):
     glass: GlassStyleConfig = GlassStyleConfig()
 
     # Legacy style properties (deprecated - use glass.* instead)
-    @computed_field
-    @property
-    def glass_bg_gradient(self) -> str:
-        return self.glass.bg_gradient
-
+    # Note: glass_panel_style, glass_input_style, glass_button_secondary are still used
     @computed_field
     @property
     def glass_panel_style(self) -> str:
@@ -194,28 +185,8 @@ class AppConfig(BaseModel):
 
     @computed_field
     @property
-    def glass_header_style(self) -> str:
-        return self.glass.header_style
-
-    @computed_field
-    @property
-    def glass_sidebar_style(self) -> str:
-        return self.glass.sidebar_style
-
-    @computed_field
-    @property
-    def glass_card_hover(self) -> str:
-        return self.glass.card_hover
-
-    @computed_field
-    @property
     def glass_input_style(self) -> str:
         return self.glass.input_style
-
-    @computed_field
-    @property
-    def glass_button_primary(self) -> str:
-        return self.glass.button_primary
 
     @computed_field
     @property
@@ -253,7 +224,7 @@ class VlogsConfig(BaseModel):
     llm_model: str = Field(default_factory=lambda: current_config.vlogs_llm_model)
     temperature: float = Field(default_factory=lambda: current_config.vlogs_temperature)
     limit: int = Field(default_factory=lambda: current_config.vlogs_fetch_limit)
-    output_schema: Optional[Any] = Field(
+    output_schema: Any | None = Field(
         default=None
     )  # Type[BaseModel], use Any to avoid circular imports
     reprocess_all: bool = Field(

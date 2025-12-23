@@ -10,8 +10,9 @@ for displaying complete check-in information including:
 """
 
 import reflex as rx
-from ..shared.checkin_components import status_badge, type_icon
+
 from ...styles.constants import GlassStyles
+from ..shared.checkin import status_badge, type_icon
 
 
 def checkin_detail_modal(
@@ -52,7 +53,6 @@ def checkin_detail_modal(
         Modal component
     """
     return rx.radix.primitives.dialog.root(
-        rx.radix.primitives.dialog.trigger(rx.fragment()),
         rx.radix.primitives.dialog.portal(
             rx.radix.primitives.dialog.overlay(
                 class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-50",
@@ -147,17 +147,60 @@ def checkin_detail_modal(
                             class_name=f"grid grid-cols-2 gap-4 {GlassStyles.PANEL} p-4 mb-4",
                         ),
                     ),
-                    # Content section
+                    # Content section - shows raw_transcript if available, otherwise summary
                     rx.el.div(
                         rx.el.p(
-                            "Check-in Content",
+                            (
+                                rx.cond(
+                                    checkin_raw_transcript is not None
+                                    and checkin_raw_transcript != "",
+                                    "Full Transcript",
+                                    "Check-in Content",
+                                )
+                                if checkin_raw_transcript is not None
+                                else "Check-in Content"
+                            ),
                             class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
                         ),
-                        rx.el.p(
-                            checkin_summary,
-                            class_name="text-sm text-white leading-relaxed",
+                        rx.el.div(
+                            rx.el.p(
+                                (
+                                    rx.cond(
+                                        checkin_raw_transcript is not None
+                                        and checkin_raw_transcript != "",
+                                        checkin_raw_transcript,
+                                        checkin_summary,
+                                    )
+                                    if checkin_raw_transcript is not None
+                                    else checkin_summary
+                                ),
+                                class_name="text-sm text-white leading-relaxed whitespace-pre-wrap",
+                            ),
+                            class_name="max-h-64 overflow-y-auto",
                         ),
                         class_name=f"{GlassStyles.PANEL} p-4 mb-4",
+                    ),
+                    # Summary section (only if raw_transcript is different/available)
+                    (
+                        rx.cond(
+                            (checkin_raw_transcript is not None)
+                            & (checkin_raw_transcript != "")
+                            & (checkin_summary != ""),
+                            rx.el.div(
+                                rx.el.p(
+                                    "AI Summary",
+                                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
+                                ),
+                                rx.el.p(
+                                    checkin_summary,
+                                    class_name="text-sm text-slate-300 leading-relaxed",
+                                ),
+                                class_name=f"{GlassStyles.PANEL} p-4 mb-4",
+                            ),
+                            rx.fragment(),
+                        )
+                        if checkin_raw_transcript is not None
+                        else rx.fragment()
                     ),
                     # Topics section
                     rx.el.div(
@@ -177,28 +220,6 @@ def checkin_detail_modal(
                         ),
                         class_name="mb-4",
                     ),
-                    # Raw transcript section (optional, for admin view)
-                    rx.cond(
-                        checkin_raw_transcript is not None
-                        and checkin_raw_transcript != "",
-                        rx.el.div(
-                            rx.el.p(
-                                "Full Transcript",
-                                class_name="text-xs text-slate-400 uppercase tracking-wider mb-2",
-                            ),
-                            rx.el.div(
-                                rx.el.p(
-                                    checkin_raw_transcript,
-                                    class_name="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap",
-                                ),
-                                class_name="max-h-48 overflow-y-auto",
-                            ),
-                            class_name=f"{GlassStyles.PANEL} p-4 mb-4",
-                        ),
-                        rx.fragment(),
-                    )
-                    if checkin_raw_transcript is not None
-                    else rx.fragment(),
                     # Actions
                     rx.el.div(
                         rx.radix.primitives.dialog.close(
@@ -206,28 +227,31 @@ def checkin_detail_modal(
                                 "Close", class_name=GlassStyles.BUTTON_SECONDARY
                             ),
                         ),
-                        rx.cond(
-                            show_actions & (checkin_status == "pending"),
-                            rx.el.div(
-                                rx.el.button(
-                                    rx.icon("flag", class_name="w-4 h-4 mr-2"),
-                                    "Flag",
-                                    on_click=lambda: on_flag(checkin_id)
-                                    if on_flag
-                                    else None,  # type: ignore[arg-type]
-                                    class_name="px-4 py-2 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center",
+                        # Only render action buttons if handlers are provided AND show_actions is True
+                        (
+                            rx.cond(
+                                checkin_status == "pending",
+                                rx.el.div(
+                                    rx.el.button(
+                                        rx.icon("flag", class_name="w-4 h-4 mr-2"),
+                                        "Flag",
+                                        on_click=on_flag(checkin_id),  # type: ignore[misc]
+                                        class_name="px-4 py-2 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center",
+                                    ),
+                                    rx.el.button(
+                                        rx.icon("check", class_name="w-4 h-4 mr-2"),
+                                        "Mark Reviewed",
+                                        on_click=on_mark_reviewed(checkin_id),  # type: ignore[misc]
+                                        class_name=f"{GlassStyles.BUTTON_PRIMARY} flex items-center",
+                                    ),
+                                    class_name="flex gap-3",
                                 ),
-                                rx.el.button(
-                                    rx.icon("check", class_name="w-4 h-4 mr-2"),
-                                    "Mark Reviewed",
-                                    on_click=lambda: on_mark_reviewed(checkin_id)
-                                    if on_mark_reviewed
-                                    else None,  # type: ignore[arg-type]
-                                    class_name=f"{GlassStyles.BUTTON_PRIMARY} flex items-center",
-                                ),
-                                class_name="flex gap-3",
-                            ),
-                            rx.fragment(),
+                                rx.fragment(),
+                            )
+                            if show_actions
+                            and on_flag is not None
+                            and on_mark_reviewed is not None
+                            else rx.fragment()
                         ),
                         class_name="flex justify-between",
                     ),

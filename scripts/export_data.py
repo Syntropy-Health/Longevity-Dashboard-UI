@@ -14,20 +14,20 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Initialize Reflex config to set up database URL
-import rxconfig  # noqa: F401
-
 import reflex as rx
 from sqlalchemy import inspect, text
+
+import rxconfig  # noqa: F401
 
 
 def format_value(value: Any) -> str:
@@ -63,7 +63,7 @@ def format_value(value: Any) -> str:
         return f"'\\x{hex_str}'"
 
     # Default: try to convert to string
-    return f"'{str(value)}'"
+    return f"'{value!s}'"
 
 
 def get_table_data(engine, table_name: str) -> tuple[list[str], list[tuple]]:
@@ -112,8 +112,8 @@ def generate_insert_statements(
 
 
 def export_data(
-    tables: Optional[list[str]] = None,
-    exclude_tables: Optional[list[str]] = None,
+    tables: list[str] | None = None,
+    exclude_tables: list[str] | None = None,
     batch_size: int = 100,
 ) -> str:
     """Export data from all or specified tables."""

@@ -8,7 +8,6 @@ import reflex as rx
 
 from ....states.admin_metrics_state import AdminMetricsState
 
-
 # Shared tooltip configuration for consistent styling
 TOOLTIP_PROPS = {
     "content_style": {

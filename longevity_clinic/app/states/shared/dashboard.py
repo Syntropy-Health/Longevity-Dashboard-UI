@@ -8,7 +8,7 @@ This module provides consolidated dashboard state for both admin and patient vie
 import asyncio
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import reflex as rx
 
@@ -18,7 +18,6 @@ from ...data.state_schemas import (
     DataSource,
     FoodEntry,
     MedicationEntry,
-    Patient,
     Symptom,
     SymptomEntry,
     SymptomTrend,
@@ -26,12 +25,11 @@ from ...data.state_schemas import (
 from ...functions.db_utils import (
     get_food_entries_sync,
     get_medications_sync,
-    get_primary_demo_user_id,
     get_symptoms_sync,
     get_user_by_external_id_sync,
 )
 from ...functions.patients.dashboard import load_all_dashboard_data
-from ...functions.patients.patients import load_all_patient_data
+from ..auth.base import AuthState
 
 logger = get_logger("longevity_clinic.dashboard")
 
@@ -48,7 +46,7 @@ _DEFAULT_NUTRITION = {
 }
 
 
-def _calculate_nutrition(food_entries: List[FoodEntry]) -> Dict[str, Any]:
+def _calculate_nutrition(food_entries: list[FoodEntry]) -> dict[str, Any]:
     """Calculate nutrition summary from food entries."""
     if not food_entries:
         return _DEFAULT_NUTRITION.copy()
@@ -66,6 +64,27 @@ class HealthDashboardState(rx.State):
 
     Shared between patient and admin views for displaying health metrics,
     medications, conditions, symptoms, and data sources.
+
+    Data Source:
+    ============
+    Health entries (medications, food, symptoms) are fetched from database tables
+    populated by CheckinState via two pathways:
+
+    1. Patient Check-ins (voice/text):
+       save_checkin_and_log_health() → save_health_entries_sync()
+       → MedicationEntry, FoodLogEntry, SymptomEntry tables
+
+    2. Call Log CDC Pipeline:
+       start_calls_to_checkin_sync_loop() → update_call_log_metrics()
+       → MedicationEntry, FoodLogEntry, SymptomEntry tables
+
+    Data Fetch (via load_dashboard_data):
+    - get_medications_sync(user_id) → self.medications (list[MedicationEntry])
+    - get_food_entries_sync(user_id) → self.food_entries (list[FoodEntry])
+    - get_symptoms_sync(user_id) → self.symptoms (list[Symptom])
+
+    Refresh:
+    - load_health_data_from_db() can be called to refresh from database
     """
 
     # Tab and filter states
@@ -96,29 +115,53 @@ class HealthDashboardState(rx.State):
     new_food_meal_type: str = "snack"
 
     # Selected items for modals
-    selected_medication: Dict[str, Any] = {}
-    selected_condition: Dict[str, Any] = {}
-    selected_symptom: Dict[str, Any] = {}
+    selected_medication: dict[str, Any] = {}
+    selected_condition: dict[str, Any] = {}
+    selected_symptom: dict[str, Any] = {}
 
     # Settings
     email_notifications: bool = True
     push_notifications: bool = True
 
     # Data (loaded via load_dashboard_data)
-    nutrition_summary: Dict[str, Any] = {}
-    food_entries: List[FoodEntry] = []
-    medications: List[MedicationEntry] = []
-    conditions: List[Condition] = []
-    symptoms: List[Symptom] = []
-    symptom_logs: List[SymptomEntry] = []
-    symptom_trends: List[SymptomTrend] = []
-    reminders: List[Dict[str, Any]] = []
-    data_sources: List[DataSource] = []
+    nutrition_summary: dict[str, Any] = {}
+    food_entries: list[FoodEntry] = []
+    medications: list[MedicationEntry] = []
+    conditions: list[Condition] = []
+    symptoms: list[Symptom] = []
+    symptom_logs: list[SymptomEntry] = []
+    symptom_trends: list[SymptomTrend] = []
+    reminders: list[dict[str, Any]] = []
+    data_sources: list[DataSource] = []
 
     # Loading state
     is_loading: bool = False
     _data_loaded: bool = False
-    _viewing_patient_id: Optional[str] = None
+    _viewing_patient_id: str | None = None
+    _current_user_id: int | None = None  # Cached from AuthState
+
+    # =========================================================================
+    # Pagination State
+    # =========================================================================
+    # Page size constants
+    _MEDS_PAGE_SIZE: int = 5
+    _FOOD_PAGE_SIZE: int = 6
+    _CONDITIONS_PAGE_SIZE: int = 5
+    _SYMPTOMS_PAGE_SIZE: int = 5
+    _SYMPTOM_LOGS_PAGE_SIZE: int = 8
+    _REMINDERS_PAGE_SIZE: int = 6
+    _TRENDS_PAGE_SIZE: int = 5
+    _DATA_SOURCES_PAGE_SIZE: int = 6
+
+    # Current page numbers (1-indexed)
+    medications_page: int = 1
+    food_entries_page: int = 1
+    conditions_page: int = 1
+    symptoms_page: int = 1
+    symptom_logs_page: int = 1
+    reminders_page: int = 1
+    symptom_trends_page: int = 1
+    data_sources_page: int = 1
 
     # =========================================================================
     # Computed Variables
@@ -144,7 +187,7 @@ class HealthDashboardState(rx.State):
         return len([c for c in self.conditions if c.status == "resolved"])
 
     @rx.var
-    def filtered_conditions(self) -> List[Condition]:
+    def filtered_conditions(self) -> list[Condition]:
         if self.conditions_filter == "all":
             return self.conditions
         return [c for c in self.conditions if c.status == self.conditions_filter]
@@ -154,7 +197,7 @@ class HealthDashboardState(rx.State):
         return len([s for s in self.data_sources if s.connected])
 
     @rx.var
-    def filtered_data_sources(self) -> List[DataSource]:
+    def filtered_data_sources(self) -> list[DataSource]:
         type_map = {
             "devices": ["wearable", "scale", "cgm"],
             "api_connections": ["app", "ehr"],
@@ -168,6 +211,324 @@ class HealthDashboardState(rx.State):
         )
 
     # =========================================================================
+    # Pagination Computed Variables - Medications
+    # =========================================================================
+
+    @rx.var
+    def medications_paginated(self) -> list[MedicationEntry]:
+        """Paginated slice of medications."""
+        start = (self.medications_page - 1) * self._MEDS_PAGE_SIZE
+        end = start + self._MEDS_PAGE_SIZE
+        return self.medications[start:end]
+
+    @rx.var
+    def medications_total_pages(self) -> int:
+        return max(
+            1,
+            (len(self.medications) + self._MEDS_PAGE_SIZE - 1) // self._MEDS_PAGE_SIZE,
+        )
+
+    @rx.var
+    def medications_has_previous(self) -> bool:
+        return self.medications_page > 1
+
+    @rx.var
+    def medications_has_next(self) -> bool:
+        return self.medications_page < self.medications_total_pages
+
+    @rx.var
+    def medications_page_info(self) -> str:
+        return f"Page {self.medications_page} of {self.medications_total_pages}"
+
+    @rx.var
+    def medications_showing_info(self) -> str:
+        total = len(self.medications)
+        if total == 0:
+            return "No medications"
+        start = (self.medications_page - 1) * self._MEDS_PAGE_SIZE + 1
+        end = min(self.medications_page * self._MEDS_PAGE_SIZE, total)
+        return f"Showing {start}-{end} of {total}"
+
+    # =========================================================================
+    # Pagination Computed Variables - Food Entries
+    # =========================================================================
+
+    @rx.var
+    def food_entries_paginated(self) -> list[FoodEntry]:
+        """Paginated slice of food entries."""
+        start = (self.food_entries_page - 1) * self._FOOD_PAGE_SIZE
+        end = start + self._FOOD_PAGE_SIZE
+        return self.food_entries[start:end]
+
+    @rx.var
+    def food_entries_total_pages(self) -> int:
+        return max(
+            1,
+            (len(self.food_entries) + self._FOOD_PAGE_SIZE - 1) // self._FOOD_PAGE_SIZE,
+        )
+
+    @rx.var
+    def food_entries_has_previous(self) -> bool:
+        return self.food_entries_page > 1
+
+    @rx.var
+    def food_entries_has_next(self) -> bool:
+        return self.food_entries_page < self.food_entries_total_pages
+
+    @rx.var
+    def food_entries_page_info(self) -> str:
+        return f"Page {self.food_entries_page} of {self.food_entries_total_pages}"
+
+    @rx.var
+    def food_entries_showing_info(self) -> str:
+        total = len(self.food_entries)
+        if total == 0:
+            return "No food entries"
+        start = (self.food_entries_page - 1) * self._FOOD_PAGE_SIZE + 1
+        end = min(self.food_entries_page * self._FOOD_PAGE_SIZE, total)
+        return f"Showing {start}-{end} of {total}"
+
+    # =========================================================================
+    # Pagination Computed Variables - Conditions
+    # =========================================================================
+
+    @rx.var
+    def conditions_paginated(self) -> list[Condition]:
+        """Paginated slice of filtered conditions."""
+        start = (self.conditions_page - 1) * self._CONDITIONS_PAGE_SIZE
+        end = start + self._CONDITIONS_PAGE_SIZE
+        return self.filtered_conditions[start:end]
+
+    @rx.var
+    def conditions_total_pages(self) -> int:
+        return max(
+            1,
+            (len(self.filtered_conditions) + self._CONDITIONS_PAGE_SIZE - 1)
+            // self._CONDITIONS_PAGE_SIZE,
+        )
+
+    @rx.var
+    def conditions_has_previous(self) -> bool:
+        return self.conditions_page > 1
+
+    @rx.var
+    def conditions_has_next(self) -> bool:
+        return self.conditions_page < self.conditions_total_pages
+
+    @rx.var
+    def conditions_page_info(self) -> str:
+        return f"Page {self.conditions_page} of {self.conditions_total_pages}"
+
+    @rx.var
+    def conditions_showing_info(self) -> str:
+        total = len(self.filtered_conditions)
+        if total == 0:
+            return "No conditions"
+        start = (self.conditions_page - 1) * self._CONDITIONS_PAGE_SIZE + 1
+        end = min(self.conditions_page * self._CONDITIONS_PAGE_SIZE, total)
+        return f"Showing {start}-{end} of {total}"
+
+    # =========================================================================
+    # Pagination Computed Variables - Symptoms
+    # =========================================================================
+
+    @rx.var
+    def symptoms_paginated(self) -> list[Symptom]:
+        """Paginated slice of symptoms."""
+        start = (self.symptoms_page - 1) * self._SYMPTOMS_PAGE_SIZE
+        end = start + self._SYMPTOMS_PAGE_SIZE
+        return self.symptoms[start:end]
+
+    @rx.var
+    def symptoms_total_pages(self) -> int:
+        return max(
+            1,
+            (len(self.symptoms) + self._SYMPTOMS_PAGE_SIZE - 1)
+            // self._SYMPTOMS_PAGE_SIZE,
+        )
+
+    @rx.var
+    def symptoms_has_previous(self) -> bool:
+        return self.symptoms_page > 1
+
+    @rx.var
+    def symptoms_has_next(self) -> bool:
+        return self.symptoms_page < self.symptoms_total_pages
+
+    @rx.var
+    def symptoms_page_info(self) -> str:
+        return f"Page {self.symptoms_page} of {self.symptoms_total_pages}"
+
+    @rx.var
+    def symptoms_showing_info(self) -> str:
+        total = len(self.symptoms)
+        if total == 0:
+            return "No symptoms"
+        start = (self.symptoms_page - 1) * self._SYMPTOMS_PAGE_SIZE + 1
+        end = min(self.symptoms_page * self._SYMPTOMS_PAGE_SIZE, total)
+        return f"Showing {start}-{end} of {total}"
+
+    # =========================================================================
+    # Pagination Computed Variables - Symptom Logs
+    # =========================================================================
+
+    @rx.var
+    def symptom_logs_paginated(self) -> list[SymptomEntry]:
+        """Paginated slice of symptom logs."""
+        start = (self.symptom_logs_page - 1) * self._SYMPTOM_LOGS_PAGE_SIZE
+        end = start + self._SYMPTOM_LOGS_PAGE_SIZE
+        return self.symptom_logs[start:end]
+
+    @rx.var
+    def symptom_logs_total_pages(self) -> int:
+        return max(
+            1,
+            (len(self.symptom_logs) + self._SYMPTOM_LOGS_PAGE_SIZE - 1)
+            // self._SYMPTOM_LOGS_PAGE_SIZE,
+        )
+
+    @rx.var
+    def symptom_logs_has_previous(self) -> bool:
+        return self.symptom_logs_page > 1
+
+    @rx.var
+    def symptom_logs_has_next(self) -> bool:
+        return self.symptom_logs_page < self.symptom_logs_total_pages
+
+    @rx.var
+    def symptom_logs_page_info(self) -> str:
+        return f"Page {self.symptom_logs_page} of {self.symptom_logs_total_pages}"
+
+    @rx.var
+    def symptom_logs_showing_info(self) -> str:
+        total = len(self.symptom_logs)
+        if total == 0:
+            return "No symptom logs"
+        start = (self.symptom_logs_page - 1) * self._SYMPTOM_LOGS_PAGE_SIZE + 1
+        end = min(self.symptom_logs_page * self._SYMPTOM_LOGS_PAGE_SIZE, total)
+        return f"Showing {start}-{end} of {total}"
+
+    # =========================================================================
+    # Pagination Computed Variables - Reminders
+    # =========================================================================
+
+    @rx.var
+    def reminders_paginated(self) -> list[dict[str, Any]]:
+        """Paginated slice of reminders."""
+        start = (self.reminders_page - 1) * self._REMINDERS_PAGE_SIZE
+        end = start + self._REMINDERS_PAGE_SIZE
+        return self.reminders[start:end]
+
+    @rx.var
+    def reminders_total_pages(self) -> int:
+        return max(
+            1,
+            (len(self.reminders) + self._REMINDERS_PAGE_SIZE - 1)
+            // self._REMINDERS_PAGE_SIZE,
+        )
+
+    @rx.var
+    def reminders_has_previous(self) -> bool:
+        return self.reminders_page > 1
+
+    @rx.var
+    def reminders_has_next(self) -> bool:
+        return self.reminders_page < self.reminders_total_pages
+
+    @rx.var
+    def reminders_page_info(self) -> str:
+        return f"Page {self.reminders_page} of {self.reminders_total_pages}"
+
+    @rx.var
+    def reminders_showing_info(self) -> str:
+        total = len(self.reminders)
+        if total == 0:
+            return "No reminders"
+        start = (self.reminders_page - 1) * self._REMINDERS_PAGE_SIZE + 1
+        end = min(self.reminders_page * self._REMINDERS_PAGE_SIZE, total)
+        return f"Showing {start}-{end} of {total}"
+
+    # =========================================================================
+    # Pagination Computed Variables - Symptom Trends
+    # =========================================================================
+
+    @rx.var
+    def symptom_trends_paginated(self) -> list[SymptomTrend]:
+        """Paginated slice of symptom trends."""
+        start = (self.symptom_trends_page - 1) * self._TRENDS_PAGE_SIZE
+        end = start + self._TRENDS_PAGE_SIZE
+        return self.symptom_trends[start:end]
+
+    @rx.var
+    def symptom_trends_total_pages(self) -> int:
+        return max(
+            1,
+            (len(self.symptom_trends) + self._TRENDS_PAGE_SIZE - 1)
+            // self._TRENDS_PAGE_SIZE,
+        )
+
+    @rx.var
+    def symptom_trends_has_previous(self) -> bool:
+        return self.symptom_trends_page > 1
+
+    @rx.var
+    def symptom_trends_has_next(self) -> bool:
+        return self.symptom_trends_page < self.symptom_trends_total_pages
+
+    @rx.var
+    def symptom_trends_page_info(self) -> str:
+        return f"Page {self.symptom_trends_page} of {self.symptom_trends_total_pages}"
+
+    @rx.var
+    def symptom_trends_showing_info(self) -> str:
+        total = len(self.symptom_trends)
+        if total == 0:
+            return "No symptom trends"
+        start = (self.symptom_trends_page - 1) * self._TRENDS_PAGE_SIZE + 1
+        end = min(self.symptom_trends_page * self._TRENDS_PAGE_SIZE, total)
+        return f"Showing {start}-{end} of {total}"
+
+    # =========================================================================
+    # Pagination Computed Variables - Data Sources
+    # =========================================================================
+
+    @rx.var
+    def data_sources_paginated(self) -> list[DataSource]:
+        """Paginated slice of filtered data sources."""
+        start = (self.data_sources_page - 1) * self._DATA_SOURCES_PAGE_SIZE
+        end = start + self._DATA_SOURCES_PAGE_SIZE
+        return self.filtered_data_sources[start:end]
+
+    @rx.var
+    def data_sources_total_pages(self) -> int:
+        return max(
+            1,
+            (len(self.filtered_data_sources) + self._DATA_SOURCES_PAGE_SIZE - 1)
+            // self._DATA_SOURCES_PAGE_SIZE,
+        )
+
+    @rx.var
+    def data_sources_has_previous(self) -> bool:
+        return self.data_sources_page > 1
+
+    @rx.var
+    def data_sources_has_next(self) -> bool:
+        return self.data_sources_page < self.data_sources_total_pages
+
+    @rx.var
+    def data_sources_page_info(self) -> str:
+        return f"Page {self.data_sources_page} of {self.data_sources_total_pages}"
+
+    @rx.var
+    def data_sources_showing_info(self) -> str:
+        total = len(self.filtered_data_sources)
+        if total == 0:
+            return "No data sources"
+        start = (self.data_sources_page - 1) * self._DATA_SOURCES_PAGE_SIZE + 1
+        end = min(self.data_sources_page * self._DATA_SOURCES_PAGE_SIZE, total)
+        return f"Showing {start}-{end} of {total}"
+
+    # =========================================================================
     # Data Loading
     # =========================================================================
 
@@ -179,7 +540,17 @@ class HealthDashboardState(rx.State):
                 return
             self.is_loading = True
 
-        logger.info("load_dashboard_data: Starting")
+            # Get user ID from AuthState (must be inside async with self)
+            auth_state = await self.get_state(AuthState)
+            user_id = auth_state.user_id
+            if not user_id:
+                logger.warning("load_dashboard_data: No authenticated user")
+                self.is_loading = False
+                return
+
+            self._current_user_id = user_id
+
+        logger.info("load_dashboard_data: Starting for user_id=%s", user_id)
 
         try:
             db_data, static_data = await asyncio.gather(
@@ -211,22 +582,22 @@ class HealthDashboardState(rx.State):
             async with self:
                 self.is_loading = False
 
-    async def _load_health_entries_from_db(self) -> Dict[str, Any]:
-        """Load health entries from database."""
+    async def _load_health_entries_from_db(self) -> dict[str, Any]:
+        """Load health entries from database for the authenticated user."""
+        user_id = self._current_user_id
+        if not user_id:
+            logger.warning("_load_health_entries_from_db: No user ID set")
+            return {"medications": [], "food_entries": [], "symptoms": []}
 
-        def _query():
-            user_id = get_primary_demo_user_id()
-            if not user_id:
-                logger.warning("No primary demo user found")
-                return [], [], []
+        def _query(uid: int):
             return (
-                get_medications_sync(user_id, limit=50),
-                get_food_entries_sync(user_id, limit=50),
-                get_symptoms_sync(user_id, limit=50),
+                get_medications_sync(uid, limit=50),
+                get_food_entries_sync(uid, limit=50),
+                get_symptoms_sync(uid, limit=50),
             )
 
         try:
-            meds, foods, symptoms = await asyncio.to_thread(_query)
+            meds, foods, symptoms = await asyncio.to_thread(_query, user_id)
             return {"medications": meds, "food_entries": foods, "symptoms": symptoms}
         except Exception as e:
             logger.error("_load_health_entries_from_db: %s", e)
@@ -312,6 +683,16 @@ class HealthDashboardState(rx.State):
         """Refresh health data from database (CDC-synced data)."""
         logger.info("load_health_data_from_db: Refreshing")
 
+        # Ensure we have user ID from AuthState (must be inside async with self)
+        async with self:
+            if not self._current_user_id:
+                auth_state = await self.get_state(AuthState)
+                user_id = auth_state.user_id
+                if not user_id:
+                    logger.warning("load_health_data_from_db: No authenticated user")
+                    return
+                self._current_user_id = user_id
+
         try:
             db_data = await self._load_health_entries_from_db()
             if not any(db_data.values()):
@@ -341,6 +722,7 @@ class HealthDashboardState(rx.State):
     def clear_patient_health_data(self):
         """Clear patient health data (used when deselecting patient)."""
         self._viewing_patient_id = None
+        self._current_user_id = None
         self._data_loaded = False
         self.nutrition_summary = {}
         self.food_entries = []
@@ -359,14 +741,39 @@ class HealthDashboardState(rx.State):
     def set_active_tab(self, tab: str):
         self.active_tab = tab
 
-    def set_conditions_filter(self, value: str):
-        self.conditions_filter = value
-
     def set_symptoms_filter(self, value: str):
         self.symptoms_filter = value
 
     def set_data_sources_filter(self, value: str):
         self.data_sources_filter = value
+
+    # =========================================================================
+    # Pagination Handlers
+    # =========================================================================
+
+    def medications_previous_page(self):
+        if self.medications_page > 1:
+            self.medications_page -= 1
+
+    def medications_next_page(self):
+        if self.medications_page < self.medications_total_pages:
+            self.medications_page += 1
+
+    def food_entries_previous_page(self):
+        if self.food_entries_page > 1:
+            self.food_entries_page -= 1
+
+    def food_entries_next_page(self):
+        if self.food_entries_page < self.food_entries_total_pages:
+            self.food_entries_page += 1
+
+    def symptoms_previous_page(self):
+        if self.symptoms_page > 1:
+            self.symptoms_page -= 1
+
+    def symptoms_next_page(self):
+        if self.symptoms_page < self.symptoms_total_pages:
+            self.symptoms_page += 1
 
     def toggle_email_notifications(self):
         self.email_notifications = not self.email_notifications
@@ -395,13 +802,9 @@ class HealthDashboardState(rx.State):
     # Modal Handlers (Medication, Condition, Symptom)
     # =========================================================================
 
-    def open_medication_modal(self, medication: Dict[str, Any]):
+    def open_medication_modal(self, medication: dict[str, Any]):
         self.selected_medication = medication
         self.show_medication_modal = True
-
-    def close_medication_modal(self):
-        self.show_medication_modal = False
-        self.selected_medication = {}
 
     def set_show_medication_modal(self, value: bool):
         self.show_medication_modal = value
@@ -410,24 +813,16 @@ class HealthDashboardState(rx.State):
     async def log_dose(self, medication_id: str):
         self.show_medication_modal = False
 
-    def open_condition_modal(self, condition: Dict[str, Any]):
+    def open_condition_modal(self, condition: dict[str, Any]):
         self.selected_condition = condition
         self.show_condition_modal = True
-
-    def close_condition_modal(self):
-        self.show_condition_modal = False
-        self.selected_condition = {}
 
     def set_show_condition_modal(self, value: bool):
         self.show_condition_modal = value
 
-    def open_symptom_modal(self, symptom: Dict[str, Any]):
+    def open_symptom_modal(self, symptom: dict[str, Any]):
         self.selected_symptom = symptom
         self.show_symptom_modal = True
-
-    def close_symptom_modal(self):
-        self.show_symptom_modal = False
-        self.selected_symptom = {}
 
     def set_show_symptom_modal(self, value: bool):
         self.show_symptom_modal = value
@@ -449,12 +844,6 @@ class HealthDashboardState(rx.State):
     # Modal Handlers (Connect, Add Food, Suggest Integration)
     # =========================================================================
 
-    def open_connect_modal(self):
-        self.show_connect_modal = True
-
-    def close_connect_modal(self):
-        self.show_connect_modal = False
-
     def set_show_connect_modal(self, value: bool):
         self.show_connect_modal = value
 
@@ -466,9 +855,6 @@ class HealthDashboardState(rx.State):
         self.new_food_carbs = ""
         self.new_food_fat = ""
         self.new_food_meal_type = "snack"
-
-    def close_add_food_modal(self):
-        self.show_add_food_modal = False
 
     def set_show_add_food_modal(self, value: bool):
         self.show_add_food_modal = value
@@ -522,9 +908,6 @@ class HealthDashboardState(rx.State):
         self.suggested_integration_description = ""
         self.integration_suggestion_submitted = False
 
-    def close_suggest_integration_modal(self):
-        self.show_suggest_integration_modal = False
-
     def set_show_suggest_integration_modal(self, value: bool):
         self.show_suggest_integration_modal = value
 
@@ -537,156 +920,109 @@ class HealthDashboardState(rx.State):
     def submit_integration_suggestion(self):
         self.integration_suggestion_submitted = True
 
+    # =========================================================================
+    # Pagination Handlers
+    # =========================================================================
+
+    def medications_next_page(self):
+        """Go to next medications page."""
+        if self.medications_page < self.medications_total_pages:
+            self.medications_page += 1
+
+    def medications_previous_page(self):
+        """Go to previous medications page."""
+        if self.medications_page > 1:
+            self.medications_page -= 1
+
+    def food_entries_next_page(self):
+        """Go to next food entries page."""
+        if self.food_entries_page < self.food_entries_total_pages:
+            self.food_entries_page += 1
+
+    def food_entries_previous_page(self):
+        """Go to previous food entries page."""
+        if self.food_entries_page > 1:
+            self.food_entries_page -= 1
+
+    def conditions_next_page(self):
+        """Go to next conditions page."""
+        if self.conditions_page < self.conditions_total_pages:
+            self.conditions_page += 1
+
+    def conditions_previous_page(self):
+        """Go to previous conditions page."""
+        if self.conditions_page > 1:
+            self.conditions_page -= 1
+
+    def set_conditions_filter_with_reset(self, value: str):
+        """Set conditions filter and reset page to 1."""
+        self.conditions_filter = value
+        self.conditions_page = 1
+
+    def symptoms_next_page(self):
+        """Go to next symptoms page."""
+        if self.symptoms_page < self.symptoms_total_pages:
+            self.symptoms_page += 1
+
+    def symptoms_previous_page(self):
+        """Go to previous symptoms page."""
+        if self.symptoms_page > 1:
+            self.symptoms_page -= 1
+
+    def symptom_logs_next_page(self):
+        """Go to next symptom logs page."""
+        if self.symptom_logs_page < self.symptom_logs_total_pages:
+            self.symptom_logs_page += 1
+
+    def symptom_logs_previous_page(self):
+        """Go to previous symptom logs page."""
+        if self.symptom_logs_page > 1:
+            self.symptom_logs_page -= 1
+
+    def reminders_next_page(self):
+        """Go to next reminders page."""
+        if self.reminders_page < self.reminders_total_pages:
+            self.reminders_page += 1
+
+    def reminders_previous_page(self):
+        """Go to previous reminders page."""
+        if self.reminders_page > 1:
+            self.reminders_page -= 1
+
+    def symptom_trends_next_page(self):
+        """Go to next symptom trends page."""
+        if self.symptom_trends_page < self.symptom_trends_total_pages:
+            self.symptom_trends_page += 1
+
+    def symptom_trends_previous_page(self):
+        """Go to previous symptom trends page."""
+        if self.symptom_trends_page > 1:
+            self.symptom_trends_page -= 1
+
+    def data_sources_next_page(self):
+        """Go to next data sources page."""
+        if self.data_sources_page < self.data_sources_total_pages:
+            self.data_sources_page += 1
+
+    def data_sources_previous_page(self):
+        """Go to previous data sources page."""
+        if self.data_sources_page > 1:
+            self.data_sources_page -= 1
+
+    def set_data_sources_filter_with_reset(self, value: str):
+        """Set data sources filter and reset page to 1."""
+        self.data_sources_filter = value
+        self.data_sources_page = 1
+
 
 class AdminDashboardState(rx.State):
-    """State management for admin dashboard patient selection."""
+    """State management for admin dashboard tab navigation.
+
+    Patient data is managed by PatientState - this class only handles UI state.
+    """
 
     active_tab: str = "overview"
-    patients: List[Patient] = []
-    recently_active_patients: List[Patient] = []
-    patient_search_query: str = ""
-    selected_patient_id: Optional[str] = None
-    selected_patient: Optional[Patient] = None
-    is_loading: bool = False
-    _patients_loaded: bool = False
-    _recent_patients_loaded: bool = False
-
-    @rx.var
-    def has_selected_patient(self) -> bool:
-        return self.selected_patient_id is not None
-
-    @rx.var
-    def filtered_patients(self) -> List[Patient]:
-        if not self.patient_search_query:
-            return self.patients[:20]
-        query = self.patient_search_query.lower()
-        return [
-            p
-            for p in self.patients
-            if query in p["full_name"].lower() or query in p["email"].lower()
-        ][:20]
-
-    @rx.var
-    def selected_patient_name(self) -> str:
-        return self.selected_patient["full_name"] if self.selected_patient else ""
 
     def set_tab(self, tab: str):
+        """Set the active dashboard tab."""
         self.active_tab = tab
-
-    @rx.event(background=True)
-    async def load_patients_for_selection(self):
-        """Load patients list for selection dropdown."""
-        async with self:
-            if self._patients_loaded:
-                return
-            self.is_loading = True
-
-        try:
-            data = await load_all_patient_data()
-            async with self:
-                self.patients = data["patients"]
-                self.is_loading = False
-                self._patients_loaded = True
-            logger.info(
-                "load_patients_for_selection: %d patients", len(data["patients"])
-            )
-        except Exception as e:
-            logger.error("load_patients_for_selection: %s", e)
-            async with self:
-                self.is_loading = False
-
-    @rx.event(background=True)
-    async def load_recently_active_patients(self):
-        """Load recently active patients based on check-in activity.
-
-        Falls back to fetching the first few patients if no recent activity found.
-        """
-        from ...config import current_config
-        from ...functions.db_utils import (
-            get_recently_active_patients_sync,
-            get_all_patients_sync,
-        )
-
-        async with self:
-            if self._recent_patients_loaded:
-                return
-
-        try:
-
-            def _query():
-                # First try to get recently active patients
-                active = get_recently_active_patients_sync(
-                    limit=current_config.quick_access_patient_count
-                )
-                if active:
-                    return active
-
-                # Fallback: get first few patients from database
-                logger.info(
-                    "No recently active patients, fetching first %d patients",
-                    current_config.quick_access_patient_count,
-                )
-                return get_all_patients_sync()[
-                    : current_config.quick_access_patient_count
-                ]
-
-            users = await asyncio.to_thread(_query)
-
-            # Convert User models to Patient TypedDict format
-            recent_patients = []
-            for user in users:
-                recent_patients.append(
-                    {
-                        "id": str(user.external_id),
-                        "full_name": user.name,
-                        "email": user.email,
-                        "phone": user.phone or "",
-                        "age": 0,  # Not stored in User model
-                        "gender": "",
-                        "last_visit": (
-                            user.updated_at.strftime("%Y-%m-%d")
-                            if user.updated_at
-                            else ""
-                        ),
-                        "status": "active",
-                        "biomarker_score": 0,
-                        "medical_history": "",
-                        "next_appointment": "",
-                        "assigned_treatments": [],
-                    }
-                )
-
-            async with self:
-                self.recently_active_patients = recent_patients
-                self._recent_patients_loaded = True
-
-            logger.info("Loaded %d recently active patients", len(recent_patients))
-        except Exception as e:
-            logger.error("load_recently_active_patients: %s", e)
-            async with self:
-                self.recently_active_patients = []
-
-    def set_patient_search_query(self, query: str):
-        self.patient_search_query = query
-
-    def select_patient(self, patient: Patient):
-        self.selected_patient_id = patient["id"]
-        self.selected_patient = patient
-        self.patient_search_query = ""
-        logger.info("select_patient: %s", patient["id"])
-
-    def select_patient_by_id(self, patient_id: str):
-        """Select patient by ID (for use with foreach/lambda)."""
-        for p in self.patients:
-            if p["id"] == patient_id:
-                self.selected_patient_id = patient_id
-                self.selected_patient = p
-                self.patient_search_query = ""
-                logger.info("select_patient_by_id: %s", patient_id)
-                return
-        logger.warning("select_patient_by_id: patient %s not found", patient_id)
-
-    def clear_selected_patient(self):
-        self.selected_patient_id = None
-        self.selected_patient = None
-        logger.info("clear_selected_patient")

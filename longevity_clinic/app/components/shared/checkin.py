@@ -21,6 +21,7 @@ Usage:
 """
 
 import reflex as rx
+
 from ...styles.constants import GlassStyles
 
 
@@ -86,48 +87,126 @@ def topics_list(topics: list) -> rx.Component:
     )
 
 
+def format_date_display(timestamp: str) -> rx.Component:
+    """Format timestamp to show MM/DD prominently with year de-emphasized.
+
+    Args:
+        timestamp: ISO timestamp or date string
+
+    Returns:
+        Component with formatted date display
+    """
+    # Extract date parts - handles ISO format like "2025-01-15T10:30:00"
+    return rx.el.span(
+        # Month/Day in bold
+        rx.el.span(
+            timestamp.split("T")[0].split("-")[1],  # Month
+            "/",
+            timestamp.split("T")[0].split("-")[2],  # Day
+            class_name="font-medium text-slate-300",
+        ),
+        # Year de-emphasized
+        rx.el.span(
+            "/",
+            timestamp.split("T")[0].split("-")[0],  # Year
+            class_name="text-slate-500 text-xs ml-0.5",
+        ),
+        class_name="text-sm",
+    )
+
+
 def checkin_card(
     checkin: dict,
     show_patient_name: bool = False,
     on_click: rx.EventHandler | None = None,
+    on_edit: rx.EventHandler | None = None,
+    on_delete: rx.EventHandler | None = None,
 ) -> rx.Component:
     """Unified check-in card component for admin and patient views.
-
-    Uses admin-style design with:
-    - Type icon (not text label)
-    - Topics/keywords tags
-    - Status badge
-    - Optional patient name display
-    - Call type indicator (purple border)
 
     Args:
         checkin: Check-in data dict with keys: patient_name, type, timestamp,
                  summary, raw_transcript, key_topics, status
-        show_patient_name: Whether to show patient name (True for admin, False for patient)
+        show_patient_name: Whether to show patient name (True for admin)
         on_click: Optional click handler for opening details modal
+        on_edit: Optional edit handler (shows dropdown if provided)
+        on_delete: Optional delete handler (shows dropdown if provided)
 
     Returns:
         Styled card component
     """
+    show_menu = on_edit is not None or on_delete is not None
+
+    # Build menu items list
+    menu_items = []
+    if on_edit is not None:
+        menu_items.append(
+            rx.menu.item(
+                rx.icon("pencil", class_name="w-4 h-4 mr-2"),
+                "Edit",
+                on_click=lambda: on_edit(checkin["id"]),  # type: ignore
+            )
+        )
+    if on_delete is not None:
+        menu_items.append(
+            rx.menu.item(
+                rx.icon("trash-2", class_name="w-4 h-4 mr-2"),
+                "Delete",
+                color="red",
+                on_click=lambda: on_delete(checkin["id"]),  # type: ignore
+            )
+        )
+
+    # Dropdown menu for edit/delete actions
+    action_menu = (
+        rx.menu.root(
+            rx.menu.trigger(
+                rx.el.button(
+                    rx.icon("ellipsis-vertical", class_name="w-4 h-4 text-slate-400"),
+                    class_name="p-1 rounded hover:bg-white/10 transition-colors",
+                ),
+                on_click=rx.stop_propagation,  # Prevent card click when opening menu
+            ),
+            rx.menu.content(
+                *menu_items,
+                class_name="bg-slate-800 border border-white/10 rounded-lg shadow-xl",
+                on_click=rx.stop_propagation,  # Prevent card click when selecting item
+            ),
+        )
+        if show_menu
+        else rx.fragment()
+    )
+
     card_content = rx.el.div(
         rx.el.div(
-            # Header row: name/type and timestamp
+            # Header row: date, type icon, patient name (optional), status + menu
             rx.el.div(
+                # Left side: date + type icon + patient name
                 rx.el.div(
+                    # Date display (MM/DD/YYYY)
+                    format_date_display(checkin["timestamp"]),
+                    # Type icon
+                    rx.el.span(
+                        type_icon(checkin["type"]),
+                        class_name="ml-3 mr-2",
+                    ),
                     # Patient name (admin only)
                     rx.cond(
                         show_patient_name,
                         rx.el.span(
                             checkin["patient_name"],
-                            class_name="font-semibold text-white mr-2",
+                            class_name="font-semibold text-white",
                         ),
                         rx.fragment(),
                     ),
-                    # Type icon
-                    type_icon(checkin["type"]),
                     class_name="flex items-center",
                 ),
-                rx.el.span(checkin["timestamp"], class_name="text-xs text-slate-500"),
+                # Right side: status badge + action menu
+                rx.el.div(
+                    status_badge(checkin["status"]),
+                    action_menu,
+                    class_name="flex items-center gap-2",
+                ),
                 class_name="flex items-center justify-between mb-2",
             ),
             # Summary content
@@ -143,11 +222,10 @@ def checkin_card(
                 ),
                 class_name="text-sm text-slate-300 line-clamp-2 mb-3",
             ),
-            # Footer: topics and status
+            # Footer: topics only (status moved to header)
             rx.el.div(
                 topics_list(checkin["key_topics"]),
-                status_badge(checkin["status"]),
-                class_name="flex items-center justify-between mt-2",
+                class_name="flex items-center mt-2",
             ),
             class_name=rx.cond(
                 checkin["type"] == "call",
@@ -236,14 +314,16 @@ def stat_card(
 def patient_checkin_card(
     checkin: dict,
     on_click: rx.EventHandler | None = None,
+    on_edit: rx.EventHandler | None = None,
+    on_delete: rx.EventHandler | None = None,
 ) -> rx.Component:
-    """Patient check-in card (no patient name shown).
-
-    Pre-configured checkin_card for patient views that hides patient name.
+    """Patient check-in card with optional edit/delete dropdown.
 
     Args:
         checkin: Check-in data dict
         on_click: Optional click handler for opening details modal
+        on_edit: Optional handler for edit action (shows dropdown menu)
+        on_delete: Optional handler for delete action (shows dropdown menu)
 
     Returns:
         Styled card component without patient name
@@ -252,6 +332,8 @@ def patient_checkin_card(
         checkin=checkin,
         show_patient_name=False,
         on_click=on_click,
+        on_edit=on_edit,
+        on_delete=on_delete,
     )
 
 
@@ -274,4 +356,49 @@ def admin_checkin_card(
         checkin=checkin,
         show_patient_name=True,
         on_click=on_click,
+    )
+
+
+def pagination_controls(
+    has_previous: rx.Var[bool],
+    has_next: rx.Var[bool],
+    page_info: rx.Var[str],
+    showing_info: rx.Var[str],
+    on_previous: rx.EventHandler,
+    on_next: rx.EventHandler,
+) -> rx.Component:
+    """Reusable pagination controls component.
+
+    Args:
+        has_previous: Whether previous page exists
+        has_next: Whether next page exists
+        page_info: Page info string (e.g., 'Page 1 of 5')
+        showing_info: Showing info string (e.g., 'Showing 1-10 of 25')
+        on_previous: Event handler for previous page
+        on_next: Event handler for next page
+
+    Returns:
+        Pagination control component
+    """
+    return rx.el.div(
+        # Showing info (left)
+        rx.el.span(showing_info, class_name="text-sm text-slate-400"),
+        # Navigation (right)
+        rx.el.div(
+            rx.el.button(
+                rx.icon("chevron-left", class_name="w-4 h-4"),
+                on_click=on_previous,
+                disabled=~has_previous,
+                class_name="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all",
+            ),
+            rx.el.span(page_info, class_name="text-sm text-slate-300 mx-3"),
+            rx.el.button(
+                rx.icon("chevron-right", class_name="w-4 h-4"),
+                on_click=on_next,
+                disabled=~has_next,
+                class_name="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all",
+            ),
+            class_name="flex items-center",
+        ),
+        class_name="flex items-center justify-between mt-4 pt-4 border-t border-white/10",
     )

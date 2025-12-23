@@ -1,9 +1,11 @@
 """Data sources tab component for patient portal."""
 
 import reflex as rx
+
+from ....components.paginated_view import paginated_list
+from ....data.state_schemas import DataSource
 from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
-from ....data.state_schemas import DataSource
 
 
 def data_source_card(source: DataSource) -> rx.Component:
@@ -176,7 +178,7 @@ def data_sources_tab() -> rx.Component:
         rx.el.div(
             rx.el.button(
                 "Devices & Wearables",
-                on_click=lambda: HealthDashboardState.set_data_sources_filter(
+                on_click=lambda: HealthDashboardState.set_data_sources_filter_with_reset(
                     "devices"
                 ),
                 class_name=rx.cond(
@@ -187,7 +189,7 @@ def data_sources_tab() -> rx.Component:
             ),
             rx.el.button(
                 "API Connections",
-                on_click=lambda: HealthDashboardState.set_data_sources_filter(
+                on_click=lambda: HealthDashboardState.set_data_sources_filter_with_reset(
                     "api_connections"
                 ),
                 class_name=rx.cond(
@@ -198,7 +200,7 @@ def data_sources_tab() -> rx.Component:
             ),
             rx.el.button(
                 "Import History",
-                on_click=lambda: HealthDashboardState.set_data_sources_filter(
+                on_click=lambda: HealthDashboardState.set_data_sources_filter_with_reset(
                     "import_history"
                 ),
                 class_name=rx.cond(
@@ -230,12 +232,20 @@ def data_sources_tab() -> rx.Component:
                     ),
                     class_name=f"{GlassStyles.PANEL} p-5 mb-6",
                 ),
-                # Sources List
-                rx.el.div(
-                    rx.foreach(
-                        HealthDashboardState.filtered_data_sources, data_source_card
-                    ),
-                    class_name="space-y-4",
+                # Sources List (Paginated)
+                paginated_list(
+                    items=HealthDashboardState.data_sources_paginated,
+                    item_renderer=data_source_card,
+                    has_previous=HealthDashboardState.data_sources_has_previous,
+                    has_next=HealthDashboardState.data_sources_has_next,
+                    page_info=HealthDashboardState.data_sources_page_info,
+                    showing_info=HealthDashboardState.data_sources_showing_info,
+                    on_previous=HealthDashboardState.data_sources_previous_page,
+                    on_next=HealthDashboardState.data_sources_next_page,
+                    empty_icon="link",
+                    empty_message="No data sources found",
+                    empty_subtitle="Connect a device or service to get started",
+                    list_class="space-y-4",
                 ),
                 # "Not here?" link
                 rx.el.div(

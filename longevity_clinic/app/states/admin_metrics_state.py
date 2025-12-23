@@ -5,18 +5,18 @@ for admin dashboard visualizations.
 """
 
 import asyncio
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 import reflex as rx
 from sqlmodel import select
 
 from ..config import get_logger
 from ..data.model import (
-    PatientVisit,
-    TreatmentProtocolMetric,
     BiomarkerAggregate,
     ClinicDailyMetrics,
+    PatientVisit,
     ProviderMetrics,
+    TreatmentProtocolMetric,
 )
 
 logger = get_logger("longevity_clinic.admin_metrics_state")
@@ -349,9 +349,3 @@ class AdminMetricsState(rx.State):
                 self.treatment_completion_rates = DEFAULT_TREATMENT_COMPLETION
                 self.is_loading = False
                 self._data_loaded = True
-
-    @rx.event
-    def refresh_metrics(self):
-        """Force refresh metrics from database."""
-        self._data_loaded = False
-        return AdminMetricsState.load_metrics

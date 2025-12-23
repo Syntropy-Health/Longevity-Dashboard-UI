@@ -1,11 +1,9 @@
 """Utility functions for vlogs processing."""
 
-import json
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
+from longevity_clinic.app.data.process_schema import MetricLogsOutput
 from longevity_clinic.app.functions.db_utils import get_patient_name_by_phone
-from longevity_clinic.app.data.process_schema import CallLogsOutput
 
 
 def get_patient_name(phone: str) -> str:
@@ -13,14 +11,7 @@ def get_patient_name(phone: str) -> str:
     return get_patient_name_by_phone(phone, fallback="Unknown Patient")
 
 
-def json_dumps_or_none(
-    items: list, transform=lambda x: x.model_dump()
-) -> Optional[str]:
-    """JSON serialize list or return None if empty."""
-    return json.dumps([transform(i) for i in items]) if items else None
-
-
-def get_medications(output: CallLogsOutput) -> list:
+def get_medications(output: MetricLogsOutput) -> list:
     """Extract medications from output (handles both field names)."""
     return output.medications_entries
 
@@ -37,32 +28,38 @@ def parse_datetime(date_str: str) -> datetime:
     try:
         return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
     except (ValueError, AttributeError):
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
-def get_best_summary(api_summary: str, full_transcript: str) -> str:
-    """Extract best summary from API or transcript."""
-    if api_summary and len(api_summary.strip()) > 20:
-        return api_summary.strip()
+def tag_checkin_with_metadata(
+    output: MetricLogsOutput,
+    checkin_id: str,
+    checkin_type: str,
+    timestamp: str,
+    patient_name: str,
+    fallback_summary: str,
+) -> MetricLogsOutput:
+    """Override system-generated fields in checkin with provided metadata.
 
-    if full_transcript:
-        transcript = full_transcript.strip()
-        user_lines = [
-            line[5:].strip()
-            for line in transcript.split("\n")
-            if line.strip().lower().startswith("user:") and line[5:].strip()
-        ]
+    Args:
+        output: The MetricLogsOutput from LLM parsing
+        checkin_id: Unique identifier for this checkin
+        checkin_type: Type of checkin ("text", "call", "voice")
+        timestamp: Formatted timestamp string
+        patient_name: Patient name (uses LLM-extracted if empty)
+        fallback_summary: Content to use if summary is empty
 
-        if user_lines:
-            user_summary = " ".join(user_lines)
-            return (
-                user_summary[:200] + "..." if len(user_summary) > 200 else user_summary
-            )
+    Returns:
+        Updated MetricLogsOutput with tagged metadata
+    """
+    output.checkin.id = checkin_id
+    output.checkin.type = checkin_type
+    output.checkin.timestamp = timestamp
+    output.checkin.provider_reviewed = False
+    output.checkin.patient_name = patient_name or output.checkin.patient_name
+    output.checkin.summary = output.checkin.summary or fallback_summary
+    output.checkin.key_topics = output.checkin.key_topics or []
 
-        if len(transcript) > 100 and not transcript.lower().startswith("ai:"):
-            return transcript[:300] + "..." if len(transcript) > 300 else transcript
-
-        if len(transcript) < 100:
-            return "Brief call - conversation incomplete"
+    return output
 
     return "Voice call check-in"

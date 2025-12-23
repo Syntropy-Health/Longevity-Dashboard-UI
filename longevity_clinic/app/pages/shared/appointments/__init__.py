@@ -8,37 +8,37 @@ This module provides the appointment scheduling interface with:
 - Appointment details modal
 """
 
-from .page import appointments_page
 from .components import (
-    status_badge,
     appointment_card,
     mini_calendar,
+    status_badge,
     time_slots_grid,
 )
 from .modals import (
     booking_modal,
     details_modal,
 )
+from .page import appointments_page
 from .sections import (
-    appointments_sidebar,
-    upcoming_appointments_list,
     appointments_for_date_section,
-    appointments_content,
+    calendar_sidebar,
+    past_appointments_section,
+    upcoming_appointments_list,
 )
 
 __all__ = [
-    "appointments_page",
-    # Components
-    "status_badge",
     "appointment_card",
-    "mini_calendar",
-    "time_slots_grid",
+    "appointments_for_date_section",
+    "appointments_page",
     # Modals
     "booking_modal",
-    "details_modal",
     # Sections
-    "appointments_sidebar",
+    "calendar_sidebar",
+    "details_modal",
+    "mini_calendar",
+    "past_appointments_section",
+    # Components
+    "status_badge",
+    "time_slots_grid",
     "upcoming_appointments_list",
-    "appointments_for_date_section",
-    "appointments_content",
 ]

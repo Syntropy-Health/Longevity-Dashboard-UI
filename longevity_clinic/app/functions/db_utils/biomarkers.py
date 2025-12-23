@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import reflex as rx
 from sqlmodel import select
@@ -20,7 +20,7 @@ logger = get_logger("longevity_clinic.db_utils.biomarkers")
 # =============================================================================
 
 
-def get_biomarker_panels_sync(user_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def get_biomarker_panels_sync(user_id: int | None = None) -> list[dict[str, Any]]:
     """Get biomarker panels for display, grouped by category.
 
     Args:
@@ -42,7 +42,7 @@ def get_biomarker_panels_sync(user_id: Optional[int] = None) -> List[Dict[str, A
                 return []
 
             # Group by category
-            categories: Dict[str, List[Dict[str, Any]]] = {}
+            categories: dict[str, list[dict[str, Any]]] = {}
 
             for defn in definitions:
                 category = defn.category
@@ -98,8 +98,8 @@ def get_biomarker_panels_sync(user_id: Optional[int] = None) -> List[Dict[str, A
 
 
 def get_biomarker_definitions_sync(
-    category: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    category: str | None = None,
+) -> list[dict[str, Any]]:
     """Get all biomarker definitions from database."""
     try:
         with rx.session() as session:
@@ -133,7 +133,7 @@ def get_biomarker_definitions_sync(
 
 def get_biomarker_definition_by_name_sync(
     name: str,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Get biomarker definition by name."""
     try:
         with rx.session() as session:
@@ -172,9 +172,9 @@ def get_biomarker_definition_by_name_sync(
 
 def get_patient_biomarkers_sync(
     user_id: int,
-    biomarker_name: Optional[str] = None,
+    biomarker_name: str | None = None,
     limit: int = 100,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get biomarker readings for a patient."""
     try:
         with rx.session() as session:
@@ -224,14 +224,14 @@ def get_patient_biomarkers_sync(
 
 def get_latest_biomarkers_sync(
     user_id: int,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """Get latest reading for each biomarker for a user."""
     try:
         with rx.session() as session:
             # Get all biomarker definitions
             definitions = session.exec(select(BiomarkerDefinition)).all()
 
-            latest_readings: Dict[str, Dict[str, Any]] = {}
+            latest_readings: dict[str, dict[str, Any]] = {}
 
             for definition in definitions:
                 reading = session.exec(
@@ -269,10 +269,10 @@ def create_biomarker_reading_sync(
     user_id: int,
     biomarker_id: int,
     value: float,
-    reading_date: Optional[datetime] = None,
+    reading_date: datetime | None = None,
     source: str = "manual",
-    notes: Optional[str] = None,
-) -> Optional[Dict[str, Any]]:
+    notes: str | None = None,
+) -> dict[str, Any] | None:
     """Create a biomarker reading."""
     try:
         with rx.session() as session:
@@ -280,7 +280,7 @@ def create_biomarker_reading_sync(
                 user_id=user_id,
                 biomarker_id=biomarker_id,
                 value=value,
-                reading_date=reading_date or datetime.now(timezone.utc),
+                reading_date=reading_date or datetime.now(UTC),
                 source=source,
                 notes=notes,
             )
@@ -305,12 +305,12 @@ def get_biomarker_trends_sync(
     user_id: int,
     biomarker_name: str,
     days: int = 365,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get biomarker readings over time for trend analysis."""
     try:
         from datetime import timedelta
 
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
         with rx.session() as session:
             definition = session.exec(

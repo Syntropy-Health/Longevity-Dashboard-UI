@@ -5,17 +5,14 @@ Contains patient check-in seed data for both patient and admin views.
 
 from __future__ import annotations
 
-from typing import List
-
 # Import CheckIn type from state_schemas
 from ..state_schemas import CheckIn
-
 
 # =============================================================================
 # Patient Check-in Seed Data
 # =============================================================================
 
-CHECKIN_SEED_DATA: List[CheckIn] = [
+CHECKIN_SEED_DATA: list[CheckIn] = [
     {
         "id": "1",
         "type": "voice",
@@ -53,7 +50,7 @@ CHECKIN_SEED_DATA: List[CheckIn] = [
 # Admin Check-in Seed Data (extended format with status)
 # =============================================================================
 
-ADMIN_CHECKINS_SEED: List[dict] = [
+ADMIN_CHECKINS_SEED: list[dict] = [
     {
         "id": "1",
         "patient_id": "P001",
@@ -170,6 +167,6 @@ ADMIN_CHECKINS_SEED: List[dict] = [
 
 
 __all__ = [
-    "CHECKIN_SEED_DATA",
     "ADMIN_CHECKINS_SEED",
+    "CHECKIN_SEED_DATA",
 ]

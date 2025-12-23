@@ -10,8 +10,8 @@ This module contains reusable UI components for the notifications page:
 
 import reflex as rx
 
-from ....styles.constants import GlassStyles
 from ....states import NotificationState
+from ....styles.constants import GlassStyles
 
 
 def notification_icon(notification_type: str) -> rx.Component:

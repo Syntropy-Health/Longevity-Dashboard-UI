@@ -1,12 +1,12 @@
 """Standalone Settings page for patient portal."""
 
 import reflex as rx
+
 from ...components.layout import authenticated_layout
-from ...states import AuthState
-from ...states import HealthDashboardState
+from ...states import AuthState, HealthDashboardState
 from ...styles.constants import GlassStyles
-from .tabs import data_source_card, import_drop_zone
 from .modals import connect_source_modal, suggest_integration_modal
+from .tabs import data_source_card, import_drop_zone
 
 
 def settings_page() -> rx.Component:

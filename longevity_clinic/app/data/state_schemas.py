@@ -5,9 +5,9 @@ This module centralizes all TypedDict definitions that are used in Reflex state
 classes, separating data structure definitions from state logic.
 """
 
-from typing import List, TypedDict
-from pydantic import BaseModel, Field
+from typing import TypedDict
 
+from pydantic import BaseModel, Field
 
 # =============================================================================
 # Patient Schemas (from demo.py)
@@ -29,14 +29,6 @@ class Patient(TypedDict):
     medical_history: str
     next_appointment: str
     assigned_treatments: list[dict]
-
-
-class ChartData(TypedDict):
-    """Chart data type for patient analytics."""
-
-    name: str
-    value: int
-    value2: int
 
 
 # =============================================================================
@@ -165,7 +157,7 @@ class CheckIn(TypedDict):
     summary: str
     timestamp: str
     sentiment: str
-    key_topics: List[str]
+    key_topics: list[str]
     provider_reviewed: bool
     patient_name: str  # Added for admin view
 
@@ -179,7 +171,7 @@ class CheckInWithTranscript(TypedDict):
     raw_transcript: str
     timestamp: str
     sentiment: str
-    key_topics: List[str]
+    key_topics: list[str]
     provider_reviewed: bool
     patient_name: str
     status: str
@@ -198,7 +190,7 @@ class CheckInModel(BaseModel):
         default="neutral",
         description="Sentiment of the check-in: 'positive', 'negative', or 'neutral'",
     )
-    key_topics: List[str] = Field(
+    key_topics: list[str] = Field(
         default_factory=list,
         description="List of key health topics mentioned (e.g., 'fatigue', 'sleep', 'pain')",
     )
@@ -209,19 +201,6 @@ class CheckInModel(BaseModel):
     patient_name: str = Field(
         default="", description="Name of the patient associated with this check-in"
     )
-
-    def to_dict(self) -> CheckIn:
-        """Convert Pydantic model to TypedDict for state storage."""
-        return {
-            "id": self.id,
-            "type": self.type,
-            "summary": self.summary,
-            "timestamp": self.timestamp,
-            "sentiment": self.sentiment,
-            "key_topics": self.key_topics,
-            "provider_reviewed": self.provider_reviewed,
-            "patient_name": self.patient_name,
-        }
 
 
 # =============================================================================
@@ -271,7 +250,7 @@ class AdminCheckIn(TypedDict):
     timestamp: str
     submitted_at: str  # For sorting
     sentiment: str
-    key_topics: List[str]
+    key_topics: list[str]
     status: str  # pending, reviewed, flagged
     provider_reviewed: bool
     reviewed_by: str
@@ -381,6 +360,14 @@ class TreatmentProtocol(TypedDict):
     frequency: str
     cost: float
     status: str
+
+
+class TreatmentCategoryGroup(TypedDict):
+    """Grouped treatments by category for collapsible display."""
+
+    category: str
+    treatments: list[TreatmentProtocol]
+    count: int
 
 
 # =============================================================================

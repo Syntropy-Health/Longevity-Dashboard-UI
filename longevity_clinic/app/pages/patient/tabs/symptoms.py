@@ -1,6 +1,14 @@
 """Symptoms tab component for patient portal."""
 
 import reflex as rx
+
+from ....components.indicators import (
+    severity_bar,
+    severity_comparison,
+    trend_badge,
+    trend_text,
+)
+from ....components.paginated_view import paginated_list
 from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 
@@ -11,11 +19,6 @@ def symptom_card(symptom) -> rx.Component:
     Args:
         symptom: Symptom instance from PatientDashboardState
     """
-    trend_icon = {
-        "improving": ("trending-down", "text-teal-400"),
-        "stable": ("minus", "text-slate-400"),
-        "worsening": ("trending-up", "text-red-400"),
-    }
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -40,31 +43,7 @@ def symptom_card(symptom) -> rx.Component:
         ),
         rx.el.div(
             rx.el.div(
-                rx.match(
-                    symptom.trend,
-                    (
-                        "improving",
-                        rx.fragment(
-                            rx.icon(
-                                "trending-down", class_name="w-4 h-4 text-teal-400 mr-1"
-                            ),
-                            rx.el.span("Improving", class_name="text-xs text-teal-400"),
-                        ),
-                    ),
-                    (
-                        "worsening",
-                        rx.fragment(
-                            rx.icon(
-                                "trending-up", class_name="w-4 h-4 text-red-400 mr-1"
-                            ),
-                            rx.el.span("Worsening", class_name="text-xs text-red-400"),
-                        ),
-                    ),
-                    rx.fragment(
-                        rx.icon("minus", class_name="w-4 h-4 text-slate-400 mr-1"),
-                        rx.el.span("Stable", class_name="text-xs text-slate-400"),
-                    ),
-                ),
+                trend_text(symptom.trend),
                 class_name="flex items-center",
             ),
             rx.el.button(
@@ -79,7 +58,7 @@ def symptom_card(symptom) -> rx.Component:
 
 
 def symptom_log_item(log) -> rx.Component:
-    """Symptom log item.
+    """Symptom log item with severity progress bar.
 
     Args:
         log: SymptomEntry instance from PatientDashboardState
@@ -92,10 +71,8 @@ def symptom_log_item(log) -> rx.Component:
             class_name="flex-1",
         ),
         rx.el.div(
-            rx.el.span(
-                rx.text(f"Severity: {log.severity}/10"),
-                class_name="text-xs text-slate-300 bg-slate-700/50 px-2 py-1 rounded",
-            ),
+            severity_bar(log.severity, max_value=10, show_label=True, size="sm"),
+            class_name="w-20",
         ),
         class_name="flex items-start justify-between py-3 border-b border-white/5 last:border-0",
     )
@@ -166,7 +143,7 @@ def reminder_item(reminder: dict) -> rx.Component:
 
 
 def symptom_trend_item(trend) -> rx.Component:
-    """Symptom trend item component.
+    """Symptom trend item component using indicator components.
 
     Args:
         trend: SymptomTrend instance from PatientDashboardState
@@ -182,83 +159,17 @@ def symptom_trend_item(trend) -> rx.Component:
                     trend.symptom_name,
                     class_name="text-base font-semibold text-white mb-1",
                 ),
-                rx.el.div(
-                    rx.el.span("Current: ", class_name="text-xs text-slate-400"),
-                    rx.el.span(
-                        rx.text(f"{trend.current_severity}/10"),
-                        class_name="text-sm text-white font-medium",
-                    ),
-                    rx.el.span(
-                        " vs Previous: ", class_name="text-xs text-slate-400 ml-2"
-                    ),
-                    rx.el.span(
-                        rx.text(f"{trend.previous_severity}/10"),
-                        class_name="text-sm text-slate-300",
-                    ),
-                    class_name="flex items-center",
+                severity_comparison(
+                    current=trend.current_severity,
+                    previous=trend.previous_severity,
+                    max_value=10,
                 ),
                 rx.el.p(trend.period, class_name="text-xs text-slate-500 mt-1"),
             ),
             class_name="flex items-start flex-1",
         ),
         rx.el.div(
-            rx.match(
-                trend.trend,
-                (
-                    "improving",
-                    rx.el.div(
-                        rx.icon(
-                            "trending-down", class_name="w-4 h-4 text-teal-400 mr-1"
-                        ),
-                        rx.el.span(
-                            "Improving", class_name="text-xs font-medium text-teal-400"
-                        ),
-                        class_name="flex items-center px-3 py-1 rounded-full bg-teal-500/10",
-                    ),
-                ),
-                (
-                    "worsening",
-                    rx.el.div(
-                        rx.icon("trending-up", class_name="w-4 h-4 text-red-400 mr-1"),
-                        rx.el.span(
-                            "Worsening", class_name="text-xs font-medium text-red-400"
-                        ),
-                        class_name="flex items-center px-3 py-1 rounded-full bg-red-500/10",
-                    ),
-                ),
-                rx.el.div(
-                    rx.icon("minus", class_name="w-4 h-4 text-slate-400 mr-1"),
-                    rx.el.span(
-                        "Stable", class_name="text-xs font-medium text-slate-400"
-                    ),
-                    class_name="flex items-center px-3 py-1 rounded-full bg-slate-500/10",
-                ),
-            ),
-            rx.cond(
-                trend.change_percent > 0,
-                rx.match(
-                    trend.trend,
-                    (
-                        "improving",
-                        rx.el.p(
-                            rx.text(f"{trend.change_percent:.0f}%"),
-                            class_name="text-xs text-teal-400 mt-1 text-right",
-                        ),
-                    ),
-                    (
-                        "worsening",
-                        rx.el.p(
-                            rx.text(f"{trend.change_percent:.0f}%"),
-                            class_name="text-xs text-red-400 mt-1 text-right",
-                        ),
-                    ),
-                    rx.el.p(
-                        rx.text(f"{trend.change_percent:.0f}%"),
-                        class_name="text-xs text-slate-400 mt-1 text-right",
-                    ),
-                ),
-                rx.fragment(),
-            ),
+            trend_badge(trend.trend),
             class_name="flex flex-col items-end",
         ),
         class_name=f"{GlassStyles.PANEL} p-4 flex justify-between items-center mb-3",
@@ -325,15 +236,38 @@ def symptoms_tab() -> rx.Component:
                     class_name="text-lg font-semibold text-white mb-4",
                 ),
                 rx.el.div(
-                    rx.foreach(HealthDashboardState.symptom_logs, symptom_log_item),
+                    paginated_list(
+                        items=HealthDashboardState.symptom_logs_paginated,
+                        item_renderer=symptom_log_item,
+                        has_previous=HealthDashboardState.symptom_logs_has_previous,
+                        has_next=HealthDashboardState.symptom_logs_has_next,
+                        page_info=HealthDashboardState.symptom_logs_page_info,
+                        showing_info=HealthDashboardState.symptom_logs_showing_info,
+                        on_previous=HealthDashboardState.symptom_logs_previous_page,
+                        on_next=HealthDashboardState.symptom_logs_next_page,
+                        empty_icon="clipboard-list",
+                        empty_message="No symptom logs yet",
+                        empty_subtitle="Start logging symptoms to track them over time",
+                        list_class="",
+                    ),
                     class_name=f"{GlassStyles.PANEL} p-4",
                 ),
             ),
             rx.cond(
                 HealthDashboardState.symptoms_filter == "symptoms",
-                rx.el.div(
-                    rx.foreach(HealthDashboardState.symptoms, symptom_card),
-                    class_name="space-y-4",
+                paginated_list(
+                    items=HealthDashboardState.symptoms_paginated,
+                    item_renderer=symptom_card,
+                    has_previous=HealthDashboardState.symptoms_has_previous,
+                    has_next=HealthDashboardState.symptoms_has_next,
+                    page_info=HealthDashboardState.symptoms_page_info,
+                    showing_info=HealthDashboardState.symptoms_showing_info,
+                    on_previous=HealthDashboardState.symptoms_previous_page,
+                    on_next=HealthDashboardState.symptoms_next_page,
+                    empty_icon="thermometer",
+                    empty_message="No symptoms tracked",
+                    empty_subtitle="Your tracked symptoms will appear here",
+                    list_class="space-y-4",
                 ),
                 rx.cond(
                     HealthDashboardState.symptoms_filter == "reminders",
@@ -342,9 +276,19 @@ def symptoms_tab() -> rx.Component:
                             "Today's Reminders",
                             class_name="text-lg font-semibold text-white mb-4",
                         ),
-                        rx.el.div(
-                            rx.foreach(HealthDashboardState.reminders, reminder_item),
-                            class_name="space-y-0",
+                        paginated_list(
+                            items=HealthDashboardState.reminders_paginated,
+                            item_renderer=reminder_item,
+                            has_previous=HealthDashboardState.reminders_has_previous,
+                            has_next=HealthDashboardState.reminders_has_next,
+                            page_info=HealthDashboardState.reminders_page_info,
+                            showing_info=HealthDashboardState.reminders_showing_info,
+                            on_previous=HealthDashboardState.reminders_previous_page,
+                            on_next=HealthDashboardState.reminders_next_page,
+                            empty_icon="bell",
+                            empty_message="No reminders",
+                            empty_subtitle="Your reminders will appear here",
+                            list_class="space-y-0",
                         ),
                     ),
                     rx.el.div(
@@ -356,11 +300,19 @@ def symptoms_tab() -> rx.Component:
                             "Track how your symptoms are changing over time.",
                             class_name="text-sm text-slate-400 mb-4",
                         ),
-                        rx.el.div(
-                            rx.foreach(
-                                HealthDashboardState.symptom_trends, symptom_trend_item
-                            ),
-                            class_name="space-y-0",
+                        paginated_list(
+                            items=HealthDashboardState.symptom_trends_paginated,
+                            item_renderer=symptom_trend_item,
+                            has_previous=HealthDashboardState.symptom_trends_has_previous,
+                            has_next=HealthDashboardState.symptom_trends_has_next,
+                            page_info=HealthDashboardState.symptom_trends_page_info,
+                            showing_info=HealthDashboardState.symptom_trends_showing_info,
+                            on_previous=HealthDashboardState.symptom_trends_previous_page,
+                            on_next=HealthDashboardState.symptom_trends_next_page,
+                            empty_icon="trending-up",
+                            empty_message="No trend data",
+                            empty_subtitle="Symptom trends will appear as you log more data",
+                            list_class="space-y-0",
                         ),
                     ),
                 ),

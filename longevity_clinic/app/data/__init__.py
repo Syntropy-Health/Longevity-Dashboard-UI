@@ -1,211 +1,248 @@
 """
-Data module for shared categories, constants, and data schemas.
+Data module for shared categories, constants, schemas, and database models.
+
+This module exports:
+- Constants: Treatment/biomarker categories, statuses, and configuration
+- State Schemas: TypedDict/Pydantic models for component state (state_schemas.py)
+- API Schemas: Request/response models for external APIs (api_schemas.py)
+- DB Models: SQLModel database tables (model.py)
+- Seed Data: Demo data for development/testing (seed/)
 """
 
-from .categories import (
-    TREATMENT_CATEGORIES,
-    TREATMENT_CATEGORY_COLORS,
-    TREATMENT_FREQUENCIES,
-    TREATMENT_STATUSES,
-    PATIENT_STATUSES,
-    HEALTH_KEYWORDS,
-    HealthKeyword,
+# =============================================================================
+# Constants and Enums (categories.py, biomarkers.py)
+# =============================================================================
+# =============================================================================
+# API Schemas - Request/Response models for external APIs (api_schemas.py)
+# =============================================================================
+from .api_schemas import (
+    CallLogsAPIConfig,
+    CallLogsQueryParams,
+    TranscriptSummarizationRequest,
 )
-
 from .biomarkers import (
     BIOMARKER_CATEGORIES,
     BIOMARKER_SIMPLE_CATEGORIES,
     BIOMARKER_STATUSES,
     BIOMARKER_TRENDS,
-    BiomarkerMetric,
     BiomarkerCategory,
-    MeasurementUnit,
+    BiomarkerCategoryEnum,
+    BiomarkerMetric,
     BiomarkerMetricName,
+    BiomarkerSimpleCategoryEnum,
     BiomarkerStatus,
     BiomarkerTrend,
-    BiomarkerCategoryEnum,
-    BiomarkerSimpleCategoryEnum,
+    MeasurementUnit,
     generate_history,
     get_biomarker_panels,
 )
-
-from .state_schemas import (
-    # Patient schemas
-    Patient,
-    ChartData,
-    # Patient dashboard schemas
-    NutritionSummary,
-    FoodEntry,
-    MedicationEntry,
-    Condition,
-    Symptom,
-    SymptomEntry,
-    Reminder,
-    SymptomTrend,
-    DataSource,
-    CheckIn,
-    CheckInModel,
-    # Call Log schemas
-    CallLogEntry,
-    TranscriptSummary,
-    # Admin Check-in schemas
-    AdminCheckIn,
-    # Auth schemas
-    User,
-    # Biomarker schemas
-    BiomarkerDataPoint,
-    Biomarker,
-    PortalAppointment,
-    PortalTreatment,
-    # Notification schemas
-    Notification,
-    # Treatment schemas
-    TreatmentProtocol,
-    # Appointment schemas
-    Appointment,
-    TimeSlot,
+from .categories import (
+    HEALTH_KEYWORDS,
+    PATIENT_STATUSES,
+    TREATMENT_CATEGORIES,
+    TREATMENT_CATEGORY_COLORS,
+    TREATMENT_FREQUENCIES,
+    TREATMENT_STATUSES,
+    HealthKeyword,
 )
 
-from .api_schemas import (
-    # Call Logs API schemas
-    CallLogsQueryParams,
-    CallLogsAPIConfig,
-    TranscriptSummarizationRequest,
+# =============================================================================
+# Database Models - SQLModel/rx.Model tables (model.py)
+# Naming convention: <Schema>DBModel to distinguish from state TypedDicts/Pydantic
+# =============================================================================
+from .model import (
+    CallLog as CallLogDBModel,
+    CallTranscript as CallTranscriptDBModel,
+    CheckIn as CheckInDBModel,
+    FoodLogEntry as FoodLogEntryDBModel,
+    MedicationEntry as MedicationEntryDBModel,
+    Notification as NotificationDBModel,
+    SymptomEntry as SymptomEntryDBModel,
+    User as UserDBModel,
 )
 
-# Seed data (modular replacement for demo.py)
+# =============================================================================
+# Seed Data - Demo data for development/testing (seed/)
+# =============================================================================
 from .seed import (
-    # Canonical seed data names
-    BIOMARKER_METRIC_SEED_DATA,
+    # Admin check-ins
+    ADMIN_CHECKINS_SEED,
+    # Notifications
     ADMIN_NOTIFICATIONS_SEED,
-    PATIENT_NOTIFICATIONS_SEED,
+    BIOMARKER_CHART_SEED,
+    # Biomarkers
+    BIOMARKER_METRIC_SEED_DATA,
+    # Check-ins
+    CHECKIN_SEED_DATA,
+    CONDITIONS_SEED,
+    DATA_SOURCES_SEED,
+    # Patients
     DEMO_PATIENTS,
+    DEMO_PATIENTS_STATE,
     DEMO_PHONE_NUMBER,
-    NUTRITION_SUMMARY_SEED,
     FOOD_ENTRIES_SEED,
     MEDICATIONS_SEED,
-    CONDITIONS_SEED,
-    SYMPTOMS_SEED,
-    SYMPTOM_LOGS_SEED,
-    REMINDERS_SEED,
-    SYMPTOM_TRENDS_SEED,
-    DATA_SOURCES_SEED,
-    CHECKIN_SEED_DATA,
-    DEMO_PATIENTS_STATE,
+    # Patient dashboard
+    NUTRITION_SUMMARY_SEED,
+    PATIENT_NOTIFICATIONS_SEED,
+    # Charts
     PATIENT_TREND_SEED,
-    TREATMENT_CHART_SEED,
-    BIOMARKER_CHART_SEED,
     PHONE_TO_PATIENT_SEED,
+    REMINDERS_SEED,
+    SYMPTOM_LOGS_SEED,
+    SYMPTOM_TRENDS_SEED,
+    SYMPTOMS_SEED,
+    TREATMENT_CHART_SEED,
 )
 
-# Database models (SQLModel/rx.Model)
-from .model import (
-    User as UserModel,
-    CallLog as CallLogModel,
-    CallTranscript as CallTranscriptModel,
-    CallSummary as CallSummaryModel,
-    CheckIn as CheckInModel_DB,
-    Notification as NotificationModel,
-    MedicationEntry as MedicationEntryModel,
-    FoodLogEntry as FoodLogEntryModel,
-    SymptomEntry as SymptomEntryModel,
+# =============================================================================
+# State Schemas - TypedDict/Pydantic for Reflex component state (state_schemas.py)
+# =============================================================================
+from .state_schemas import (
+    AdminCheckIn,
+    # Appointments
+    Appointment,
+    Biomarker,
+    # Biomarkers
+    BiomarkerDataPoint,
+    # Call logs
+    CallLogEntry,
+    # Check-ins
+    CheckIn,
+    CheckInModel,
+    CheckInWithTranscript,
+    Condition,
+    DataSource,
+    FoodEntry,
+    MedicationEntry,
+    # Notifications
+    Notification,
+    # Patient dashboard
+    NutritionSummary,
+    # Patient profile
+    Patient,
+    # Portal views
+    PortalAppointment,
+    PortalTreatment,
+    Reminder,
+    Symptom,
+    SymptomEntry,
+    SymptomTrend,
+    TimeSlot,
+    TranscriptSummary,
+    # Treatments
+    TreatmentProtocol,
+    # Auth
+    User,
 )
 
 # NOTE: Database helpers have moved to longevity_clinic.app.functions.db_utils
 # Import from there instead of data.db_helpers
 
 __all__ = [
-    # Categories and constants
-    "TREATMENT_CATEGORIES",
-    "TREATMENT_CATEGORY_COLORS",
+    # ==========================================================================
+    # Seed Data
+    # ==========================================================================
+    "ADMIN_CHECKINS_SEED",
+    "ADMIN_NOTIFICATIONS_SEED",
     "BIOMARKER_CATEGORIES",
+    "BIOMARKER_CHART_SEED",
+    "BIOMARKER_METRIC_SEED_DATA",
     "BIOMARKER_SIMPLE_CATEGORIES",
-    "TREATMENT_FREQUENCIES",
-    "TREATMENT_STATUSES",
-    "PATIENT_STATUSES",
-    "HEALTH_KEYWORDS",
-    "HealthKeyword",
     "BIOMARKER_STATUSES",
     "BIOMARKER_TRENDS",
-    # Biomarker types
-    "MeasurementUnit",
-    "BiomarkerMetricName",
-    "BiomarkerStatus",
-    "BiomarkerTrend",
-    "BiomarkerCategoryEnum",
-    "BiomarkerSimpleCategoryEnum",
-    "BiomarkerMetric",
-    "BiomarkerCategory",
-    "generate_history",
-    "get_biomarker_panels",
-    # State schemas - Patient
-    "Patient",
-    "ChartData",
-    # State schemas - Patient dashboard
-    "NutritionSummary",
-    "FoodEntry",
-    "MedicationEntry",
-    "Condition",
-    "Symptom",
-    "SymptomEntry",
-    "Reminder",
-    "SymptomTrend",
-    "DataSource",
-    "CheckIn",
-    "CheckInModel",
-    # State schemas - Call logs
-    "CallLogEntry",
-    "TranscriptSummary",
-    # State schemas - Admin
-    "AdminCheckIn",
-    # State schemas - Auth
-    "User",
-    # State schemas - Biomarker state
-    "BiomarkerDataPoint",
-    "Biomarker",
-    "PortalAppointment",
-    "PortalTreatment",
-    # State schemas - Notification
-    "Notification",
-    # State schemas - Treatment
-    "TreatmentProtocol",
-    # State schemas - Appointment
-    "Appointment",
-    "TimeSlot",
-    # API schemas
-    "CallLogsQueryParams",
-    "CallLogsAPIConfig",
-    "TranscriptSummarizationRequest",
-    # Seed data constants (canonical names)
-    "BIOMARKER_METRIC_SEED_DATA",
-    "ADMIN_NOTIFICATIONS_SEED",
-    "PATIENT_NOTIFICATIONS_SEED",
-    "DEMO_PATIENTS",
-    "DEMO_PHONE_NUMBER",
-    "NUTRITION_SUMMARY_SEED",
-    "FOOD_ENTRIES_SEED",
-    "MEDICATIONS_SEED",
+    "CHECKIN_SEED_DATA",
     "CONDITIONS_SEED",
+    "DATA_SOURCES_SEED",
+    "DEMO_PATIENTS",
+    "DEMO_PATIENTS_STATE",
+    "DEMO_PHONE_NUMBER",
+    "FOOD_ENTRIES_SEED",
+    "HEALTH_KEYWORDS",
+    "MEDICATIONS_SEED",
+    "NUTRITION_SUMMARY_SEED",
+    "PATIENT_NOTIFICATIONS_SEED",
+    "PATIENT_STATUSES",
+    "PATIENT_TREND_SEED",
+    "PHONE_TO_PATIENT_SEED",
+    "REMINDERS_SEED",
     "SYMPTOMS_SEED",
     "SYMPTOM_LOGS_SEED",
-    "REMINDERS_SEED",
     "SYMPTOM_TRENDS_SEED",
-    "DATA_SOURCES_SEED",
-    "CHECKIN_SEED_DATA",
-    "DEMO_PATIENTS_STATE",
-    "PATIENT_TREND_SEED",
+    # ==========================================================================
+    # Constants and Enums
+    # ==========================================================================
+    "TREATMENT_CATEGORIES",
+    "TREATMENT_CATEGORY_COLORS",
     "TREATMENT_CHART_SEED",
-    "BIOMARKER_CHART_SEED",
-    "PHONE_TO_PATIENT_SEED",
-    # Database models
-    "UserModel",
-    "CallLogModel",
-    "CallTranscriptModel",
-    "CallSummaryModel",
-    "CheckInModel_DB",
-    "NotificationModel",
-    "MedicationEntryModel",
-    "FoodLogEntryModel",
-    "SymptomEntryModel",
+    "TREATMENT_FREQUENCIES",
+    "TREATMENT_STATUSES",
+    "AdminCheckIn",
+    # Appointments
+    "Appointment",
+    "Biomarker",
+    "BiomarkerCategory",
+    "BiomarkerCategoryEnum",
+    # Biomarkers
+    "BiomarkerDataPoint",
+    "BiomarkerMetric",
+    "BiomarkerMetricName",
+    "BiomarkerSimpleCategoryEnum",
+    "BiomarkerStatus",
+    "BiomarkerTrend",
+    "CallLogDBModel",
+    # Call logs
+    "CallLogEntry",
+    "CallLogsAPIConfig",
+    # ==========================================================================
+    # API Schemas
+    # ==========================================================================
+    "CallLogsQueryParams",
+    "CallTranscriptDBModel",
+    # Check-ins
+    "CheckIn",
+    "CheckInDBModel",
+    "CheckInModel",
+    "CheckInWithTranscript",
+    "Condition",
+    "DataSource",
+    "FoodEntry",
+    "FoodLogEntryDBModel",
+    "HealthKeyword",
+    # Biomarker types/enums
+    "MeasurementUnit",
+    "MedicationEntry",
+    "MedicationEntryDBModel",
+    # Notifications
+    "Notification",
+    "NotificationDBModel",
+    # Patient dashboard
+    "NutritionSummary",
+    # ==========================================================================
+    # State Schemas (TypedDict/Pydantic for component state)
+    # ==========================================================================
+    # Patient
+    "Patient",
+    # Portal views
+    "PortalAppointment",
+    "PortalTreatment",
+    "Reminder",
+    "Symptom",
+    "SymptomEntry",
+    "SymptomEntryDBModel",
+    "SymptomTrend",
+    "TimeSlot",
+    "TranscriptSummarizationRequest",
+    "TranscriptSummary",
+    # Treatments
+    "TreatmentProtocol",
+    # Auth
+    "User",
+    # ==========================================================================
+    # Database Models (SQLModel) - use <Name>DBModel naming
+    # ==========================================================================
+    "UserDBModel",
+    "generate_history",
+    "get_biomarker_panels",
     # NOTE: Database helpers have moved to longevity_clinic.app.functions.db_utils
 ]

@@ -4,15 +4,13 @@ Provides synchronous database operations for appointments.
 Used by AppointmentState for DB-first data loading with seed fallback.
 """
 
-from typing import Optional
-
 import reflex as rx
 
 from longevity_clinic.app.data.model import Appointment
 
 
 def get_appointments_sync(
-    status: Optional[str] = None,
+    status: str | None = None,
     limit: int = 100,
 ) -> list[dict]:
     """Get appointments with optional status filter.
@@ -175,11 +173,13 @@ def update_appointment_status_sync(
 
 def create_appointment_sync(
     appointment_data: dict,
-) -> Optional[str]:
+    user_id: int | None = None,
+) -> str | None:
     """Create a new appointment in the database.
 
     Args:
         appointment_data: Dict with appointment fields
+        user_id: Optional user database ID to link the appointment
 
     Returns:
         The new appointment_id if successful, None otherwise
@@ -188,6 +188,7 @@ def create_appointment_sync(
         with rx.session() as session:
             appointment = Appointment(
                 appointment_id=appointment_data.get("id", ""),
+                user_id=user_id or appointment_data.get("user_id"),
                 title=appointment_data.get("title", ""),
                 description=appointment_data.get("description"),
                 date=appointment_data.get("date", ""),

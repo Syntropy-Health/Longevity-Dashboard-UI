@@ -1,20 +1,16 @@
 """Patient Check-ins page with unified role-based routing."""
 
 import reflex as rx
+
 from ...components.layout import authenticated_layout
-from ...components.modals import transcript_modal
-from ...components.shared import (
-    patient_checkin_card as _patient_checkin_card,
-    stat_card,
-)
+from ...components.modals import checkin_detail_modal
+from ...components.paginated_view import paginated_list
+from ...components.shared import patient_checkin_card, stat_card
 from ...states import AuthState
 from ...states.shared.checkin import CheckinState
 from ...styles.constants import GlassStyles
-from .modals import checkin_modal
-
-# Import admin view from admin module
 from ..admin.checkins import admin_checkins_view
-
+from .modals import checkin_modal, delete_checkin_confirm_modal, edit_checkin_modal
 
 # =============================================================================
 # Page Wrapper (for on_mount/on_unmount lifecycle)
@@ -22,24 +18,18 @@ from ..admin.checkins import admin_checkins_view
 
 
 def checkins_page_wrapper():
-    """Wrapper for checkins page with background processing lifecycle."""
+    """Wrapper for checkins page with CDC sync loop lifecycle.
+
+    The sync loop handles:
+    - Initial load of checkins from database
+    - Periodic processing of unprocessed call logs
+    - LLM extraction of health data (medications, food, symptoms)
+    - UI refresh when new data is processed
+    """
     return rx.fragment(
         checkins_page(),
-        on_mount=CheckinState.start_background_processing,
-        on_unmount=CheckinState.stop_background_processing,
-    )
-
-
-# =============================================================================
-# Patient Components
-# =============================================================================
-
-
-def patient_checkin_card(checkin: dict) -> rx.Component:
-    """Patient check-in card (no patient name shown)."""
-    return _patient_checkin_card(
-        checkin=checkin,
-        on_click=CheckinState.open_transcript_modal,
+        on_mount=CheckinState.start_calls_to_checkin_sync_loop,
+        on_unmount=CheckinState.stop_checkin_sync_loop,
     )
 
 
@@ -155,7 +145,7 @@ def patient_checkins_view() -> rx.Component:
                 class_name="text-xs mb-4",
             ),
         ),
-        # Check-ins List
+        # Check-ins List with Pagination
         rx.el.div(
             rx.el.h3(
                 rx.icon(
@@ -164,18 +154,42 @@ def patient_checkins_view() -> rx.Component:
                 "Recent Check-ins",
                 class_name="text-lg font-semibold text-white mb-4 flex items-center",
             ),
-            rx.el.div(
-                rx.foreach(CheckinState.checkins, patient_checkin_card),
-                class_name="space-y-4",
+            paginated_list(
+                items=CheckinState.paginated_checkins,
+                item_renderer=lambda c: patient_checkin_card(
+                    checkin=c,
+                    on_click=CheckinState.open_checkin_detail,
+                    on_edit=CheckinState.open_edit_modal,
+                    on_delete=CheckinState.open_delete_confirm,
+                ),
+                has_previous=CheckinState.has_previous_page,
+                has_next=CheckinState.has_next_page,
+                page_info=CheckinState.page_info,
+                showing_info=CheckinState.showing_info,
+                on_previous=CheckinState.previous_page,
+                on_next=CheckinState.next_page,
+                empty_icon="inbox",
+                empty_message="No check-ins yet",
+                empty_subtitle="Call your voice line or submit a check-in to get started.",
             ),
         ),
         # Modals
         checkin_modal(),
-        transcript_modal(
-            show_modal=CheckinState.show_transcript_modal,
-            transcript_text=CheckinState.selected_checkin_transcript,
-            on_close=CheckinState.close_transcript_modal,
-            title="Full Transcript",
+        edit_checkin_modal(),
+        delete_checkin_confirm_modal(),
+        checkin_detail_modal(
+            show_modal=CheckinState.show_checkin_detail_modal,
+            checkin_status=CheckinState.selected_checkin_status,
+            checkin_patient_name=CheckinState.selected_checkin_patient_name,
+            checkin_timestamp=CheckinState.selected_checkin_timestamp,
+            checkin_type=CheckinState.selected_checkin_type,
+            checkin_summary=CheckinState.selected_checkin_summary,
+            checkin_topics=CheckinState.selected_checkin_topics,
+            checkin_id=CheckinState.selected_checkin_id,
+            checkin_raw_transcript=CheckinState.selected_checkin_transcript,
+            on_close=CheckinState.set_show_checkin_detail_modal(False),
+            show_patient_name=False,  # Patient view doesn't need their own name
+            show_actions=False,  # Patient view doesn't need admin actions
         ),
     )
 

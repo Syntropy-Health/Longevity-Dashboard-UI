@@ -121,7 +121,7 @@ def run_export(output_dir: str, include_data: bool = True) -> None:
         f.write("psql -U postgres -c 'CREATE DATABASE longevity_clinic;'\n")
         f.write("```\n")
 
-    print(f"\n✅ Migration export complete!")
+    print("\n✅ Migration export complete!")
     print(f"   Output directory: {output_path.absolute()}")
 
 

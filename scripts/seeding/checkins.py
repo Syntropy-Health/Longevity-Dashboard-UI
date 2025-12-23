@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
@@ -44,7 +44,7 @@ def load_checkins(session: Session, user_id_map: dict[str, int]) -> SeedResult:
         try:
             timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
 
         # Get user_id from patient_name
         user_id = None

@@ -1,15 +1,16 @@
-"""Notification state management for admin and patient views."""
+"""Notification state management for admin and patient views.
+
+All notifications are loaded from the database.
+Seed data with: python scripts/load_seed_data.py
+"""
 
 import reflex as rx
 
-from ..auth.base import AuthState
-from ...config import current_config, get_logger
-from ...data.seed import ADMIN_NOTIFICATIONS_SEED, PATIENT_NOTIFICATIONS_SEED
+from ...config import get_logger
 from ...functions.db_utils import (
     get_notifications_for_role_sync,
-    mark_notification_read_sync,
-    delete_notification_sync,
 )
+from ..auth.base import AuthState
 
 logger = get_logger("longevity_clinic.notifications")
 
@@ -39,46 +40,22 @@ class NotificationState(rx.State):
         """Load notifications based on user role from AuthState."""
         auth_state = await self.get_state(AuthState)
         role = "admin" if auth_state.is_admin else "patient"
-        seed_data = (
-            ADMIN_NOTIFICATIONS_SEED if role == "admin" else PATIENT_NOTIFICATIONS_SEED
-        )
 
-        if current_config.is_demo:
-            self.notifications = list(seed_data)
-        else:
-            db_notifications = get_notifications_for_role_sync(role)
-            if db_notifications:
-                self.notifications = db_notifications
-                logger.info(
-                    "Loaded %d notifications from DB for %s",
-                    len(db_notifications),
-                    role,
-                )
-            else:
-                logger.warning("No notifications in DB for %s, using seed data", role)
-                self.notifications = list(seed_data)
-
-    def load_admin_notifications(self):
-        """Load notifications for admin users."""
-        if current_config.is_demo:
-            self.notifications = list(ADMIN_NOTIFICATIONS_SEED)
-        else:
-            db_notifications = get_notifications_for_role_sync("admin")
-            self.notifications = (
-                db_notifications if db_notifications else list(ADMIN_NOTIFICATIONS_SEED)
+        db_notifications = get_notifications_for_role_sync(role)
+        if db_notifications:
+            self.notifications = db_notifications
+            logger.info(
+                "Loaded %d notifications from DB for %s",
+                len(db_notifications),
+                role,
             )
-
-    def load_patient_notifications(self):
-        """Load notifications for patient users."""
-        if current_config.is_demo:
-            self.notifications = list(PATIENT_NOTIFICATIONS_SEED)
         else:
-            db_notifications = get_notifications_for_role_sync("patient")
-            self.notifications = (
-                db_notifications
-                if db_notifications
-                else list(PATIENT_NOTIFICATIONS_SEED)
+            logger.warning(
+                "No notifications in DB for %s. "
+                "Run 'python scripts/load_seed_data.py' to seed data.",
+                role,
             )
+            self.notifications = []
 
     def set_filter(self, filter_type: str):
         """Set the notification filter type."""
@@ -112,33 +89,7 @@ class NotificationState(rx.State):
         if self.selected_notification.get("id") == notification_id:
             self.selected_notification = {}
 
-    def get_icon_for_type(self, notification_type: str) -> str:
-        """Get the appropriate icon name for a notification type."""
-        icons = {
-            "info": "info",
-            "warning": "alert-triangle",
-            "success": "circle-check",
-            "error": "circle-x",
-            "appointment": "calendar",
-            "treatment": "activity",
-            "lab": "flask-conical",
-        }
-        return icons.get(notification_type, "bell")
-
     @rx.var
     def has_selected_notification(self) -> bool:
         """Check if a notification is currently selected."""
         return bool(self.selected_notification and self.selected_notification.get("id"))
-
-    def get_color_for_type(self, notification_type: str) -> str:
-        """Get the appropriate color class for a notification type."""
-        colors = {
-            "info": "text-blue-500",
-            "warning": "text-amber-500",
-            "success": "text-emerald-500",
-            "error": "text-rose-500",
-            "appointment": "text-teal-500",
-            "treatment": "text-purple-500",
-            "lab": "text-cyan-500",
-        }
-        return colors.get(notification_type, "text-gray-500")

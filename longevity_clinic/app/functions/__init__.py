@@ -16,19 +16,19 @@ from __future__ import annotations
 # Local application - config
 from longevity_clinic.app.config import VlogsConfig
 
-# Local application - LLM utilities
-from .llm import (
-    get_chat_model,
-    get_structured_output_model,
-    parse_with_structured_output,
-)
-
 # Local application - admins
 from .admins import (
     count_checkins_by_status,
     extract_health_topics,
     filter_checkins,
     get_patient_name_from_phone,
+)
+
+# Local application - LLM utilities
+from .llm import (
+    get_chat_model,
+    get_structured_output_model,
+    parse_with_structured_output,
 )
 
 # Local application - patients
@@ -50,33 +50,33 @@ from .utils import fetch_call_logs, format_timestamp
 from .vlogs import VlogsAgent
 
 __all__ = [
-    # LLM utilities
-    "get_chat_model",
-    "get_structured_output_model",
-    "parse_with_structured_output",
-    # Utils (shared)
-    "format_timestamp",
-    "fetch_call_logs",
     # VlogsAgent
     "VlogsAgent",
     "VlogsConfig",
+    "calculate_health_score",
+    "calculate_medication_adherence",
+    "calculate_trend_analysis",
+    "count_checkins_by_status",
+    "extract_health_topics",
+    # Patient: Analytics
+    "fetch_analytics_summary",
+    "fetch_biomarker_history",
+    # Patient: Biomarkers
+    "fetch_biomarkers",
+    "fetch_call_logs",
+    # Patient: Dashboard
+    "fetch_conditions",
+    # Admin: Check-ins
+    "filter_checkins",
+    "format_recording_duration",
+    # Utils (shared)
+    "format_timestamp",
+    # LLM utilities
+    "get_chat_model",
+    "get_patient_name_from_phone",
+    "get_structured_output_model",
+    "parse_with_structured_output",
     # Patient: Voice
     "transcribe_audio",
     "transcribe_audio_file",
-    "format_recording_duration",
-    # Patient: Biomarkers
-    "fetch_biomarkers",
-    "fetch_biomarker_history",
-    # Patient: Analytics
-    "fetch_analytics_summary",
-    "calculate_health_score",
-    "calculate_trend_analysis",
-    # Patient: Dashboard
-    "fetch_conditions",
-    "calculate_medication_adherence",
-    # Admin: Check-ins
-    "filter_checkins",
-    "count_checkins_by_status",
-    "get_patient_name_from_phone",
-    "extract_health_topics",
 ]

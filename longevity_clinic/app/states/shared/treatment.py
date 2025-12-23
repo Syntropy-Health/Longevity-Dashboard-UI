@@ -2,6 +2,9 @@
 
 TreatmentState - Admin protocol management (CRUD operations)
 TreatmentSearchState - Patient treatment search and requests
+
+Note: All treatment data is loaded from the database.
+Seed data with: python scripts/load_seed_data.py
 """
 
 from __future__ import annotations
@@ -9,52 +12,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-from typing import Optional
 
 import reflex as rx
 
-from ...data.state_schemas import TreatmentProtocol
+from ...data.state_schemas import TreatmentCategoryGroup, TreatmentProtocol
 from ...functions.db_utils import (
-    get_treatments_as_protocols_sync,
     create_treatment_sync,
+    get_treatments_as_protocols_sync,
     update_treatment_sync,
 )
 
 logger = logging.getLogger("longevity_clinic.states.treatment")
-
-# Default fallback protocols if DB is empty
-DEFAULT_PROTOCOLS: list[TreatmentProtocol] = [
-    {
-        "id": "T001",
-        "name": "Vitamin C IV Mega-Dose",
-        "category": "IV Therapy",
-        "description": "High-dose Vitamin C infusion to boost immune system and antioxidant levels.",
-        "duration": "60 mins",
-        "frequency": "Weekly",
-        "cost": 150.0,
-        "status": "Active",
-    },
-    {
-        "id": "T002",
-        "name": "Whole Body Cryotherapy",
-        "category": "Cryotherapy",
-        "description": "Exposure to ultra-low temperatures to reduce inflammation and improve recovery.",
-        "duration": "3 mins",
-        "frequency": "Daily",
-        "cost": 45.0,
-        "status": "Active",
-    },
-    {
-        "id": "T003",
-        "name": "NAD+ Optimization",
-        "category": "Supplements",
-        "description": "Supplement protocol to enhance cellular energy and DNA repair.",
-        "duration": "N/A",
-        "frequency": "Daily",
-        "cost": 120.0,
-        "status": "Active",
-    },
-]
 
 
 class TreatmentState(rx.State):
@@ -65,7 +33,7 @@ class TreatmentState(rx.State):
     search_query: str = ""
     category_filter: str = "All"
     is_editor_open: bool = False
-    editing_protocol: Optional[TreatmentProtocol] = None
+    editing_protocol: TreatmentProtocol | None = None
     form_name: str = ""
     form_category: str = ""
     form_description: str = ""
@@ -74,25 +42,29 @@ class TreatmentState(rx.State):
     form_cost: str = ""
     form_status: str = "Active"
     is_assign_open: bool = False
-    protocol_to_assign: Optional[TreatmentProtocol] = None
+    protocol_to_assign: TreatmentProtocol | None = None
     selected_patient_id_for_assignment: str = ""
 
     @rx.event
     async def load_protocols(self):
-        """Load treatment protocols from database."""
+        """Load treatment protocols from database.
+
+        Note: Requires seeded database. Run: python scripts/load_seed_data.py
+        """
         if self._loaded:
             return
         try:
             db_protocols = await asyncio.to_thread(get_treatments_as_protocols_sync)
-            if db_protocols:
-                self.protocols = db_protocols
-            else:
-                # Fallback to defaults if DB is empty
-                self.protocols = DEFAULT_PROTOCOLS
+            self.protocols = db_protocols or []
+            if not self.protocols:
+                logger.warning(
+                    "No treatments found in database. "
+                    "Run 'python scripts/load_seed_data.py' to seed data."
+                )
             self._loaded = True
         except Exception as e:
             logger.error("Error loading protocols from DB: %s", e)
-            self.protocols = DEFAULT_PROTOCOLS
+            self.protocols = []
             self._loaded = True
 
     @rx.var
@@ -140,10 +112,6 @@ class TreatmentState(rx.State):
         self.form_cost = str(protocol["cost"])
         self.form_status = protocol["status"]
         self.is_editor_open = True
-
-    @rx.event
-    def close_editor(self):
-        self.is_editor_open = False
 
     @rx.event
     def handle_editor_open_change(self, is_open: bool):
@@ -284,7 +252,7 @@ class TreatmentSearchState(rx.State):
 
     search_query: str = ""
     category_filter: str = "All"
-    selected_protocol: Optional[TreatmentProtocol] = None
+    selected_protocol: TreatmentProtocol | None = None
     is_details_open: bool = False
     request_note: str = ""
     _treatments: list[TreatmentProtocol] = []
@@ -292,26 +260,29 @@ class TreatmentSearchState(rx.State):
 
     @rx.event
     async def load_treatments(self):
-        """Load available treatments from database."""
+        """Load available treatments from database.
+
+        Note: Requires seeded database. Run: python scripts/load_seed_data.py
+        """
         if self._loaded:
             return
         try:
             db_treatments = await asyncio.to_thread(get_treatments_as_protocols_sync)
-            if db_treatments:
-                self._treatments = db_treatments
-            else:
-                self._treatments = DEFAULT_PROTOCOLS
+            self._treatments = db_treatments or []
+            if not self._treatments:
+                logger.warning(
+                    "No treatments found in database. "
+                    "Run 'python scripts/load_seed_data.py' to seed data."
+                )
             self._loaded = True
         except Exception as e:
             logger.error("Error loading treatments: %s", e)
-            self._treatments = DEFAULT_PROTOCOLS
+            self._treatments = []
             self._loaded = True
 
     @rx.var
     def available_treatments(self) -> list[TreatmentProtocol]:
-        """Get all available treatments."""
-        if not self._treatments:
-            return DEFAULT_PROTOCOLS
+        """Get all available treatments from database."""
         return self._treatments
 
     @rx.var
@@ -328,6 +299,29 @@ class TreatmentSearchState(rx.State):
             ]
         return items
 
+    @rx.var
+    def treatments_by_category(self) -> list[TreatmentCategoryGroup]:
+        """Group filtered treatments by category for collapsible display.
+
+        Returns:
+            List of TreatmentCategoryGroup dicts
+        """
+        from collections import OrderedDict
+
+        grouped: OrderedDict[str, list[TreatmentProtocol]] = OrderedDict()
+        for treatment in self.filtered_treatments:
+            cat = treatment["category"]
+            if cat not in grouped:
+                grouped[cat] = []
+            grouped[cat].append(treatment)
+
+        return [
+            TreatmentCategoryGroup(
+                category=cat, treatments=treatments, count=len(treatments)
+            )
+            for cat, treatments in grouped.items()
+        ]
+
     @rx.event
     def set_search_query(self, query: str):
         self.search_query = query
@@ -341,11 +335,6 @@ class TreatmentSearchState(rx.State):
         self.selected_protocol = protocol
         self.is_details_open = True
         self.request_note = ""
-
-    @rx.event
-    def close_details(self):
-        self.is_details_open = False
-        self.selected_protocol = None
 
     @rx.event
     def handle_details_open_change(self, is_open: bool):

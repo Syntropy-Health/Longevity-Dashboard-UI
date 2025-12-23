@@ -1,7 +1,9 @@
 import reflex as rx
+
 from ..config import current_config
 from ..states import AuthState
 from ..styles.constants import GlassStyles
+from .shared import sidebar_item_with_tag
 
 # Demo user data for display
 demo_user = current_config.demo_user
@@ -74,6 +76,14 @@ def sidebar_content() -> rx.Component:
                         "Treatment Library", "stethoscope", "/admin/treatments"
                     ),
                     sidebar_item("Check-ins", "mic", "/admin/checkins"),
+                    sidebar_item_with_tag(
+                        "AI Clinician",
+                        "brain",
+                        href="#",
+                        tag="coming soon",
+                        tag_color="amber",
+                        is_disabled=True,
+                    ),
                     class_name="flex flex-col px-3",
                 ),
                 rx.el.div(
@@ -93,6 +103,14 @@ def sidebar_content() -> rx.Component:
                         class_name="px-4 mt-6 mb-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest",
                     ),
                     sidebar_item("Check-ins", "mic", "/patient/checkins"),
+                    sidebar_item_with_tag(
+                        "AI Clinician",
+                        "brain",
+                        href="#",
+                        tag="coming soon",
+                        tag_color="amber",
+                        is_disabled=True,
+                    ),
                     sidebar_item("Settings", "settings", "/patient/settings"),
                     class_name="flex flex-col px-3",
                 ),

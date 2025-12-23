@@ -1,9 +1,9 @@
 """Patient state modules."""
 
-from .state import PatientState
 from .biomarker import BiomarkerState
+from .state import PatientState
 
 __all__ = [
-    "PatientState",
     "BiomarkerState",
+    "PatientState",
 ]

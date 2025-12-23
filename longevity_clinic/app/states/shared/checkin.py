@@ -3,37 +3,76 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import re
-import uuid
 from datetime import datetime
-from typing import List
 
 import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import current_config, get_logger
-from longevity_clinic.app.data.model import CallTranscript
-from longevity_clinic.app.data.model import CheckIn as CheckInDB
+from longevity_clinic.app.data.model import CallTranscript, CheckIn as CheckInDB
+from longevity_clinic.app.data.process_schema import MetricLogsOutput
 from longevity_clinic.app.data.state_schemas import (
     AdminCheckIn,
-    CheckIn,
     CheckInWithTranscript,
 )
-from longevity_clinic.app.functions.db_utils import create_checkin_sync
+from longevity_clinic.app.functions.db_utils import (
+    create_checkin_sync,
+    delete_checkin_sync,
+    save_health_entries_sync,
+    update_checkin_sync,
+)
 
-from ..auth.base import AuthState
 from ...functions import VlogsAgent
 from ...functions.admins import filter_checkins
+from ...functions.vlogs.db import reset_all_processed_to_metrics_sync
+from ..auth.base import AuthState
 from .voice_transcription import VoiceTranscriptionState
 
 logger = get_logger("longevity_clinic.checkins")
 
 
 class CheckinState(rx.State):
-    """Unified state for check-ins (patient and admin views)."""
+    """Unified state for check-ins (patient and admin views).
+
+    Data Flow - Patient Check-ins (voice/text):
+    ============================================
+    1. save_checkin_and_log_health() → VlogsAgent.parse_checkin_with_health_data()
+    2. LLM extracts MetricLogsOutput (checkin summary + medications/food/symptoms)
+    3. create_checkin_sync() → CheckIn table (returns db_id for FK linking)
+    4. save_health_entries_sync() → MedicationEntry, FoodLogEntry, SymptomEntry tables
+       (all entries linked to CheckIn via checkin_id FK and user_id for querying)
+    5. Reload checkins from DB to update UI
+
+    Data Flow - Call Log CDC Pipeline:
+    ===================================
+    1. start_calls_to_checkin_sync_loop() polls in background
+    2. VlogsAgent.process_unprocessed_logs() finds unprocessed CallLog records
+    3. LLM extracts MetricLogsOutput from transcript
+    4. update_call_log_metrics() → CheckIn + health entry tables
+    5. Marks CallLog.processed_to_metrics=True
+    6. Reload checkins from DB to update UI
+
+    Dashboard Integration:
+    ======================
+    HealthDashboardState.load_health_data_from_db() is triggered via page on_load
+    in longevity_clinic.py to refresh dashboard tabs. Data is fetched from:
+    - get_medications_sync(user_id) → MedicationEntry table
+    - get_food_entries_sync(user_id) → FoodLogEntry table
+    - get_symptoms_sync(user_id) → SymptomEntry table
+
+    Database Relationships:
+    =======================
+    CheckIn is the central table linking all health data:
+    - MedicationEntry.checkin_id → CheckIn.id
+    - FoodLogEntry.checkin_id → CheckIn.id
+    - SymptomEntry.checkin_id → CheckIn.id
+    All health entries also have user_id for direct dashboard queries.
+    """
 
     # Unified check-in data (role-based filtering via computed vars)
-    checkins: List[CheckInWithTranscript] = []
+    checkins: list[CheckInWithTranscript] = []
     active_status_tab: str = "pending"
     search_query: str = ""
 
@@ -41,20 +80,11 @@ class CheckinState(rx.State):
     show_checkin_modal: bool = False
     checkin_type: str = "voice"
     checkin_text: str = ""
-    selected_topics: List[str] = []
-
-    # Voice recording state
-    is_recording: bool = False
-    recording_session_id: str = ""
-    recording_duration: float = 0.0
-    transcribed_text: str = ""
-    transcription_status: str = ""
+    selected_topics: list[str] = []
 
     # Admin modals state
     show_checkin_detail_modal: bool = False
-    show_status_update_modal: bool = False
-    show_transcript_modal: bool = False
-    selected_checkin: CheckInWithTranscript = {}  # type: ignore[assignment]
+    selected_checkin: dict = {}  # CheckInWithTranscript dict
     selected_status: str = ""
 
     # Call logs sync state
@@ -69,6 +99,13 @@ class CheckinState(rx.State):
 
     # Checkin saving state
     checkin_saving: bool = False
+
+    # Edit/Delete modal state
+    show_edit_modal: bool = False
+    edit_checkin_id: str = ""
+    edit_checkin_summary: str = ""
+    show_delete_confirm: bool = False
+    delete_checkin_id: str = ""
 
     # Pagination state
     current_page: int = 1
@@ -85,21 +122,17 @@ class CheckinState(rx.State):
     def voice_call_checkins_count(self) -> int:
         return len([c for c in self.checkins if c.get("type") == "call"])
 
-    @rx.var
-    def checkins_this_week_count(self) -> int:
-        return len(self.checkins)
-
     # =================================================================
     # Admin Computed Variables
     # =================================================================
 
     @rx.var
-    def combined_checkins(self) -> List[AdminCheckIn]:
+    def combined_checkins(self) -> list[AdminCheckIn]:
         """Return all checkins for admin view."""
         return self.checkins
 
     @rx.var
-    def filtered_checkins(self) -> List[AdminCheckIn]:
+    def filtered_checkins(self) -> list[AdminCheckIn]:
         """Filter checkins by status and search query."""
         return filter_checkins(
             self.combined_checkins,
@@ -131,7 +164,7 @@ class CheckinState(rx.State):
         return self.selected_checkin.get("summary", "")
 
     @rx.var
-    def selected_checkin_topics(self) -> List[str]:
+    def selected_checkin_topics(self) -> list[str]:
         return self.selected_checkin.get("key_topics", [])
 
     @rx.var
@@ -168,6 +201,70 @@ class CheckinState(rx.State):
     def selected_checkin_id(self) -> str:
         return self.selected_checkin.get("id", "")
 
+    # =========================================================================
+    # Pagination Computed Variables
+    # =========================================================================
+
+    @rx.var
+    def per_page(self) -> int:
+        """Items per page from config."""
+        return current_config.checkins_per_page
+
+    @rx.var
+    def total_pages(self) -> int:
+        """Total number of pages based on filtered checkins."""
+        total = len(self.filtered_checkins)
+        per_page = current_config.checkins_per_page
+        return max(1, (total + per_page - 1) // per_page)
+
+    @rx.var
+    def paginated_checkins(self) -> list[AdminCheckIn]:
+        """Return current page of filtered checkins."""
+        per_page = current_config.checkins_per_page
+        start = (self.current_page - 1) * per_page
+        end = start + per_page
+        return self.filtered_checkins[start:end]
+
+    @rx.var
+    def has_previous_page(self) -> bool:
+        """Whether there's a previous page."""
+        return self.current_page > 1
+
+    @rx.var
+    def has_next_page(self) -> bool:
+        """Whether there's a next page."""
+        return self.current_page < self.total_pages
+
+    @rx.var
+    def page_info(self) -> str:
+        """Page info string (e.g., 'Page 1 of 5')."""
+        return f"Page {self.current_page} of {self.total_pages}"
+
+    @rx.var
+    def showing_info(self) -> str:
+        """Showing info string (e.g., 'Showing 1-10 of 25')."""
+        per_page = current_config.checkins_per_page
+        total = len(self.filtered_checkins)
+        start = (self.current_page - 1) * per_page + 1
+        end = min(self.current_page * per_page, total)
+        if total == 0:
+            return "No check-ins"
+        return f"Showing {start}-{end} of {total}"
+
+    # -------------------------------------------------------------------------
+    # Pagination Event Handlers
+    # -------------------------------------------------------------------------
+
+    def next_page(self):
+        """Go to next page."""
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+
+    def previous_page(self):
+        """Go to previous page."""
+        if self.current_page > 1:
+            self.current_page -= 1
+
     # -------------------------------------------------------------------------
     # Patient Check-in Type and Text
     # -------------------------------------------------------------------------
@@ -187,45 +284,6 @@ class CheckinState(rx.State):
         else:
             self.selected_topics = [*self.selected_topics, topic]
 
-    def is_topic_selected(self, topic: str) -> bool:
-        return topic in self.selected_topics
-
-    # -------------------------------------------------------------------------
-    # Voice Recording
-    # -------------------------------------------------------------------------
-
-    @rx.event
-    async def start_recording(self):
-        self.is_recording = True
-        self.transcription_status = "recording"
-        self.recording_duration = 0.0
-        self.recording_session_id = f"rec_{uuid.uuid4().hex[:8]}"
-
-    @rx.event
-    async def stop_recording(self):
-        self.is_recording = False
-        self.transcription_status = "done"
-
-    @rx.event
-    async def toggle_recording(self):
-        if not self.is_recording:
-            yield CheckinState.start_recording
-            yield CheckinState.increment_recording_duration
-        else:
-            yield CheckinState.stop_recording
-
-    @rx.event(background=True)
-    async def increment_recording_duration(self):
-        async with self:
-            if not self.is_recording:
-                return
-        while True:
-            await asyncio.sleep(1)
-            async with self:
-                if not self.is_recording:
-                    return
-                self.recording_duration += 1.0
-
     # -------------------------------------------------------------------------
     # Patient Check-in Modal Operations
     # -------------------------------------------------------------------------
@@ -238,126 +296,151 @@ class CheckinState(rx.State):
         self._reset_checkin_state()
         await self._reset_voice_state()
 
-    @rx.event
-    async def close_checkin_modal(self):
-        self.show_checkin_modal = False
-        self._reset_checkin_state()
-        await self._reset_voice_state()
-
     def set_show_checkin_modal(self, value: bool):
         self.show_checkin_modal = value
 
     # -------------------------------------------------------------------------
     # Save Patient Check-in
     # -------------------------------------------------------------------------
-    async def _create_checkin_from_summary(
-        self, checkin_summary, raw_transcript: str = "", persist_to_db: bool = True
-    ) -> CheckInWithTranscript:
-        """Create CheckInWithTranscript from parsed summary and optionally persist to DB.
 
-        Args:
-            checkin_summary: Parsed CheckinSummary from VlogsAgent
-            raw_transcript: Original transcript text
-            persist_to_db: If True, save to database (default: True)
+    @rx.event(background=True)
+    async def save_checkin_and_log_health(self):
+        """Save a new check-in via voice/text (background process).
 
-        Returns:
-            CheckInWithTranscript dict for state
+        Data Flow:
+        1. Parse content with LLM → MetricLogsOutput (checkin + health entries)
+        2. Create CheckIn record → checkins table
+        3. Persist health entries → medication_entries, food_log_entries, symptom_entries
+        4. Reload checkins from DB to update UI
+
+        Database Tables Updated:
+        - checkins: CheckIn record with summary, sentiment, topics
+        - medication_entries: Medications mentioned in check-in
+        - food_log_entries: Food/nutrition entries
+        - symptom_entries: Symptoms reported
+
+        Dashboard Sync:
+        After save, HealthDashboardState.load_health_data_from_db() will
+        fetch updated entries from these tables for display.
         """
-        checkin_id = checkin_summary.id
-        checkin_data: CheckInWithTranscript = {
-            "id": checkin_id,
-            "type": checkin_summary.type,
-            "summary": checkin_summary.summary,
-            "raw_transcript": raw_transcript,
-            "timestamp": checkin_summary.timestamp,
-            "sentiment": checkin_summary.sentiment,
-            "key_topics": checkin_summary.key_topics,
-            "provider_reviewed": checkin_summary.provider_reviewed,
-            "patient_name": checkin_summary.patient_name,
-            "status": "pending",
-        }
+        async with self:
+            voice_state = await self.get_state(VoiceTranscriptionState)
+            content = (
+                voice_state.transcript
+                if self.checkin_type == "voice"
+                else self.checkin_text.strip()
+            )
+            if not content.strip():
+                logger.warning("No content to save for checkin")
+                return
+            self.checkin_saving = True
+            checkin_type = self.checkin_type
 
-        # Persist to database if requested
-        if persist_to_db:
-            auth_state = await self.get_state(AuthState)
-            user_id = auth_state.user_id if auth_state.user_id else None
+        logger.info(
+            "Saving new checkin type=%s, content_len=%d", checkin_type, len(content)
+        )
 
-            # Serialize health_topics to JSON string for DB
-            import json
+        try:
+            # Step 1: Parse content with LLM - get full health data extraction
+            parse_result: MetricLogsOutput = (
+                await VlogsAgent.parse_checkin_with_health_data(
+                    content=content, checkin_type=checkin_type
+                )
+            )
+            checkin_summary = parse_result.checkin
 
+            logger.debug(
+                "LLM parsed: summary_len=%d, meds=%d, foods=%d, symptoms=%d, content=%s",
+                len(checkin_summary.summary),
+                len(parse_result.medications_entries),
+                len(parse_result.food_entries),
+                len(parse_result.symptom_entries),
+                content[:100],
+            )
+
+            # Get user info for DB persistence
+            async with self:
+                auth_state = await self.get_state(AuthState)
+                user_id = auth_state.user_id if auth_state.user_id else None
+                patient_name = auth_state.user_full_name or "Unknown"
+
+            # Step 2: Persist CheckIn to database
             health_topics_json = (
                 json.dumps(checkin_summary.key_topics)
                 if checkin_summary.key_topics
                 else None
             )
 
-            db_result = create_checkin_sync(
-                checkin_id=checkin_id,
-                patient_name=checkin_summary.patient_name,
+            # Step 2: Persist CheckIn to database (returns db_id to avoid extra query)
+            db_result = await asyncio.to_thread(
+                create_checkin_sync,
+                checkin_id=checkin_summary.id,
+                patient_name=patient_name,
                 summary=checkin_summary.summary,
                 checkin_type=checkin_summary.type,
                 user_id=user_id,
-                raw_content=raw_transcript or None,
+                raw_content=content,
                 health_topics=health_topics_json,
             )
+
             if db_result:
-                logger.info("Persisted checkin %s to database", checkin_id)
+                logger.info("Created CheckIn %s in database", checkin_summary.id)
+
+                # Step 3: Use db_id from create result (no extra query needed)
+                checkin_db_id = db_result.get("db_id")
+
+                if checkin_db_id:
+                    # Determine source based on checkin type
+                    source = "voice" if checkin_type == "voice" else "manual"
+
+                    health_counts = await asyncio.to_thread(
+                        save_health_entries_sync,
+                        checkin_db_id,
+                        user_id,
+                        parse_result,
+                        source,
+                    )
+
+                    logger.info(
+                        "Saved health entries for %s: %d meds, %d foods, %d symptoms",
+                        checkin_summary.id,
+                        health_counts["medications"],
+                        health_counts["foods"],
+                        health_counts["symptoms"],
+                    )
+                else:
+                    logger.warning(
+                        "db_id not returned for %s - health entries not saved",
+                        checkin_summary.id,
+                    )
             else:
-                logger.warning("Failed to persist checkin %s to database", checkin_id)
+                logger.warning("Failed to save checkin to database")
 
-        return checkin_data
+            # Step 4: Reload checkins from DB to ensure consistency
+            checkins_from_db = await self._load_checkins_from_db()
 
-    @rx.event
-    async def save_checkin(self):
-        """Save a new check-in using LLM for structured extraction."""
-        content = (
-            self.transcribed_text
-            if self.checkin_type == "voice"
-            else self.checkin_text.strip()
-        )
-        if len(content) < 10:
-            return
+            async with self:
+                self.checkins = checkins_from_db
+                self._reset_checkin_state()
+                # Reset voice state
+                voice_state = await self.get_state(VoiceTranscriptionState)
+                voice_state.transcript = ""
+                voice_state.has_error = False
+                voice_state.error_message = ""
+                voice_state.processing = False
 
-        checkin_summary = await VlogsAgent.parse_user_checkin(
-            content, self.checkin_type
-        )
-        new_checkin = await self._create_checkin_from_summary(
-            checkin_summary, raw_transcript=content
-        )
-        self.checkins = [new_checkin, *self.checkins]
-        self.show_checkin_modal = False
-        self._reset_checkin_state()
-
-    @rx.event
-    async def save_checkin_with_voice(self):
-        """Save a new check-in via voice."""
-        voice_state = await self.get_state(VoiceTranscriptionState)
-        content = (
-            voice_state.transcript
-            if self.checkin_type == "voice"
-            else self.checkin_text.strip()
-        )
-        if not content.strip():
-            return
-
-        checkin_summary = await VlogsAgent.parse_user_checkin(
-            content, self.checkin_type
-        )
-        new_checkin = await self._create_checkin_from_summary(
-            checkin_summary, raw_transcript=content
-        )
-        self.checkins = [new_checkin, *self.checkins]
-        self.show_checkin_modal = False
-        self._reset_checkin_state()
-        await self._reset_voice_state()
+        except Exception as e:
+            logger.error("save_checkin_and_log_health failed: %s", e)
+        finally:
+            # Always close modal and reset saving state when done
+            async with self:
+                self.checkin_saving = False
+                self.show_checkin_modal = False
 
     def _reset_checkin_state(self):
-        self.is_recording = False
-        self.recording_duration = 0.0
-        self.transcribed_text = ""
+        """Reset patient checkin form state."""
         self.checkin_text = ""
         self.selected_topics = []
-        self.transcription_status = "idle"
 
     async def _reset_voice_state(self):
         """Reset voice transcription state."""
@@ -372,36 +455,30 @@ class CheckinState(rx.State):
 
     def set_active_status_tab(self, tab: str):
         self.active_status_tab = tab
+        self.current_page = 1  # Reset pagination on filter change
 
     def set_search_query(self, query: str):
         self.search_query = query
+        self.current_page = 1  # Reset pagination on search change
 
     def open_checkin_detail(self, checkin: CheckInWithTranscript):
         self.selected_checkin = checkin
         self.show_checkin_detail_modal = True
 
+    def close_checkin_detail(self):
+        """Close the check-in detail modal and clear selection."""
+        self.show_checkin_detail_modal = False
+        self.selected_checkin = {}
+
     def set_show_checkin_detail_modal(self, value: bool):
         """Set modal visibility and clear selection when closing."""
         self.show_checkin_detail_modal = value
         if not value:
-            self.selected_checkin = {}  # type: ignore[assignment]
+            self.selected_checkin = {}
 
     # -------------------------------------------------------------------------
-    # Status Update Modal
+    # Status Update
     # -------------------------------------------------------------------------
-
-    def open_status_update_modal(self, checkin: CheckInWithTranscript):
-        self.selected_checkin = checkin
-        self.selected_status = checkin.get("status", "pending")
-        self.show_status_update_modal = True
-
-    def close_status_update_modal(self):
-        self.show_status_update_modal = False
-        self.selected_checkin = {}  # type: ignore[assignment]
-        self.selected_status = ""
-
-    def set_selected_status(self, status: str):
-        self.selected_status = status
 
     @rx.event
     async def update_checkin_status(self):
@@ -409,8 +486,7 @@ class CheckinState(rx.State):
             return
         if checkin_id := self.selected_checkin.get("id"):
             self._update_checkin(checkin_id, self.selected_status)
-        self.show_status_update_modal = False
-        self.selected_checkin = {}  # type: ignore[assignment]
+        self.selected_checkin = {}
         self.selected_status = ""
 
     def _update_checkin(self, checkin_id: str, status: str):
@@ -441,19 +517,99 @@ class CheckinState(rx.State):
         self._update_checkin(checkin_id, "flagged")
 
     # -------------------------------------------------------------------------
-    # Transcript Modal
+    # Edit/Delete Handlers
     # -------------------------------------------------------------------------
 
-    def open_transcript_modal(self, checkin: CheckInWithTranscript):
-        self.selected_checkin = checkin
-        self.show_transcript_modal = True
+    def open_edit_modal(self, checkin_id: str):
+        """Open edit modal for a check-in (closes detail modal if open)."""
+        # Close detail modal first to prevent conflicts
+        self.show_checkin_detail_modal = False
+        self.selected_checkin = {}
 
-    def close_transcript_modal(self):
-        self.show_transcript_modal = False
+        checkin = next((c for c in self.checkins if c["id"] == checkin_id), None)
+        if checkin:
+            self.edit_checkin_id = checkin_id
+            self.edit_checkin_summary = checkin.get("summary", "")
+            self.show_edit_modal = True
 
-    def set_show_transcript_modal(self, value: bool):
-        self.show_transcript_modal = value
+    def close_edit_modal(self):
+        """Close edit modal."""
+        self.show_edit_modal = False
+        self.edit_checkin_id = ""
+        self.edit_checkin_summary = ""
 
+    def set_edit_checkin_summary(self, value: str):
+        """Update edit summary text."""
+        self.edit_checkin_summary = value
+
+    @rx.event(background=True)
+    async def save_edit_checkin(self):
+        """Save edited check-in to database."""
+        async with self:
+            checkin_id = self.edit_checkin_id
+            new_summary = self.edit_checkin_summary
+            if not checkin_id:
+                return
+
+        # Update in database
+        success = await asyncio.to_thread(
+            update_checkin_sync, checkin_id, summary=new_summary
+        )
+
+        if success:
+            # Update local state
+            async with self:
+                self.checkins = [
+                    {**c, "summary": new_summary} if c["id"] == checkin_id else c
+                    for c in self.checkins
+                ]
+                self.show_edit_modal = False
+                self.edit_checkin_id = ""
+                self.edit_checkin_summary = ""
+            logger.info("Updated checkin %s", checkin_id)
+        else:
+            logger.error("Failed to update checkin %s", checkin_id)
+
+    def open_delete_confirm(self, checkin_id: str):
+        """Open delete confirmation dialog (closes detail modal if open)."""
+        # Close detail modal first to prevent conflicts
+        self.show_checkin_detail_modal = False
+        self.selected_checkin = {}
+
+        self.delete_checkin_id = checkin_id
+        self.show_delete_confirm = True
+
+    def close_delete_confirm(self):
+        """Close delete confirmation dialog."""
+        self.show_delete_confirm = False
+        self.delete_checkin_id = ""
+
+    @rx.event(background=True)
+    async def confirm_delete_checkin(self):
+        """Delete check-in from database."""
+        async with self:
+            checkin_id = self.delete_checkin_id
+            if not checkin_id:
+                return
+
+        # Delete from database
+        success = await asyncio.to_thread(delete_checkin_sync, checkin_id)
+
+        if success:
+            # Remove from local state
+            async with self:
+                self.checkins = [c for c in self.checkins if c["id"] != checkin_id]
+                self.show_delete_confirm = False
+                self.delete_checkin_id = ""
+            logger.info("Deleted checkin %s", checkin_id)
+        else:
+            logger.error("Failed to delete checkin %s", checkin_id)
+            async with self:
+                self.show_delete_confirm = False
+                self.delete_checkin_id = ""
+
+    # -------------------------------------------------------------------------
+    # Transcript Modal (DEPRECATED - use open_checkin_detail instead)
     # -------------------------------------------------------------------------
     # Call Logs Sync (Admin)
     # -------------------------------------------------------------------------
@@ -480,10 +636,10 @@ class CheckinState(rx.State):
             async with self:
                 self.is_loading = False
 
-    async def _load_all_checkins_from_db(self) -> List[AdminCheckIn]:
+    async def _load_all_checkins_from_db(self) -> list[AdminCheckIn]:
         """Load all check-ins from database for admin view (all patients)."""
 
-        def _query_all_checkins() -> List[AdminCheckIn]:
+        def _query_all_checkins() -> list[AdminCheckIn]:
             with rx.session() as session:
                 result = session.exec(
                     select(CheckInDB, CallTranscript.raw_transcript)
@@ -552,8 +708,6 @@ class CheckinState(rx.State):
 
             # If reprocess flag is set, reset all processed_to_metrics to False
             if current_config.reprocess_call_logs_everytime:
-                from ...functions.vlogs.db import reset_all_processed_to_metrics_sync
-
                 reset_count = await asyncio.to_thread(
                     reset_all_processed_to_metrics_sync
                 )
@@ -585,10 +739,10 @@ class CheckinState(rx.State):
                 self.call_logs_sync_error = str(e)
                 self.call_logs_syncing = False
 
-    async def _load_checkins_from_db(self) -> List[CheckInWithTranscript]:
-        """Load check-ins from database with raw_transcript join."""
+    async def _load_checkins_from_db(self) -> list[CheckInWithTranscript]:
+        """Load all check-ins from database for patient view (all types)."""
 
-        def _query_checkins() -> List[CheckInWithTranscript]:
+        def _query_checkins() -> list[CheckInWithTranscript]:
             with rx.session() as session:
                 result = session.exec(
                     select(CheckInDB, CallTranscript.raw_transcript)
@@ -596,25 +750,28 @@ class CheckinState(rx.State):
                         CallTranscript,
                         CheckInDB.call_log_id == CallTranscript.call_log_id,
                     )
-                    .where(CheckInDB.checkin_type == "call")
                     .order_by(CheckInDB.timestamp.desc())
                     .limit(100)
                 )
-                return [
-                    {
-                        "id": c.checkin_id,
-                        "type": c.checkin_type,
-                        "summary": c.summary,
-                        "raw_transcript": raw_transcript or "",
-                        "timestamp": c.timestamp.isoformat() if c.timestamp else "",
-                        "sentiment": "neutral",
-                        "key_topics": [],
-                        "provider_reviewed": c.provider_reviewed,
-                        "patient_name": c.patient_name,
-                        "status": c.status,
-                    }
-                    for c, raw_transcript in result.all()
-                ]
+                checkins = []
+                for c, raw_transcript in result.all():
+                    # For non-call types, use raw_content if no transcript
+                    transcript_text = raw_transcript or c.raw_content or ""
+                    checkins.append(
+                        {
+                            "id": c.checkin_id,
+                            "type": c.checkin_type,
+                            "summary": c.summary,
+                            "raw_transcript": transcript_text,
+                            "timestamp": c.timestamp.isoformat() if c.timestamp else "",
+                            "sentiment": "neutral",
+                            "key_topics": [],
+                            "provider_reviewed": c.provider_reviewed,
+                            "patient_name": c.patient_name,
+                            "status": c.status,
+                        }
+                    )
+                return checkins
 
         try:
             return await asyncio.to_thread(_query_checkins)
@@ -622,15 +779,61 @@ class CheckinState(rx.State):
             logger.error("_load_checkins_from_db failed: %s", e)
             return []
 
+    # -------------------------------------------------------------------------
+    # Background Processing Loop (on_mount/on_unmount lifecycle)
+    # -------------------------------------------------------------------------
+
     @rx.event(background=True)
-    async def start_background_processing(self):
-        """Start periodic background processing (on_mount)."""
+    async def start_calls_to_checkin_sync_loop(self):
+        """Start the background CDC pipeline for call log processing.
+
+        This method runs as a background event handler and performs:
+        1. Initial load of checkins from database (role-based)
+        2. Periodic polling loop that:
+           - Processes unprocessed call logs (CallLog.processed_to_metrics=False)
+           - Parses transcripts with LLM to extract health data (MetricLogsOutput)
+           - Creates/updates CheckIn records linked to CallLog
+           - Persists health entries (medications, food, symptoms) to normalized tables
+           - Marks CallLog.processed_to_metrics=True when complete
+           - Reloads checkins to reflect new data in UI
+
+        The processing pipeline reuses VlogsAgent.process_unprocessed_logs() which
+        internally calls update_call_log_metrics() to persist:
+        - CheckIn records (summary, topics, sentiment)
+        - MedicationEntry records
+        - FoodLogEntry records
+        - SymptomEntry records
+
+        Lifecycle:
+        - Started via on_mount in checkins_page_wrapper
+        - Stopped via stop_checkin_sync_loop on on_unmount
+        """
         async with self:
             if self.is_processing_background:
                 return
             self.is_processing_background = True
 
-        logger.debug("Background processing loop started")
+        logger.debug("Checkin sync loop started")
+
+        # Initial load of checkins from database
+        try:
+            async with self:
+                auth_state = await self.get_state(AuthState)
+                is_admin = auth_state.is_admin
+
+            if is_admin:
+                checkins_from_db = await self._load_all_checkins_from_db()
+            else:
+                checkins_from_db = await self._load_checkins_from_db()
+
+            async with self:
+                self.checkins = checkins_from_db
+            logger.debug("Initial load: %d checkins from DB", len(checkins_from_db))
+        except Exception as e:
+            logger.error("Initial checkin load failed: %s", e)
+
+        # Polling interval (seconds) - process call logs periodically
+        poll_interval = current_config.background_poll_interval
 
         while True:
             async with self:
@@ -638,12 +841,16 @@ class CheckinState(rx.State):
                     break
 
             try:
+                # Process unprocessed call logs via CDC pipeline
+                # This parses transcripts → extracts health data → persists to DB
                 agent = VlogsAgent.from_config()
-                count = await agent.process_unprocessed_logs()
+                processed_count = await agent.process_unprocessed_logs()
 
-                if count > 0:
-                    logger.debug("Background processed %d logs", count)
-                    # Reload based on current user role
+                if processed_count > 0:
+                    logger.info(
+                        "Processed %d call logs to health metrics", processed_count
+                    )
+                    # Reload checkins to reflect newly processed data
                     async with self:
                         auth_state = await self.get_state(AuthState)
                         is_admin = auth_state.is_admin
@@ -652,16 +859,22 @@ class CheckinState(rx.State):
                         checkins_from_db = await self._load_all_checkins_from_db()
                     else:
                         checkins_from_db = await self._load_checkins_from_db()
+
                     async with self:
                         if checkins_from_db:
                             self.checkins = checkins_from_db
             except Exception as e:
                 logger.error("Background processing error: %s", e)
 
-            await asyncio.sleep(30)
+            await asyncio.sleep(poll_interval)
 
-        logger.debug("Background processing loop stopped")
+        logger.debug("Checkin sync loop stopped")
 
     @rx.event
-    def stop_background_processing(self):
+    def stop_checkin_sync_loop(self):
+        """Stop the background CDC processing loop (on_unmount)."""
         self.is_processing_background = False
+
+    # Legacy aliases for backward compatibility
+    start_background_processing = start_calls_to_checkin_sync_loop
+    stop_background_processing = stop_checkin_sync_loop

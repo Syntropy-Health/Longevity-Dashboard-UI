@@ -14,19 +14,16 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Initialize Reflex config to set up database URL
-import rxconfig  # noqa: F401
-
 import reflex as rx
-from sqlalchemy import inspect, MetaData
-from sqlalchemy.schema import CreateTable
+from sqlalchemy import inspect
 
+import rxconfig  # noqa: F401
 
 # SQLite to PostgreSQL type mappings
 TYPE_MAPPINGS = {

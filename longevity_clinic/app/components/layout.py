@@ -1,7 +1,8 @@
 import reflex as rx
-from .sidebar import sidebar, mobile_menu
-from .header import header
+
 from ..styles.constants import GlassStyles
+from .header import header
+from .sidebar import mobile_menu, sidebar
 
 
 def authenticated_layout(content: rx.Component) -> rx.Component:

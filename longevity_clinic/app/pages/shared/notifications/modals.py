@@ -6,8 +6,8 @@ This module contains modal dialogs for the notifications page:
 
 import reflex as rx
 
-from ....styles.constants import GlassStyles
 from ....states import NotificationState
+from ....styles.constants import GlassStyles
 from .components import notification_type_badge
 
 

@@ -1,49 +1,93 @@
-from logging.config import fileConfig
+"""Alembic migrations environment configuration.
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+Supports both local SQLite and remote PostgreSQL (Supabase) databases.
+Database URL is read from REFLEX_DB_URL environment variable.
+"""
+
+import os
+import sys
+from logging.config import fileConfig
+from pathlib import Path
+
+from sqlalchemy import create_engine, pool
 
 from alembic import context
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Load environment variables (same hierarchy as rxconfig.py)
+try:
+    from dotenv import load_dotenv
+
+    envs_path = Path(__file__).parent.parent / "envs"
+    app_env = os.getenv("APP_ENV", "dev").lower()
+
+    # Load in order: base → env-specific → secrets
+    for env_file in [
+        envs_path / ".env.base",
+        envs_path / f".env.{app_env}",
+        envs_path / ".env.secrets",
+    ]:
+        if env_file.exists():
+            load_dotenv(env_file, override=True)
+except ImportError:
+    pass  # dotenv not available, rely on environment variables
+
+# Import SQLModel metadata from our models
+# This enables autogenerate to detect model changes
+from sqlmodel import SQLModel
+
+# Alembic Config object
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
+# Setup logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+# Target metadata for autogenerate support
+target_metadata = SQLModel.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+
+def get_database_url() -> str:
+    """Get database URL from environment or alembic.ini.
+
+    Priority:
+    1. REFLEX_DB_URL environment variable (production/test)
+    2. sqlalchemy.url from alembic.ini (fallback)
+
+    For Supabase PostgreSQL, use the pooler URL on port 6543.
+    """
+    db_url = os.getenv("REFLEX_DB_URL")
+    if db_url:
+        print(
+            f"📦 Using database from REFLEX_DB_URL: {db_url.split('@')[1] if '@' in db_url else db_url}"
+        )
+        return db_url
+
+    # Fallback to alembic.ini config
+    url = config.get_main_option("sqlalchemy.url")
+    if url and url != "driver://user:pass@localhost/dbname":
+        return url
+
+    # Default to local SQLite
+    return "sqlite:///reflex.db"
 
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
+    Generates SQL scripts without connecting to the database.
+    Useful for reviewing migration SQL before applying.
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+        compare_server_default=True,
     )
 
     with context.begin_transaction():
@@ -53,18 +97,29 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
+    Creates an engine and runs migrations against the live database.
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    url = get_database_url()
+
+    # Create engine directly with the URL (not from config section)
+    connectable = create_engine(
+        url,
         poolclass=pool.NullPool,
+        # PostgreSQL-specific settings for Supabase
+        **(
+            {"connect_args": {"sslmode": "require"}}
+            if url.startswith("postgresql")
+            else {}
+        ),
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+            compare_server_default=True,
+        )
 
         with context.begin_transaction():
             context.run_migrations()

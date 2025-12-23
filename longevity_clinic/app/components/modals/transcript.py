@@ -1,6 +1,11 @@
-"""Transcript modal component for displaying full check-in transcripts."""
+"""Transcript modal component for displaying full check-in transcripts.
+
+DEPRECATED: Use checkin_detail_modal from checkin_detail.py instead.
+This module is kept for backward compatibility.
+"""
 
 import reflex as rx
+
 from ...styles import GlassStyles
 
 
@@ -11,6 +16,9 @@ def transcript_modal(
     title: str = "Full Transcript",
 ) -> rx.Component:
     """Reusable transcript modal with click-outside-to-close functionality.
+
+    DEPRECATED: Use checkin_detail_modal instead for a unified modal experience
+    that works for both admin and patient views.
 
     Args:
         show_modal: Boolean var controlling modal visibility

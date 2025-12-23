@@ -1,12 +1,13 @@
 """Shared components for the patient portal."""
 
 import reflex as rx
+
+from ...components.charts import biomarker_history_chart
+from ...data.state_schemas import Biomarker, PortalAppointment, PortalTreatment
 from ...states import (
     BiomarkerState,
+    HealthDashboardState,
 )
-from ...data.state_schemas import Biomarker, PortalAppointment, PortalTreatment
-from ...states import HealthDashboardState
-from ...components.charts import biomarker_history_chart
 from ...styles.constants import GlassStyles
 
 
@@ -181,21 +182,6 @@ def biomarker_detail_panel() -> rx.Component:
     )
 
 
-def sub_filter_button(
-    label: str, filter_value: str, current_filter: str, set_filter
-) -> rx.Component:
-    """Sub-filter button for tab content."""
-    return rx.el.button(
-        label,
-        on_click=lambda: set_filter(filter_value),
-        class_name=rx.cond(
-            current_filter == filter_value,
-            "px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
-            "px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
-        ),
-    )
-
-
 def treatment_card(treatment: PortalTreatment) -> rx.Component:
     """Treatment card with dark theme styling."""
     return rx.el.div(
@@ -248,50 +234,20 @@ def appointment_item(apt: PortalAppointment) -> rx.Component:
     )
 
 
-def static_metric_card(
-    name: str, value: str, unit: str, icon: str, trend: str, trend_value: str
-) -> rx.Component:
-    """Static metric card for overview tab."""
-    return rx.el.div(
-        rx.el.div(
-            rx.icon(
-                icon,
-                class_name="w-5 h-5 text-teal-400",
-            ),
-            rx.el.span(
-                name,
-                class_name="text-xs text-slate-400 uppercase tracking-wider font-semibold ml-2",
-            ),
-            class_name="flex items-center mb-3",
-        ),
-        rx.el.div(
-            rx.el.span(
-                value,
-                class_name="text-3xl font-bold text-white",
-            ),
-            rx.el.span(
-                unit,
-                class_name="text-sm text-slate-400 ml-1",
-            ),
-            class_name="flex items-baseline mb-2",
-        ),
-        rx.el.div(
-            rx.icon(
-                (
-                    "trending-up"
-                    if trend == "up"
-                    else ("trending-down" if trend == "down" else "minus")
-                ),
-                class_name=f"w-3 h-3 {'text-teal-400' if trend in ['up', 'down'] else 'text-slate-500'} mr-1",
-            ),
-            rx.el.span(
-                trend_value,
-                class_name="text-xs text-slate-400",
-            ),
-            class_name="flex items-center",
-        ),
-        class_name=f"{GlassStyles.PANEL} p-5 hover:bg-white/10 transition-all cursor-pointer",
-    )
+# Re-export static_metric_card from shared for backward compatibility
+from ...components.shared import static_metric_card
+
+__all__ = [
+    "appointment_item",
+    "biomarker_card",
+    "biomarker_detail_panel",
+    "patient_portal_tabs",
+    "static_metric_card",
+    "status_badge",
+    "tab_button",
+    "treatment_card",
+    "trend_indicator",
+]
 
 
 def tab_button(label: str, tab_id: str, icon: str) -> rx.Component:

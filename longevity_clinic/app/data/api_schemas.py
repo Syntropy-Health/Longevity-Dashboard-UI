@@ -5,9 +5,7 @@ This module centralizes all Pydantic models used for API request/response
 validation and serialization, including call logs API parameters.
 """
 
-from typing import Optional
 from pydantic import BaseModel, Field
-
 
 # =============================================================================
 # Call Logs API Schemas
@@ -32,7 +30,7 @@ class CallLogsQueryParams(BaseModel):
     fields: str = Field(default="*.*", description="Fields to include in response")
 
     # Filter parameters
-    caller_phone: Optional[str] = Field(
+    caller_phone: str | None = Field(
         default=None, description="Filter by caller phone number"
     )
     require_transcript: bool = Field(
@@ -102,8 +100,3 @@ class TranscriptSummarizationRequest(BaseModel):
         ge=100,
         description="Maximum transcript length to process (truncated if longer)",
     )
-
-    @property
-    def truncated_transcript(self) -> str:
-        """Get transcript truncated to max length."""
-        return self.full_transcript[: self.max_transcript_length]

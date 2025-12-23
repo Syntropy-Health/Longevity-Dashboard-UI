@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlmodel import Session, select
 
@@ -131,7 +131,7 @@ def load_biomarker_readings(
             # Parse month to date (use 2025 and 15th of month)
             month_str = point.get("date", "Jan")
             month_num = month_map.get(month_str, 1)
-            measured_at = datetime(2025, month_num, 15, 10, 0, 0, tzinfo=timezone.utc)
+            measured_at = datetime(2025, month_num, 15, 10, 0, 0, tzinfo=UTC)
 
             # Check if exists
             existing = session.exec(
@@ -200,7 +200,7 @@ def load_biomarker_aggregates(session: Session) -> SeedResult:
     print_section("Loading biomarker aggregates")
     result = SeedResult(name="biomarker_aggregates")
 
-    base_date = datetime.now(timezone.utc) - timedelta(weeks=16)
+    base_date = datetime.now(UTC) - timedelta(weeks=16)
 
     for i, data in enumerate(BIOMARKER_AGGREGATE_SEED):
         existing = session.exec(

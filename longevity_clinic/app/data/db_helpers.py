@@ -6,8 +6,10 @@ These replace hardcoded demo data lookups with actual DB queries.
 
 from __future__ import annotations
 
+from datetime import UTC
+
 # Standard library
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any
 
 # Third-party
 import reflex as rx
@@ -17,10 +19,7 @@ from sqlmodel import select
 from longevity_clinic.app.config import get_logger
 from longevity_clinic.app.functions.utils import normalize_phone
 
-from .model import BiomarkerDefinition, BiomarkerReading, CallLog, CheckIn, User
-
-if TYPE_CHECKING:
-    pass  # Add type-only imports here if needed
+from .model import BiomarkerDefinition, BiomarkerReading, CheckIn, User
 
 logger = get_logger("longevity_clinic.db_helpers")
 
@@ -30,7 +29,7 @@ logger = get_logger("longevity_clinic.db_helpers")
 # =============================================================================
 
 
-def get_user_by_phone_sync(phone: str) -> Optional[User]:
+def get_user_by_phone_sync(phone: str) -> User | None:
     """Get user by phone number (sync version).
 
     Args:
@@ -81,7 +80,7 @@ def get_patient_name_by_phone(phone: str, fallback: str = "Unknown Patient") -> 
     return fallback if fallback != "Unknown Patient" else f"Patient ({phone})"
 
 
-def get_user_by_external_id_sync(external_id: str) -> Optional[User]:
+def get_user_by_external_id_sync(external_id: str) -> User | None:
     """Get user by external ID (e.g., 'P001').
 
     Args:
@@ -100,7 +99,7 @@ def get_user_by_external_id_sync(external_id: str) -> Optional[User]:
         return None
 
 
-def get_all_patients_sync() -> List[User]:
+def get_all_patients_sync() -> list[User]:
     """Get all patient users from database.
 
     Returns:
@@ -114,7 +113,7 @@ def get_all_patients_sync() -> List[User]:
         return []
 
 
-def get_phone_to_patient_map() -> Dict[str, str]:
+def get_phone_to_patient_map() -> dict[str, str]:
     """Build phone-to-patient-name mapping from database.
 
     This replaces the hardcoded PHONE_TO_PATIENT dict.
@@ -140,9 +139,9 @@ def get_phone_to_patient_map() -> Dict[str, str]:
 
 
 def get_checkins_sync(
-    status: Optional[str] = None,
+    status: str | None = None,
     limit: int = 100,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get check-ins from database.
 
     Args:
@@ -188,7 +187,7 @@ def update_checkin_status_sync(
     checkin_id: str,
     status: str,
     reviewed_by: str,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Update check-in status in database.
 
     Args:
@@ -199,7 +198,7 @@ def update_checkin_status_sync(
     Returns:
         Updated check-in dict or None on failure
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     try:
         with rx.session() as session:
@@ -214,8 +213,8 @@ def update_checkin_status_sync(
             checkin.status = status
             checkin.provider_reviewed = True
             checkin.reviewed_by = reviewed_by
-            checkin.reviewed_at = datetime.now(timezone.utc)
-            checkin.updated_at = datetime.now(timezone.utc)
+            checkin.reviewed_at = datetime.now(UTC)
+            checkin.updated_at = datetime.now(UTC)
 
             session.add(checkin)
             session.commit()
@@ -237,7 +236,7 @@ def update_checkin_status_sync(
 # =============================================================================
 
 
-def get_biomarker_definitions_sync() -> List[Dict[str, Any]]:
+def get_biomarker_definitions_sync() -> list[dict[str, Any]]:
     """Get all biomarker definitions from database.
 
     Returns:
@@ -266,9 +265,9 @@ def get_biomarker_definitions_sync() -> List[Dict[str, Any]]:
 
 
 def get_patient_biomarkers_sync(
-    user_id: Optional[int] = None,
-    external_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    user_id: int | None = None,
+    external_id: str | None = None,
+) -> list[dict[str, Any]]:
     """Get biomarkers with latest readings for a patient.
 
     Args:
@@ -342,14 +341,14 @@ def get_patient_biomarkers_sync(
 # =============================================================================
 
 __all__ = [
-    "normalize_phone",
-    "get_user_by_phone_sync",
-    "get_patient_name_by_phone",
-    "get_user_by_external_id_sync",
     "get_all_patients_sync",
-    "get_phone_to_patient_map",
-    "get_checkins_sync",
-    "update_checkin_status_sync",
     "get_biomarker_definitions_sync",
+    "get_checkins_sync",
     "get_patient_biomarkers_sync",
+    "get_patient_name_by_phone",
+    "get_phone_to_patient_map",
+    "get_user_by_external_id_sync",
+    "get_user_by_phone_sync",
+    "normalize_phone",
+    "update_checkin_status_sync",
 ]

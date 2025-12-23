@@ -5,7 +5,7 @@ from __future__ import annotations
 # Standard library
 import random
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Third-party
 import httpx
@@ -81,7 +81,7 @@ def format_phone_display(phone: str) -> str:
 
 def generate_biomarker_history(
     base_val: float, volatility: float
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Generate historical biomarker data with random variations.
 
     This is used to create mock historical data for display purposes.
@@ -117,7 +117,7 @@ def format_timestamp(date_str: str, fmt: str = "%B %d, %Y at %I:%M %p") -> str:
 
 
 async def fetch_call_logs(
-    phone_number: Optional[str] = None,
+    phone_number: str | None = None,
     limit: int = 50,
     offset: int = 0,
     page: int = 1,

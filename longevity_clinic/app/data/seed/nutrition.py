@@ -10,21 +10,18 @@ Contains:
 
 from __future__ import annotations
 
-from typing import List
-
 # Import types from state_schemas
 from ..state_schemas import (
-    NutritionSummary,
+    Condition,
+    DataSource,
     FoodEntry,
     MedicationEntry,
-    Condition,
+    NutritionSummary,
+    Reminder,
     Symptom,
     SymptomEntry,
-    Reminder,
     SymptomTrend,
-    DataSource,
 )
-
 
 # =============================================================================
 # Nutrition Seed Data
@@ -39,7 +36,7 @@ NUTRITION_SUMMARY_SEED: NutritionSummary = {
     "water_intake": 2.4,
 }
 
-FOOD_ENTRIES_SEED: List[FoodEntry] = [
+FOOD_ENTRIES_SEED: list[FoodEntry] = [
     {
         "id": "1",
         "name": "Greek Yogurt with Berries",
@@ -87,7 +84,7 @@ FOOD_ENTRIES_SEED: List[FoodEntry] = [
 # Medication Seed Data
 # =============================================================================
 
-MEDICATIONS_SEED: List[MedicationEntry] = [
+MEDICATIONS_SEED: list[MedicationEntry] = [
     {
         "id": "1",
         "name": "Metformin",
@@ -127,7 +124,7 @@ MEDICATIONS_SEED: List[MedicationEntry] = [
 # Condition Seed Data
 # =============================================================================
 
-CONDITIONS_SEED: List[Condition] = [
+CONDITIONS_SEED: list[Condition] = [
     {
         "id": "1",
         "name": "Type 2 Diabetes",
@@ -171,7 +168,7 @@ CONDITIONS_SEED: List[Condition] = [
 # Symptom Seed Data
 # =============================================================================
 
-SYMPTOMS_SEED: List[Symptom] = [
+SYMPTOMS_SEED: list[Symptom] = [
     {
         "id": "1",
         "name": "Fatigue",
@@ -195,7 +192,7 @@ SYMPTOMS_SEED: List[Symptom] = [
     },
 ]
 
-SYMPTOM_LOGS_SEED: List[SymptomEntry] = [
+SYMPTOM_LOGS_SEED: list[SymptomEntry] = [
     {
         "id": "1",
         "symptom_name": "Fatigue",
@@ -219,7 +216,7 @@ SYMPTOM_LOGS_SEED: List[SymptomEntry] = [
     },
 ]
 
-SYMPTOM_TRENDS_SEED: List[SymptomTrend] = [
+SYMPTOM_TRENDS_SEED: list[SymptomTrend] = [
     {
         "id": "1",
         "symptom_name": "Fatigue",
@@ -254,7 +251,7 @@ SYMPTOM_TRENDS_SEED: List[SymptomTrend] = [
 # Reminder Seed Data
 # =============================================================================
 
-REMINDERS_SEED: List[Reminder] = [
+REMINDERS_SEED: list[Reminder] = [
     {
         "id": "1",
         "title": "Take Metformin",
@@ -302,7 +299,7 @@ REMINDERS_SEED: List[Reminder] = [
 # Data Sources Seed Data (connected devices/apps)
 # =============================================================================
 
-DATA_SOURCES_SEED: List[DataSource] = [
+DATA_SOURCES_SEED: list[DataSource] = [
     {
         "id": "1",
         "name": "Apple Watch Series 9",
@@ -367,13 +364,13 @@ DATA_SOURCES_SEED: List[DataSource] = [
 
 
 __all__ = [
-    "NUTRITION_SUMMARY_SEED",
+    "CONDITIONS_SEED",
+    "DATA_SOURCES_SEED",
     "FOOD_ENTRIES_SEED",
     "MEDICATIONS_SEED",
-    "CONDITIONS_SEED",
+    "NUTRITION_SUMMARY_SEED",
+    "REMINDERS_SEED",
     "SYMPTOMS_SEED",
     "SYMPTOM_LOGS_SEED",
-    "REMINDERS_SEED",
     "SYMPTOM_TRENDS_SEED",
-    "DATA_SOURCES_SEED",
 ]

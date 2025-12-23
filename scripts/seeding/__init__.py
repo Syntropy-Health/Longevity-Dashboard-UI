@@ -19,24 +19,28 @@ Or use the CLI:
     python scripts/load_seed_data.py --reset
 """
 
-from .base import get_engine, create_tables, drop_tables, SeedResult
-from .users import load_users
-from .checkins import load_checkins
-from .notifications import load_notifications
 from .appointments import load_appointments
-from .call_logs import load_call_logs
-from .treatments import load_treatments, load_treatment_protocol_metrics
+from .base import SeedResult, create_tables, drop_tables, get_engine
 from .biomarkers import (
+    load_biomarker_aggregates,
     load_biomarker_definitions,
     load_biomarker_readings,
-    load_biomarker_aggregates,
 )
-from .health import load_health_entries
+from .call_logs import load_call_logs
+from .checkins import load_checkins
 from .clinic_metrics import (
-    load_patient_visits,
     load_daily_metrics,
+    load_patient_visits,
     load_provider_metrics,
 )
+from .health import load_health_entries
+from .notifications import load_notifications
+from .treatments import (
+    load_patient_treatment_assignments,
+    load_treatment_protocol_metrics,
+    load_treatments,
+)
+from .users import load_users
 
 
 def load_all_seed_data(reset: bool = False) -> dict[str, SeedResult]:
@@ -70,7 +74,11 @@ def load_all_seed_data(reset: bool = False) -> dict[str, SeedResult]:
 
         # Treatments
         results["treatments"] = load_treatments(session)
+        treatment_id_map = results["treatments"].id_map
         results["treatment_protocols"] = load_treatment_protocol_metrics(session)
+        results["patient_treatments"] = load_patient_treatment_assignments(
+            session, user_id_map, treatment_id_map
+        )
 
         # Health entries for primary user
         results["health"] = load_health_entries(session, user_id_map)
@@ -92,26 +100,27 @@ def load_all_seed_data(reset: bool = False) -> dict[str, SeedResult]:
 
 
 __all__ = [
-    # Base utilities
-    "get_engine",
+    "SeedResult",
     "create_tables",
     "drop_tables",
-    "SeedResult",
-    # Individual loaders
-    "load_users",
-    "load_checkins",
-    "load_notifications",
-    "load_call_logs",
-    "load_treatments",
-    "load_treatment_protocol_metrics",
-    "load_biomarker_definitions",
-    "load_biomarker_readings",
-    "load_biomarker_aggregates",
-    "load_health_entries",
-    "load_patient_visits",
-    "load_daily_metrics",
-    "load_provider_metrics",
-    "load_appointments",
+    # Base utilities
+    "get_engine",
     # Convenience function
     "load_all_seed_data",
+    "load_appointments",
+    "load_biomarker_aggregates",
+    "load_biomarker_definitions",
+    "load_biomarker_readings",
+    "load_call_logs",
+    "load_checkins",
+    "load_daily_metrics",
+    "load_health_entries",
+    "load_notifications",
+    "load_patient_treatment_assignments",
+    "load_patient_visits",
+    "load_provider_metrics",
+    "load_treatment_protocol_metrics",
+    "load_treatments",
+    # Individual loaders
+    "load_users",
 ]

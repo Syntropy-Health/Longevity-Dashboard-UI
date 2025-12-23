@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
@@ -58,7 +58,7 @@ def load_health_entries(session: Session, user_id_map: dict[str, int]) -> SeedRe
             status=med_data.get("status", "active"),
             adherence_rate=med_data.get("adherence_rate", 1.0),
             source="seed",
-            mentioned_at=datetime.now(timezone.utc),
+            mentioned_at=datetime.now(UTC),
         )
         session.add(med)
         med_count += 1
@@ -87,7 +87,7 @@ def load_health_entries(session: Session, user_id_map: dict[str, int]) -> SeedRe
             meal_type=food_data.get("meal_type", "snack"),
             consumed_at=food_data.get("time", ""),
             source="seed",
-            logged_at=datetime.now(timezone.utc),
+            logged_at=datetime.now(UTC),
         )
         session.add(food)
         food_count += 1
@@ -113,7 +113,7 @@ def load_health_entries(session: Session, user_id_map: dict[str, int]) -> SeedRe
             frequency=symptom_data.get("frequency", ""),
             trend=symptom_data.get("trend", "stable"),
             source="seed",
-            reported_at=datetime.now(timezone.utc),
+            reported_at=datetime.now(UTC),
         )
         session.add(symptom)
         symptom_count += 1

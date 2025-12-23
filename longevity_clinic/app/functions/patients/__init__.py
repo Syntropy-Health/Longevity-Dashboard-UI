@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+# Re-export fetch_call_logs from utils for convenience
+from ..utils import fetch_call_logs
+
 # Local application - analytics
 from .analytics import (
     calculate_health_score,
@@ -45,38 +48,35 @@ from .voice import (
     transcribe_audio_file,
 )
 
-# Re-export fetch_call_logs from utils for convenience
-from ..utils import fetch_call_logs
-
 __all__ = [
+    "calculate_health_score",
+    "calculate_medication_adherence",
+    "calculate_trend_analysis",
+    # Analytics
+    "fetch_analytics_summary",
+    "fetch_appointments",
+    "fetch_biomarker_analytics_data",
+    "fetch_biomarker_history",
+    # Biomarkers
+    "fetch_biomarkers",
     # Call logs
     "fetch_call_logs",
+    # Dashboard
+    "fetch_conditions",
+    "fetch_data_sources",
+    # Patients
+    "fetch_patients",
+    "fetch_reminders",
+    "fetch_symptoms",
+    "fetch_treatment_data",
+    "fetch_treatments",
+    "fetch_trend_data",
+    "format_recording_duration",
+    "get_openai_client",
+    "load_all_biomarker_data",
+    "load_all_dashboard_data",
+    "load_all_patient_data",
     # Voice
     "transcribe_audio",
     "transcribe_audio_file",
-    "format_recording_duration",
-    "get_openai_client",
-    # Biomarkers
-    "fetch_biomarkers",
-    "fetch_biomarker_history",
-    "fetch_treatments",
-    "fetch_appointments",
-    "load_all_biomarker_data",
-    # Analytics
-    "fetch_analytics_summary",
-    "calculate_health_score",
-    "calculate_trend_analysis",
-    # Dashboard
-    "fetch_conditions",
-    "fetch_symptoms",
-    "fetch_data_sources",
-    "fetch_reminders",
-    "load_all_dashboard_data",
-    "calculate_medication_adherence",
-    # Patients
-    "fetch_patients",
-    "fetch_trend_data",
-    "fetch_treatment_data",
-    "fetch_biomarker_analytics_data",
-    "load_all_patient_data",
 ]

@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.model import Treatment, PatientTreatment
+from longevity_clinic.app.data.model import PatientTreatment, Treatment
 from longevity_clinic.app.data.state_schemas import TreatmentProtocol
 
 logger = get_logger("longevity_clinic.db_utils.treatments")
 
 
-def get_all_treatments_sync() -> List[Treatment]:
+def get_all_treatments_sync() -> list[Treatment]:
     """Get all treatments from database."""
     try:
         with rx.session() as session:
@@ -24,7 +22,7 @@ def get_all_treatments_sync() -> List[Treatment]:
         return []
 
 
-def get_treatment_by_id_sync(treatment_id: str) -> Optional[Treatment]:
+def get_treatment_by_id_sync(treatment_id: str) -> Treatment | None:
     """Get treatment by external ID (e.g., 'T001')."""
     try:
         with rx.session() as session:
@@ -36,7 +34,7 @@ def get_treatment_by_id_sync(treatment_id: str) -> Optional[Treatment]:
         return None
 
 
-def get_treatments_as_protocols_sync() -> List[TreatmentProtocol]:
+def get_treatments_as_protocols_sync() -> list[TreatmentProtocol]:
     """Get all treatments converted to TreatmentProtocol TypedDict format."""
     treatments = get_all_treatments_sync()
     return [
@@ -54,7 +52,7 @@ def get_treatments_as_protocols_sync() -> List[TreatmentProtocol]:
     ]
 
 
-def get_patient_treatments_sync(user_id: int) -> List[PatientTreatment]:
+def get_patient_treatments_sync(user_id: int) -> list[PatientTreatment]:
     """Get all treatment assignments for a patient."""
     try:
         with rx.session() as session:
@@ -77,7 +75,7 @@ def create_treatment_sync(
     frequency: str = "",
     cost: float = 0.0,
     status: str = "Active",
-) -> Optional[Treatment]:
+) -> Treatment | None:
     """Create a new treatment in database."""
     try:
         with rx.session() as session:
@@ -102,14 +100,14 @@ def create_treatment_sync(
 
 def update_treatment_sync(
     treatment_id: str,
-    name: Optional[str] = None,
-    category: Optional[str] = None,
-    description: Optional[str] = None,
-    duration: Optional[str] = None,
-    frequency: Optional[str] = None,
-    cost: Optional[float] = None,
-    status: Optional[str] = None,
-) -> Optional[Treatment]:
+    name: str | None = None,
+    category: str | None = None,
+    description: str | None = None,
+    duration: str | None = None,
+    frequency: str | None = None,
+    cost: float | None = None,
+    status: str | None = None,
+) -> Treatment | None:
     """Update an existing treatment."""
     try:
         with rx.session() as session:

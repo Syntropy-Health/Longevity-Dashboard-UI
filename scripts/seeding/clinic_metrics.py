@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlmodel import Session, select
 
@@ -33,7 +33,7 @@ def load_patient_visits(session: Session) -> SeedResult:
     print_section("Loading patient visit trends")
     result = SeedResult(name="patient_visits")
 
-    base_date = datetime.now(timezone.utc) - timedelta(days=180)
+    base_date = datetime.now(UTC) - timedelta(days=180)
 
     for i, data in enumerate(PATIENT_VISIT_SEED):
         # Check if exists
@@ -77,9 +77,7 @@ def load_daily_metrics(session: Session) -> SeedResult:
     print_section("Loading daily clinic metrics")
     result = SeedResult(name="daily_metrics")
 
-    today = datetime.now(timezone.utc).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    today = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
     # Load hourly flow data
     for data in HOURLY_FLOW_SEED:
@@ -149,7 +147,7 @@ def load_provider_metrics(session: Session) -> SeedResult:
     print_section("Loading provider metrics")
     result = SeedResult(name="provider_metrics")
 
-    current_period = datetime.now(timezone.utc).strftime("%Y-%m")
+    current_period = datetime.now(UTC).strftime("%Y-%m")
 
     for data in PROVIDER_METRICS_SEED:
         existing = session.exec(

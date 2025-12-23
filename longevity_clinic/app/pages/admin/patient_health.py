@@ -1,9 +1,9 @@
 """Admin patient health page - view patient health metrics."""
 
 import reflex as rx
+
 from ...components.layout import authenticated_layout
 from ...styles import GlassStyles
-from .state import AdminDashboardState
 from .tabs import patient_health_tab
 
 

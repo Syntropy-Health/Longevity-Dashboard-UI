@@ -9,7 +9,7 @@ import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.model import (
+from longevity_clinic.app.data.schemas.db import (
     CallTranscript,
     CheckIn,
     FoodLogEntry as FoodLogEntryDB,
@@ -18,7 +18,7 @@ from longevity_clinic.app.data.model import (
 )
 
 if TYPE_CHECKING:
-    from longevity_clinic.app.data.process_schema import MetricLogsOutput
+    from longevity_clinic.app.data.schemas.llm import MetricLogsOutput
 
 logger = get_logger("longevity_clinic.db_utils.checkins")
 

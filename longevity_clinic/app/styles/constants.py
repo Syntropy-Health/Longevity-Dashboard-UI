@@ -512,17 +512,55 @@ class AppStyles(BaseModel):
 
 styles = AppStyles()
 
+
+# =============================================================================
+# Category Display Styles
+# =============================================================================
+from typing import TypedDict
+
+from longevity_clinic.app.data.schemas.db.domain_enums import TreatmentCategoryEnum
+
+
+class CategoryColorConfig(TypedDict):
+    """Color configuration for a category."""
+
+    bg: str
+    text: str
+
+
+# Color mappings for treatment categories (UI display purposes)
+# Keys use TreatmentCategoryEnum from domain_enums for type safety
+TREATMENT_CATEGORY_COLORS: dict[TreatmentCategoryEnum, CategoryColorConfig] = {
+    TreatmentCategoryEnum.IV_THERAPY: {"bg": "bg-blue-100", "text": "text-blue-800"},
+    TreatmentCategoryEnum.CRYOTHERAPY: {"bg": "bg-cyan-100", "text": "text-cyan-800"},
+    TreatmentCategoryEnum.SUPPLEMENTS: {"bg": "bg-green-100", "text": "text-green-800"},
+    TreatmentCategoryEnum.HORMONE_THERAPY: {
+        "bg": "bg-purple-100",
+        "text": "text-purple-800",
+    },
+    TreatmentCategoryEnum.PHYSICAL_THERAPY: {
+        "bg": "bg-orange-100",
+        "text": "text-orange-800",
+    },
+    TreatmentCategoryEnum.SPA_SERVICES: {"bg": "bg-pink-100", "text": "text-pink-800"},
+}
+
+
 __all__ = [
     "AlertStyles",
     "AppStyles",
     "BadgeStyles",
     "ButtonStyles",
     "CardStyles",
+    "CategoryColorConfig",
     "FormStyles",
+    "GlassStyles",
     "GridStyles",
     "ModalStyles",
     "StatusBadgeStyles",
+    "TREATMENT_CATEGORY_COLORS",
     "TextStyles",
+    "TreatmentCategoryEnum",  # Re-exported from domain_enums
     "ZIndexStyles",
     "styles",
 ]

@@ -9,13 +9,13 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from longevity_clinic.app.config import VlogsConfig
-from longevity_clinic.app.data.process_schema import (
+from longevity_clinic.app.data.schemas.llm import (
     CheckInSummary,
     MetricLogsOutput,
 )
-from longevity_clinic.app.data.state_schemas import (
-    FoodEntry as FoodEntrySchema,
-    MedicationEntry as MedicationEntrySchema,
+from longevity_clinic.app.data.schemas.llm import (
+    FoodEntryModel as FoodEntrySchema,
+    MedicationEntryModel as MedicationEntrySchema,
     Symptom as SymptomSchema,
 )
 from longevity_clinic.app.functions.vlogs import VlogsAgent

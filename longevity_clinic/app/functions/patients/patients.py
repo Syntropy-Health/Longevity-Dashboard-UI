@@ -15,7 +15,7 @@ from typing import Any
 
 # Local application
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.state_schemas import Patient
+from longevity_clinic.app.data.schemas.state import Patient
 
 logger = get_logger("longevity_clinic.patients_functions")
 

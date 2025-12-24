@@ -5,8 +5,8 @@ Contains patient check-in seed data for both patient and admin views.
 
 from __future__ import annotations
 
-# Import CheckIn type from state_schemas
-from ..state_schemas import CheckIn
+# Import CheckIn type from schemas
+from ..schemas.state import CheckIn
 
 # =============================================================================
 # Patient Check-in Seed Data

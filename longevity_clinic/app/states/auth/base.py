@@ -7,7 +7,7 @@ from __future__ import annotations
 import reflex as rx
 
 # Local application
-from longevity_clinic.app.data.state_schemas import User
+from longevity_clinic.app.data.schemas.state import User
 from longevity_clinic.app.functions.utils import format_phone_display
 
 

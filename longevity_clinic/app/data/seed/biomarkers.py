@@ -5,13 +5,13 @@ Uses dict format compatible with SQLModel.model_validate() for type safety.
 
 from __future__ import annotations
 
-from ..biomarkers import (
+from ..schemas.db import (
     BiomarkerCategoryEnum,
-    BiomarkerMetricName,
-    BiomarkerMetricSeed,
-    BiomarkerStatus,
-    MeasurementUnit,
+    BiomarkerMetricNameEnum as BiomarkerMetricName,
+    BiomarkerStatusEnum as BiomarkerStatus,
+    MeasurementUnitEnum as MeasurementUnit,
 )
+from ..schemas.state import BiomarkerMetricSeed
 
 # =============================================================================
 # Biomarker Metric Seed Data (organized by category)

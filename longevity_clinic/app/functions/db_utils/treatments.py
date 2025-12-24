@@ -6,8 +6,8 @@ import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.model import PatientTreatment, Treatment
-from longevity_clinic.app.data.state_schemas import TreatmentProtocol
+from longevity_clinic.app.data.schemas.db import PatientTreatment, Treatment
+from longevity_clinic.app.data.schemas.state import TreatmentProtocol
 
 logger = get_logger("longevity_clinic.db_utils.treatments")
 

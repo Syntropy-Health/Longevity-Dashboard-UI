@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 
 from ...config import get_logger
-from ...data.categories import HealthKeyword
+from ...data.schemas.db import HealthKeywordEnum as HealthKeyword
 from ..db_utils import (
     get_checkins_sync,
     get_patient_name_by_phone,

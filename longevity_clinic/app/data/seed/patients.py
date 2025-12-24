@@ -12,8 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-# Import Patient type from state_schemas
-from ..state_schemas import Patient
+# Import Patient type from schemas
+from ..schemas.state import Patient
 
 
 @dataclass

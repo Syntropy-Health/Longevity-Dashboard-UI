@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import Any
 
 import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.model import BiomarkerDefinition, BiomarkerReading
+from longevity_clinic.app.data.schemas.db import BiomarkerDefinition, BiomarkerReading
 from longevity_clinic.app.functions.utils import generate_biomarker_history
 
 logger = get_logger("longevity_clinic.db_utils.biomarkers")
@@ -131,215 +130,89 @@ def get_biomarker_definitions_sync(
         return []
 
 
-def get_biomarker_definition_by_name_sync(
-    name: str,
-) -> dict[str, Any] | None:
-    """Get biomarker definition by name."""
-    try:
-        with rx.session() as session:
-            definition = session.exec(
-                select(BiomarkerDefinition).where(BiomarkerDefinition.name == name)
-            ).first()
-
-            if not definition:
-                # Try short_name
-                definition = session.exec(
-                    select(BiomarkerDefinition).where(
-                        BiomarkerDefinition.short_name == name
-                    )
-                ).first()
-
-            if not definition:
-                return None
-
-            return {
-                "id": definition.id,
-                "name": definition.name,
-                "short_name": definition.short_name,
-                "category": definition.category,
-                "unit": definition.unit,
-                "min_normal": definition.min_normal,
-                "max_normal": definition.max_normal,
-                "optimal_min": definition.optimal_min,
-                "optimal_max": definition.optimal_max,
-                "description": definition.description or "",
-                "clinical_significance": definition.clinical_significance or "",
-            }
-    except Exception as e:
-        logger.error("Failed to get biomarker definition %s: %s", name, e)
-        return None
-
-
 def get_patient_biomarkers_sync(
-    user_id: int,
+    user_id: int | None = None,
+    external_id: str | None = None,
     biomarker_name: str | None = None,
     limit: int = 100,
 ) -> list[dict[str, Any]]:
-    """Get biomarker readings for a patient."""
-    try:
-        with rx.session() as session:
-            query = (
-                select(BiomarkerReading, BiomarkerDefinition)
-                .join(
-                    BiomarkerDefinition,
-                    BiomarkerReading.biomarker_id == BiomarkerDefinition.id,
-                )
-                .where(BiomarkerReading.user_id == user_id)
-                .order_by(BiomarkerReading.reading_date.desc())
-                .limit(limit)
-            )
+    """Get biomarkers with latest readings for a patient.
 
+    Args:
+        user_id: Database user ID
+        external_id: External user ID (e.g., 'P001')
+        biomarker_name: Optional filter by biomarker name
+        limit: Maximum number of readings to return
+
+    Returns:
+        List of Biomarker dicts with current value and history
+    """
+    from .users import get_user_by_external_id_sync
+
+    try:
+        # Resolve user_id from external_id if needed
+        if not user_id and external_id:
+            user = get_user_by_external_id_sync(external_id)
+            user_id = user.id if user else None
+
+        if not user_id:
+            logger.warning("get_patient_biomarkers_sync: No user_id provided")
+            return []
+
+        with rx.session() as session:
+            # Get all definitions
+            defs_query = select(BiomarkerDefinition)
             if biomarker_name:
-                query = query.where(
+                defs_query = defs_query.where(
                     (BiomarkerDefinition.name == biomarker_name)
                     | (BiomarkerDefinition.short_name == biomarker_name)
                 )
+            defs = session.exec(defs_query).all()
 
-            results = session.exec(query).all()
+            result = []
+            for d in defs:
+                # Get readings for this biomarker, ordered by date
+                readings = session.exec(
+                    select(BiomarkerReading)
+                    .where(
+                        BiomarkerReading.user_id == user_id,
+                        BiomarkerReading.biomarker_id == d.id,
+                    )
+                    .order_by(BiomarkerReading.measured_at.desc())
+                    .limit(limit)
+                ).all()
 
-            return [
-                {
-                    "id": reading.id,
-                    "biomarker_name": definition.name,
-                    "short_name": definition.short_name,
-                    "category": definition.category,
-                    "value": reading.value,
-                    "unit": definition.unit,
-                    "reading_date": (
-                        reading.reading_date.isoformat() if reading.reading_date else ""
-                    ),
-                    "source": reading.source or "manual",
-                    "notes": reading.notes or "",
-                    "min_normal": definition.min_normal,
-                    "max_normal": definition.max_normal,
-                    "optimal_min": definition.optimal_min,
-                    "optimal_max": definition.optimal_max,
-                }
-                for reading, definition in results
-            ]
+                if not readings:
+                    continue
+
+                latest = readings[0]
+                # Build history from readings (last 6 for chart)
+                history = [
+                    {"date": r.measured_at.strftime("%b"), "value": r.value}
+                    for r in reversed(readings[-6:])
+                ]
+
+                result.append(
+                    {
+                        "id": d.code,
+                        "name": d.name,
+                        "category": d.category,
+                        "unit": d.unit,
+                        "description": d.description or "",
+                        "optimal_min": d.optimal_min,
+                        "optimal_max": d.optimal_max,
+                        "critical_min": d.critical_min,
+                        "critical_max": d.critical_max,
+                        "current_value": latest.value,
+                        "status": (
+                            latest.status.capitalize() if latest.status else "Optimal"
+                        ),
+                        "trend": latest.trend or "stable",
+                        "history": history,
+                    }
+                )
+
+            return result
     except Exception as e:
         logger.error("Failed to get biomarkers for user %s: %s", user_id, e)
-        return []
-
-
-def get_latest_biomarkers_sync(
-    user_id: int,
-) -> dict[str, dict[str, Any]]:
-    """Get latest reading for each biomarker for a user."""
-    try:
-        with rx.session() as session:
-            # Get all biomarker definitions
-            definitions = session.exec(select(BiomarkerDefinition)).all()
-
-            latest_readings: dict[str, dict[str, Any]] = {}
-
-            for definition in definitions:
-                reading = session.exec(
-                    select(BiomarkerReading)
-                    .where(BiomarkerReading.user_id == user_id)
-                    .where(BiomarkerReading.biomarker_id == definition.id)
-                    .order_by(BiomarkerReading.reading_date.desc())
-                    .limit(1)
-                ).first()
-
-                if reading:
-                    latest_readings[definition.short_name] = {
-                        "value": reading.value,
-                        "unit": definition.unit,
-                        "date": (
-                            reading.reading_date.isoformat()
-                            if reading.reading_date
-                            else ""
-                        ),
-                        "name": definition.name,
-                        "category": definition.category,
-                        "min_normal": definition.min_normal,
-                        "max_normal": definition.max_normal,
-                        "optimal_min": definition.optimal_min,
-                        "optimal_max": definition.optimal_max,
-                    }
-
-            return latest_readings
-    except Exception as e:
-        logger.error("Failed to get latest biomarkers for user %s: %s", user_id, e)
-        return {}
-
-
-def create_biomarker_reading_sync(
-    user_id: int,
-    biomarker_id: int,
-    value: float,
-    reading_date: datetime | None = None,
-    source: str = "manual",
-    notes: str | None = None,
-) -> dict[str, Any] | None:
-    """Create a biomarker reading."""
-    try:
-        with rx.session() as session:
-            reading = BiomarkerReading(
-                user_id=user_id,
-                biomarker_id=biomarker_id,
-                value=value,
-                reading_date=reading_date or datetime.now(UTC),
-                source=source,
-                notes=notes,
-            )
-            session.add(reading)
-            session.commit()
-            session.refresh(reading)
-
-            return {
-                "id": reading.id,
-                "biomarker_id": reading.biomarker_id,
-                "value": reading.value,
-                "date": (
-                    reading.reading_date.isoformat() if reading.reading_date else ""
-                ),
-            }
-    except Exception as e:
-        logger.error("Failed to create biomarker reading: %s", e)
-        return None
-
-
-def get_biomarker_trends_sync(
-    user_id: int,
-    biomarker_name: str,
-    days: int = 365,
-) -> list[dict[str, Any]]:
-    """Get biomarker readings over time for trend analysis."""
-    try:
-        from datetime import timedelta
-
-        cutoff_date = datetime.now(UTC) - timedelta(days=days)
-
-        with rx.session() as session:
-            definition = session.exec(
-                select(BiomarkerDefinition).where(
-                    (BiomarkerDefinition.name == biomarker_name)
-                    | (BiomarkerDefinition.short_name == biomarker_name)
-                )
-            ).first()
-
-            if not definition:
-                logger.warning("Biomarker definition not found: %s", biomarker_name)
-                return []
-
-            readings = session.exec(
-                select(BiomarkerReading)
-                .where(BiomarkerReading.user_id == user_id)
-                .where(BiomarkerReading.biomarker_id == definition.id)
-                .where(BiomarkerReading.reading_date >= cutoff_date)
-                .order_by(BiomarkerReading.reading_date.asc())
-            ).all()
-
-            return [
-                {
-                    "date": r.reading_date.isoformat() if r.reading_date else "",
-                    "value": r.value,
-                    "source": r.source or "manual",
-                }
-                for r in readings
-            ]
-    except Exception as e:
-        logger.error("Failed to get biomarker trends for %s: %s", biomarker_name, e)
         return []

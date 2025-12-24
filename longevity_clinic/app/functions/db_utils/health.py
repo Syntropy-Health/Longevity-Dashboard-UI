@@ -2,21 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from typing import Any
-
 import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.model import (
+from longevity_clinic.app.data.schemas.db import (
     FoodLogEntry as FoodLogEntryDB,
     MedicationEntry as MedicationEntryDB,
     SymptomEntry as SymptomEntryDB,
 )
-from longevity_clinic.app.data.state_schemas import (
-    FoodEntry,
-    MedicationEntry,
+from longevity_clinic.app.data.schemas.llm import (
+    FoodEntryModel as FoodEntry,
+    MedicationEntryModel as MedicationEntry,
     Symptom,
 )
 
@@ -92,55 +89,6 @@ def create_medication_sync(
     except Exception as e:
         logger.error("Failed to create medication: %s", e)
         return None
-
-
-def update_medication_sync(
-    medication_id: int,
-    **updates: Any,
-) -> MedicationEntry | None:
-    """Update a medication entry."""
-    try:
-        with rx.session() as session:
-            medication = session.get(MedicationEntryDB, medication_id)
-            if not medication:
-                logger.warning("Medication not found: %s", medication_id)
-                return None
-
-            for key, value in updates.items():
-                if hasattr(medication, key):
-                    setattr(medication, key, value)
-
-            session.add(medication)
-            session.commit()
-            session.refresh(medication)
-
-            return MedicationEntry(
-                id=str(medication.id),
-                name=medication.name,
-                dosage=medication.dosage,
-                frequency=medication.frequency,
-                status=medication.status,
-                adherence_rate=medication.adherence_rate,
-            )
-    except Exception as e:
-        logger.error("Failed to update medication %s: %s", medication_id, e)
-        return None
-
-
-def delete_medication_sync(medication_id: int) -> bool:
-    """Delete a medication entry."""
-    try:
-        with rx.session() as session:
-            medication = session.get(MedicationEntryDB, medication_id)
-            if not medication:
-                return False
-
-            session.delete(medication)
-            session.commit()
-            return True
-    except Exception as e:
-        logger.error("Failed to delete medication %s: %s", medication_id, e)
-        return False
 
 
 # ============================================================================
@@ -222,22 +170,6 @@ def create_food_entry_sync(
         return None
 
 
-def delete_food_entry_sync(entry_id: int) -> bool:
-    """Delete a food log entry."""
-    try:
-        with rx.session() as session:
-            entry = session.get(FoodLogEntryDB, entry_id)
-            if not entry:
-                return False
-
-            session.delete(entry)
-            session.commit()
-            return True
-    except Exception as e:
-        logger.error("Failed to delete food entry %s: %s", entry_id, e)
-        return False
-
-
 # ============================================================================
 # SYMPTOMS
 # ============================================================================
@@ -303,77 +235,3 @@ def create_symptom_sync(
     except Exception as e:
         logger.error("Failed to create symptom: %s", e)
         return None
-
-
-def delete_symptom_sync(symptom_id: int) -> bool:
-    """Delete a symptom entry."""
-    try:
-        with rx.session() as session:
-            symptom = session.get(SymptomEntryDB, symptom_id)
-            if not symptom:
-                return False
-
-            session.delete(symptom)
-            session.commit()
-            return True
-    except Exception as e:
-        logger.error("Failed to delete symptom %s: %s", symptom_id, e)
-        return False
-
-
-# ============================================================================
-# CONDITIONS (stored in User model as JSON)
-# ============================================================================
-
-
-def get_conditions_sync(user_id: int) -> list[dict[str, Any]]:
-    """Get conditions for a user from database.
-
-    Conditions are stored in the User.conditions JSON field.
-    """
-    from longevity_clinic.app.data.model import User
-
-    try:
-        with rx.session() as session:
-            user = session.get(User, user_id)
-            if not user or not user.conditions:
-                return []
-
-            # Parse JSON conditions
-            import json
-
-            if isinstance(user.conditions, str):
-                conditions = json.loads(user.conditions)
-            else:
-                conditions = user.conditions
-
-            return conditions if isinstance(conditions, list) else []
-    except Exception as e:
-        logger.error("Failed to get conditions for user %s: %s", user_id, e)
-        return []
-
-
-def update_conditions_sync(
-    user_id: int,
-    conditions: list[dict[str, Any]],
-) -> bool:
-    """Update conditions for a user in database."""
-    import json
-
-    from longevity_clinic.app.data.model import User
-
-    try:
-        with rx.session() as session:
-            user = session.get(User, user_id)
-            if not user:
-                logger.warning("User not found: %s", user_id)
-                return False
-
-            user.conditions = json.dumps(conditions)
-            user.updated_at = datetime.now(UTC)
-            session.add(user)
-            session.commit()
-            return True
-    except Exception as e:
-        logger.error("Failed to update conditions for user %s: %s", user_id, e)
-        return False

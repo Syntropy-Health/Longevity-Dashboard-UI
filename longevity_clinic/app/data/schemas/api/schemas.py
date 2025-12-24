@@ -100,3 +100,10 @@ class TranscriptSummarizationRequest(BaseModel):
         ge=100,
         description="Maximum transcript length to process (truncated if longer)",
     )
+
+
+__all__ = [
+    "CallLogsAPIConfig",
+    "CallLogsQueryParams",
+    "TranscriptSummarizationRequest",
+]

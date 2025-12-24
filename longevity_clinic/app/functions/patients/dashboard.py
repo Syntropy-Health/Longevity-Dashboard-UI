@@ -22,10 +22,10 @@ from longevity_clinic.app.data.seed import (
     SYMPTOM_LOGS_SEED,
     SYMPTOM_TRENDS_SEED,
 )
-from longevity_clinic.app.data.state_schemas import (
+from longevity_clinic.app.data.schemas.llm import (
     Condition,
     DataSource,
-    SymptomEntry,
+    SymptomEntryModel as SymptomEntry,
     SymptomTrend,
 )
 

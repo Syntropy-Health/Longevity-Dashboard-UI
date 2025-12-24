@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
-from longevity_clinic.app.data.model import CheckIn
+from longevity_clinic.app.data.schemas.db import CheckIn
 from longevity_clinic.app.data.seed import CHECKIN_SEED_DATA
 
 from .base import SeedResult, print_section

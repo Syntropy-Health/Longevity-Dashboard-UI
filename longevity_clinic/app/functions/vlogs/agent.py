@@ -8,7 +8,7 @@ from datetime import datetime
 from langchain_core.language_models import BaseChatModel
 
 from longevity_clinic.app.config import VlogsConfig, get_logger
-from longevity_clinic.app.data.process_schema import CheckInSummary, MetricLogsOutput
+from longevity_clinic.app.data.schemas.llm import CheckInSummary, MetricLogsOutput
 from longevity_clinic.app.prompts import PARSE_CHECKIN
 
 from ..llm import get_structured_output_model, parse_with_structured_output

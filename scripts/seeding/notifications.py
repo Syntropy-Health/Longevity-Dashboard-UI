@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
-from longevity_clinic.app.data.model import Notification
+from longevity_clinic.app.data.schemas.db import Notification
 from longevity_clinic.app.data.seed import (
     ADMIN_NOTIFICATIONS_SEED,
     PATIENT_NOTIFICATIONS_SEED,

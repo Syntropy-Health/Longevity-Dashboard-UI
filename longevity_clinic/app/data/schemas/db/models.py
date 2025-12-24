@@ -1,6 +1,6 @@
 """Database models for the Longevity Clinic application.
 
-Uses Reflex's rx.Model (SQLModel) for database operations with SQLite.
+Uses Reflex's rx.Model (SQLModel) for database operations with SQLite/PostgreSQL.
 """
 
 from datetime import UTC, datetime
@@ -14,7 +14,9 @@ def utc_now() -> datetime:
     return datetime.now(UTC)
 
 
+# =============================================================================
 # User Model
+# =============================================================================
 
 
 class User(rx.Model, table=True):
@@ -32,7 +34,9 @@ class User(rx.Model, table=True):
     updated_at: datetime = Field(default_factory=utc_now)
 
 
+# =============================================================================
 # Call Log Models
+# =============================================================================
 
 
 class CallLog(rx.Model, table=True):
@@ -68,7 +72,9 @@ class CallTranscript(rx.Model, table=True):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+# =============================================================================
 # Check-in Models
+# =============================================================================
 
 
 class CheckIn(rx.Model, table=True):
@@ -117,7 +123,9 @@ class CheckIn(rx.Model, table=True):
     updated_at: datetime = Field(default_factory=utc_now)
 
 
+# =============================================================================
 # Notification Model
+# =============================================================================
 
 
 class Notification(rx.Model, table=True):
@@ -191,7 +199,7 @@ class MedicationEntry(rx.Model, table=True):
     """Medication entry extracted from check-ins.
 
     Normalized storage for dashboard queries and aggregations.
-    Links to CheckIn as the single source of truth (CheckIn holds call_log_id if applicable).
+    Links to CheckIn as the single source of truth.
     """
 
     __tablename__ = "medication_entries"
@@ -217,7 +225,6 @@ class FoodLogEntry(rx.Model, table=True):
     """Food/nutrition entry extracted from check-ins.
 
     Normalized storage for nutrition tracking and dashboards.
-    Links to CheckIn as the single source of truth (CheckIn holds call_log_id if applicable).
     """
 
     __tablename__ = "food_log_entries"
@@ -245,7 +252,6 @@ class SymptomEntry(rx.Model, table=True):
     """Symptom entry extracted from check-ins.
 
     Normalized storage for symptom tracking and trend analysis.
-    Links to CheckIn as the single source of truth (CheckIn holds call_log_id if applicable).
     """
 
     __tablename__ = "symptom_entries"
@@ -274,75 +280,62 @@ class SymptomEntry(rx.Model, table=True):
 
 
 class PatientVisit(rx.Model, table=True):
-    """Patient visit record for tracking clinic trends.
-
-    Tracks monthly patient visit statistics for admin dashboard charts.
-    """
+    """Patient visit record for tracking clinic trends."""
 
     __tablename__ = "patient_visits"
 
     id: int | None = Field(default=None, primary_key=True)
     period: str = Field(index=True)  # e.g., "Jan", "Feb", "2025-01", etc.
     period_type: str = Field(default="month")  # "day" | "week" | "month" | "quarter"
-    active_patients: int = Field(default=0)  # Count of active patients in period
-    new_patients: int = Field(default=0)  # New patients added in period
-    total_visits: int = Field(default=0)  # Total visits in period
+    active_patients: int = Field(default=0)
+    new_patients: int = Field(default=0)
+    total_visits: int = Field(default=0)
     notes: str | None = None
     recorded_at: datetime = Field(default_factory=utc_now)
     created_at: datetime = Field(default_factory=utc_now)
 
 
 class TreatmentProtocolMetric(rx.Model, table=True):
-    """Treatment protocol metrics for admin dashboard charts.
-
-    Tracks aggregate treatment counts for admin dashboard.
-    Renamed from TreatmentProtocol to avoid conflict with state TypedDict.
-    """
+    """Treatment protocol metrics for admin dashboard charts."""
 
     __tablename__ = "treatment_protocol_metrics"
 
     id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(index=True)  # e.g., "IV Therapy", "Cryo", etc.
-    category: str = Field(default="general")  # Category of treatment
-    active_count: int = Field(default=0)  # Number of active protocols
-    completed_count: int = Field(default=0)  # Number of completed protocols
-    success_rate: float = Field(default=0.0)  # Completion success rate %
-    avg_duration_days: int = Field(default=0)  # Average protocol duration
+    name: str = Field(index=True)
+    category: str = Field(default="general")
+    active_count: int = Field(default=0)
+    completed_count: int = Field(default=0)
+    success_rate: float = Field(default=0.0)
+    avg_duration_days: int = Field(default=0)
     notes: str | None = None
     updated_at: datetime = Field(default_factory=utc_now)
     created_at: datetime = Field(default_factory=utc_now)
 
 
 class BiomarkerAggregate(rx.Model, table=True):
-    """Aggregated biomarker scores for trend tracking.
-
-    Tracks average biomarker improvements across patient cohorts.
-    """
+    """Aggregated biomarker scores for trend tracking."""
 
     __tablename__ = "biomarker_aggregates"
 
     id: int | None = Field(default=None, primary_key=True)
-    period: str = Field(index=True)  # e.g., "Wk 1", "Wk 4", "Month 1"
-    period_type: str = Field(default="week")  # "week" | "month" | "quarter"
-    avg_score: float = Field(default=0.0)  # Average biomarker score
-    patient_count: int = Field(default=0)  # Number of patients in cohort
-    improvement_pct: float = Field(default=0.0)  # % improvement from baseline
+    period: str = Field(index=True)
+    period_type: str = Field(default="week")
+    avg_score: float = Field(default=0.0)
+    patient_count: int = Field(default=0)
+    improvement_pct: float = Field(default=0.0)
     notes: str | None = None
     recorded_at: datetime = Field(default_factory=utc_now)
     created_at: datetime = Field(default_factory=utc_now)
 
 
 class ClinicDailyMetrics(rx.Model, table=True):
-    """Daily clinic operational metrics.
-
-    Tracks daily throughput, wait times, room utilization.
-    """
+    """Daily clinic operational metrics."""
 
     __tablename__ = "clinic_daily_metrics"
 
     id: int | None = Field(default=None, primary_key=True)
     date: datetime = Field(index=True)
-    hour: int | None = None  # 0-23, None for daily aggregate
+    hour: int | None = None
 
     # Patient flow
     scheduled_appointments: int = Field(default=0)
@@ -353,10 +346,10 @@ class ClinicDailyMetrics(rx.Model, table=True):
     # Efficiency metrics
     avg_wait_time_minutes: float = Field(default=0.0)
     avg_appointment_duration_minutes: float = Field(default=0.0)
-    patient_throughput: float = Field(default=0.0)  # Patients per hour
+    patient_throughput: float = Field(default=0.0)
 
     # Room utilization
-    room_id: str | None = None  # None for clinic-wide aggregates
+    room_id: str | None = None
     room_occupancy_pct: float = Field(default=0.0)
     treatments_completed: int = Field(default=0)
 
@@ -364,30 +357,27 @@ class ClinicDailyMetrics(rx.Model, table=True):
 
 
 class ProviderMetrics(rx.Model, table=True):
-    """Provider performance metrics.
-
-    Tracks provider efficiency and patient load.
-    """
+    """Provider performance metrics."""
 
     __tablename__ = "provider_metrics"
 
     id: int | None = Field(default=None, primary_key=True)
     provider_id: int | None = Field(default=None, foreign_key="users.id", index=True)
     provider_name: str = Field(index=True)
-    period: str = Field(index=True)  # e.g., "2025-01" for monthly
+    period: str = Field(index=True)
     period_type: str = Field(default="month")
 
     # Performance metrics
     patient_count: int = Field(default=0)
-    efficiency_score: float = Field(default=0.0)  # 0-100%
-    on_time_rate: float = Field(default=0.0)  # % appointments started on time
-    avg_rating: float = Field(default=0.0)  # Patient satisfaction 0-5
+    efficiency_score: float = Field(default=0.0)
+    on_time_rate: float = Field(default=0.0)
+    avg_rating: float = Field(default=0.0)
 
     created_at: datetime = Field(default_factory=utc_now)
 
 
 # =============================================================================
-# Treatment Models (with user relationships)
+# Treatment Models
 # =============================================================================
 
 
@@ -416,7 +406,7 @@ class Treatment(rx.Model, table=True):
 class PatientTreatment(rx.Model, table=True):
     """Junction table for patient-treatment assignments.
 
-    Tracks which treatments are assigned to which patients.
+    Tracks which treatments are assigned to which patients with progress.
     """
 
     __tablename__ = "patient_treatments"
@@ -426,7 +416,7 @@ class PatientTreatment(rx.Model, table=True):
     treatment_id: int = Field(foreign_key="treatments.id", index=True)
 
     # Assignment details
-    assigned_by: str | None = None  # Provider name or ID
+    assigned_by: str | None = None
     start_date: datetime = Field(default_factory=utc_now)
     end_date: datetime | None = None
     status: str = Field(default="active")  # active | completed | paused | cancelled
@@ -450,16 +440,15 @@ class BiomarkerDefinition(rx.Model, table=True):
     """Biomarker definition catalog (reference data).
 
     Defines what biomarkers exist, their categories, units, and ranges.
-    This is shared across all patients.
     """
 
     __tablename__ = "biomarker_definitions"
 
     id: int | None = Field(default=None, primary_key=True)
     code: str = Field(index=True, unique=True)  # e.g. "VITAMIN_D", "HS_CRP"
-    name: str = Field(index=True)  # Human-readable name
+    name: str = Field(index=True)
     category: str = Field(index=True)  # Metabolic, Inflammation, Hormones, etc.
-    unit: str  # ng/mL, mg/dL, etc.
+    unit: str
     description: str = Field(default="")
 
     # Reference ranges
@@ -472,10 +461,7 @@ class BiomarkerDefinition(rx.Model, table=True):
 
 
 class BiomarkerReading(rx.Model, table=True):
-    """Individual biomarker reading for a patient.
-
-    Stores historical values for tracking trends over time.
-    """
+    """Individual biomarker reading for a patient."""
 
     __tablename__ = "biomarker_readings"
 
@@ -489,7 +475,7 @@ class BiomarkerReading(rx.Model, table=True):
 
     # Source tracking
     source: str = Field(default="lab")  # lab | manual | device
-    measured_at: datetime = Field(index=True)  # When the reading was taken
+    measured_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -498,8 +484,9 @@ class BiomarkerReading(rx.Model, table=True):
 # =============================================================================
 
 __all__ = [
+    # Core models
+    "Appointment",
     "BiomarkerAggregate",
-    # Biomarkers
     "BiomarkerDefinition",
     "BiomarkerReading",
     "CallLog",
@@ -510,12 +497,12 @@ __all__ = [
     "MedicationEntry",
     "Notification",
     "PatientTreatment",
-    # Clinic metrics
     "PatientVisit",
     "ProviderMetrics",
     "SymptomEntry",
-    # Treatments
     "Treatment",
     "TreatmentProtocolMetric",
     "User",
+    # Helper
+    "utc_now",
 ]

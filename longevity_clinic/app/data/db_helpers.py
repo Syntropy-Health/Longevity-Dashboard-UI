@@ -264,76 +264,7 @@ def get_biomarker_definitions_sync() -> list[dict[str, Any]]:
         return []
 
 
-def get_patient_biomarkers_sync(
-    user_id: int | None = None,
-    external_id: str | None = None,
-) -> list[dict[str, Any]]:
-    """Get biomarkers with latest readings for a patient.
-
-    Args:
-        user_id: Database user ID
-        external_id: External user ID (e.g., 'P001')
-
-    Returns:
-        List of biomarker dicts with current value and history
-    """
-    try:
-        # Resolve user_id from external_id if needed
-        if not user_id and external_id:
-            user = get_user_by_external_id_sync(external_id)
-            user_id = user.id if user else None
-
-        if not user_id:
-            logger.warning("get_patient_biomarkers_sync: No user_id provided")
-            return []
-
-        with rx.session() as session:
-            # Get all definitions with their readings for this user
-            defs = session.exec(select(BiomarkerDefinition)).all()
-
-            result = []
-            for d in defs:
-                # Get readings for this biomarker, ordered by date
-                readings = session.exec(
-                    select(BiomarkerReading)
-                    .where(
-                        BiomarkerReading.user_id == user_id,
-                        BiomarkerReading.biomarker_id == d.id,
-                    )
-                    .order_by(BiomarkerReading.measured_at.desc())
-                ).all()
-
-                if not readings:
-                    continue
-
-                latest = readings[0]
-                history = [
-                    {"date": r.measured_at.strftime("%b"), "value": r.value}
-                    for r in reversed(readings[-6:])  # Last 6 readings
-                ]
-
-                result.append(
-                    {
-                        "id": d.code,
-                        "name": d.name,
-                        "category": d.category,
-                        "unit": d.unit,
-                        "description": d.description,
-                        "optimal_min": d.optimal_min,
-                        "optimal_max": d.optimal_max,
-                        "critical_min": d.critical_min,
-                        "critical_max": d.critical_max,
-                        "current_value": latest.value,
-                        "status": latest.status.capitalize(),
-                        "trend": latest.trend,
-                        "history": history,
-                    }
-                )
-
-            return result
-    except Exception as e:
-        logger.error("Failed to get patient biomarkers: %s", e)
-        return []
+# NOTE: get_patient_biomarkers_sync moved to longevity_clinic.app.functions.db_utils.biomarkers
 
 
 # =============================================================================
@@ -342,9 +273,7 @@ def get_patient_biomarkers_sync(
 
 __all__ = [
     "get_all_patients_sync",
-    "get_biomarker_definitions_sync",
     "get_checkins_sync",
-    "get_patient_biomarkers_sync",
     "get_patient_name_by_phone",
     "get_phone_to_patient_map",
     "get_user_by_external_id_sync",

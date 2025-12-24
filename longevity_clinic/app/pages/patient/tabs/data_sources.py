@@ -3,7 +3,7 @@
 import reflex as rx
 
 from ....components.paginated_view import paginated_list
-from ....data.state_schemas import DataSource
+from ....data.schemas.llm import DataSource
 from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 

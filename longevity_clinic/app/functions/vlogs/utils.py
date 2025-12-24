@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from longevity_clinic.app.data.process_schema import MetricLogsOutput
+from longevity_clinic.app.data.schemas.llm import MetricLogsOutput
 from longevity_clinic.app.functions.db_utils import get_patient_name_by_phone
 
 
@@ -61,5 +61,3 @@ def tag_checkin_with_metadata(
     output.checkin.key_topics = output.checkin.key_topics or []
 
     return output
-
-    return "Voice call check-in"

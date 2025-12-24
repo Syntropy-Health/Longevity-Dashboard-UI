@@ -3,7 +3,7 @@
 import reflex as rx
 
 from ...components.charts import biomarker_history_chart
-from ...data.state_schemas import Biomarker, PortalAppointment, PortalTreatment
+from ...data.schemas.state import Biomarker, PortalAppointment, PortalTreatment
 from ...states import (
     BiomarkerState,
     HealthDashboardState,

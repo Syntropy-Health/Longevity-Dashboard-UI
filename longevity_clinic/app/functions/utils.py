@@ -12,8 +12,8 @@ import httpx
 
 # Local application
 from longevity_clinic.app.config import current_config, get_logger
-from longevity_clinic.app.data.api_schemas import CallLogsAPIConfig, CallLogsQueryParams
-from longevity_clinic.app.data.state_schemas import CallLogEntry
+from longevity_clinic.app.data.schemas.api import CallLogsAPIConfig, CallLogsQueryParams
+from longevity_clinic.app.data.schemas.state import CallLogEntry
 
 logger = get_logger("longevity_clinic.functions")
 

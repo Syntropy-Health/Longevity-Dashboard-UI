@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import reflex as rx
 
 from ...config import current_config, get_logger
-from ...data.state_schemas import Patient
+from ...data.schemas.state import Patient
 from ...functions.patients.patients import load_all_patient_data
 
 logger = get_logger("longevity_clinic.patient_state")

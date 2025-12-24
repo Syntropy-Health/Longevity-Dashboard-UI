@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from sqlmodel import Session, SQLModel
 
 # Import all models to register them with SQLModel
-from longevity_clinic.app.data.model import User
+from longevity_clinic.app.data.schemas.db import User
 
 
 @pytest.fixture(scope="function")

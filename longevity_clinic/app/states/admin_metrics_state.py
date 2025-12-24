@@ -11,7 +11,7 @@ import reflex as rx
 from sqlmodel import select
 
 from ..config import get_logger
-from ..data.model import (
+from ..data.schemas.db import (
     BiomarkerAggregate,
     ClinicDailyMetrics,
     PatientVisit,

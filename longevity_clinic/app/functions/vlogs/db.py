@@ -7,7 +7,7 @@ import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.model import (
+from longevity_clinic.app.data.schemas.db import (
     CallLog,
     CallTranscript,
     CheckIn,
@@ -16,8 +16,8 @@ from longevity_clinic.app.data.model import (
     SymptomEntry,
     User,
 )
-from longevity_clinic.app.data.process_schema import MetricLogsOutput
-from longevity_clinic.app.data.state_schemas import CallLogEntry
+from longevity_clinic.app.data.schemas.llm import MetricLogsOutput
+from longevity_clinic.app.data.schemas.state import CallLogEntry
 
 from .utils import get_medications, parse_datetime, parse_phone
 

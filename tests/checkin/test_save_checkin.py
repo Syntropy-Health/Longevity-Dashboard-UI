@@ -13,19 +13,19 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
-from longevity_clinic.app.data.model import (
+from longevity_clinic.app.data.schemas.db import (
     CheckIn,
     FoodLogEntry,
     MedicationEntry,
     SymptomEntry,
 )
-from longevity_clinic.app.data.process_schema import (
+from longevity_clinic.app.data.schemas.llm import (
     CheckInSummary,
     MetricLogsOutput,
 )
-from longevity_clinic.app.data.state_schemas import (
-    FoodEntry as FoodEntrySchema,
-    MedicationEntry as MedicationEntrySchema,
+from longevity_clinic.app.data.schemas.llm import (
+    FoodEntryModel as FoodEntrySchema,
+    MedicationEntryModel as MedicationEntrySchema,
     Symptom as SymptomSchema,
 )
 

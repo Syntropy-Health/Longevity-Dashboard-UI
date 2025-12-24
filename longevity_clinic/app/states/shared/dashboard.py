@@ -13,13 +13,13 @@ from typing import Any
 import reflex as rx
 
 from ...config import get_logger
-from ...data.state_schemas import (
+from ...data.schemas.llm import (
     Condition,
     DataSource,
-    FoodEntry,
-    MedicationEntry,
+    FoodEntryModel as FoodEntry,
+    MedicationEntryModel as MedicationEntry,
     Symptom,
-    SymptomEntry,
+    SymptomEntryModel as SymptomEntry,
     SymptomTrend,
 )
 from ...functions.db_utils import (
@@ -810,7 +810,8 @@ class HealthDashboardState(rx.State):
         self.show_medication_modal = value
 
     @rx.event
-    async def log_dose(self, medication_id: str):
+    async def log_dose(self, _medication_id: str):
+        """Log dose for a medication. Parameter required for event binding."""
         self.show_medication_modal = False
 
     def open_condition_modal(self, condition: dict[str, Any]):

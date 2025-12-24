@@ -6,7 +6,7 @@ Used by AppointmentState for DB-first data loading with seed fallback.
 
 import reflex as rx
 
-from longevity_clinic.app.data.model import Appointment
+from longevity_clinic.app.data.schemas.db import Appointment
 
 
 def get_appointments_sync(

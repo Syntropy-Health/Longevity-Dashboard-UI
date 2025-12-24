@@ -6,7 +6,11 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
-from longevity_clinic.app.data.model import FoodLogEntry, MedicationEntry, SymptomEntry
+from longevity_clinic.app.data.schemas.db import (
+    FoodLogEntry,
+    MedicationEntry,
+    SymptomEntry,
+)
 from longevity_clinic.app.data.seed import (
     FOOD_ENTRIES_SEED,
     MEDICATIONS_SEED,

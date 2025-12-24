@@ -15,7 +15,7 @@ separation of concerns and testability.
 from __future__ import annotations
 
 # TreatmentProtocol TypedDict (for backwards compatibility)
-from ..data.state_schemas import TreatmentProtocol
+from ..data.schemas.state import TreatmentProtocol
 
 # Admin metrics state
 from .admin_metrics_state import AdminMetricsState

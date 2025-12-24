@@ -10,17 +10,19 @@ Contains:
 
 from __future__ import annotations
 
-# Import types from state_schemas
-from ..state_schemas import (
+# Import types from schemas
+from ..schemas.llm import (
     Condition,
     DataSource,
-    FoodEntry,
-    MedicationEntry,
+    FoodEntryModel as FoodEntry,
+    MedicationEntryModel as MedicationEntry,
+    Symptom,
+    SymptomEntryModel as SymptomEntry,
+    SymptomTrend,
+)
+from ..schemas.state import (
     NutritionSummary,
     Reminder,
-    Symptom,
-    SymptomEntry,
-    SymptomTrend,
 )
 
 # =============================================================================

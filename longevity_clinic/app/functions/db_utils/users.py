@@ -6,7 +6,7 @@ import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.model import User
+from longevity_clinic.app.data.schemas.db import User
 from longevity_clinic.app.functions.utils import normalize_phone
 
 logger = get_logger("longevity_clinic.db_utils.users")

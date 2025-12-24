@@ -15,7 +15,7 @@ import random
 
 import reflex as rx
 
-from ...data.state_schemas import TreatmentCategoryGroup, TreatmentProtocol
+from ...data.schemas.state import TreatmentCategoryGroup, TreatmentProtocol
 from ...functions.db_utils import (
     create_treatment_sync,
     get_treatments_as_protocols_sync,

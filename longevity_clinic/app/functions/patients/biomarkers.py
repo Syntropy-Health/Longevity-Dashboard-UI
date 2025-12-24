@@ -7,11 +7,17 @@ Seed data with: python scripts/load_seed_data.py
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.db_helpers import get_patient_biomarkers_sync
-from longevity_clinic.app.data.state_schemas import Biomarker, BiomarkerDataPoint
+from longevity_clinic.app.functions.db_utils import (
+    get_appointments_for_patient_sync,
+    get_patient_biomarkers_sync,
+    get_patient_treatments_sync,
+)
+from longevity_clinic.app.functions.db_utils.users import get_user_by_external_id_sync
+from longevity_clinic.app.data.schemas.state import Biomarker, BiomarkerDataPoint
 
 logger = get_logger("longevity_clinic.biomarkers")
 
@@ -113,16 +119,38 @@ async def fetch_treatments(
     """Fetch treatments assigned to a patient.
 
     Args:
-        patient_id: Patient ID (None = current patient)
+        patient_id: Patient external ID (e.g., 'P001') or None for default
 
     Returns:
-        List of treatment records from seed data
+        List of treatment records from database, falling back to seed data
     """
     logger.info(
         "Fetching treatments for patient: %s",
         patient_id or "current",
     )
-    # TODO: Implement DB lookup when Treatment-Patient assignment model exists
+
+    # Try DB lookup first
+    external_id = patient_id or "P001"
+    user = get_user_by_external_id_sync(external_id)
+    if user:
+        treatments = get_patient_treatments_sync(user.id)
+        if treatments:
+            logger.info(
+                "fetch_treatments: Loaded %d treatments from DB", len(treatments)
+            )
+            return [
+                {
+                    "id": t.treatment_id,
+                    "name": t.treatment.name if t.treatment else "",
+                    "start_date": t.start_date.isoformat() if t.start_date else "",
+                    "status": t.status,
+                    "progress": t.progress or 0,
+                }
+                for t in treatments
+            ]
+
+    # Fall back to seed data
+    logger.debug("fetch_treatments: No DB data, using seed")
     return _get_portal_treatments_seed()
 
 
@@ -133,18 +161,40 @@ async def fetch_appointments(
     """Fetch appointments for a patient.
 
     Args:
-        patient_id: Patient ID (None = current patient)
+        patient_id: Patient external ID (e.g., 'P001') or None for default
         upcoming_only: If True, only return future appointments
 
     Returns:
-        List of appointment records from seed data
+        List of appointment records from database, falling back to seed data
     """
     logger.info(
         "Fetching appointments for patient: %s (upcoming=%s)",
         patient_id or "current",
         upcoming_only,
     )
-    # TODO: Implement DB lookup when fully migrated
+
+    # Try DB lookup first
+    external_id = patient_id or "P001"
+    appointments = get_appointments_for_patient_sync(external_id)
+
+    if appointments:
+        if upcoming_only:
+            today = datetime.now().date()
+            appointments = [
+                a
+                for a in appointments
+                if isinstance(a.get("date"), str)
+                and a["date"] >= today.isoformat()
+                or isinstance(a.get("date"), datetime)
+                and a["date"].date() >= today
+            ]
+        logger.info(
+            "fetch_appointments: Loaded %d appointments from DB", len(appointments)
+        )
+        return appointments
+
+    # Fall back to seed data
+    logger.debug("fetch_appointments: No DB data, using seed")
     return _get_portal_appointments_seed()
 
 

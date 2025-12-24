@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from sqlmodel import Session, select
 
-from longevity_clinic.app.data.model import User
+from longevity_clinic.app.data.schemas.db import User
 from longevity_clinic.app.data.seed import get_all_demo_patients
 
 from .base import SeedResult, print_section

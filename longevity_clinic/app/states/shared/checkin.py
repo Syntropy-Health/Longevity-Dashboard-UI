@@ -11,9 +11,9 @@ import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import current_config, get_logger
-from longevity_clinic.app.data.model import CallTranscript, CheckIn as CheckInDB
-from longevity_clinic.app.data.process_schema import MetricLogsOutput
-from longevity_clinic.app.data.state_schemas import (
+from longevity_clinic.app.data.schemas.db import CallTranscript, CheckIn as CheckInDB
+from longevity_clinic.app.data.schemas.llm import MetricLogsOutput
+from longevity_clinic.app.data.schemas.state import (
     AdminCheckIn,
     CheckInWithTranscript,
 )

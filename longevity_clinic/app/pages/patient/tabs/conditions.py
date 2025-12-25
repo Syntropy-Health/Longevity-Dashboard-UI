@@ -3,72 +3,8 @@
 import reflex as rx
 
 from ....components.paginated_view import paginated_list
+from ....components.tabs import condition_card
 from ....states import HealthDashboardState
-from ....styles.constants import GlassStyles
-
-
-def condition_card(condition) -> rx.Component:
-    """Condition card.
-
-    Args:
-        condition: Condition instance from PatientDashboardState
-    """
-    status_styles = {
-        "active": "bg-amber-500/10 text-amber-300 border-amber-500/20",
-        "managed": "bg-teal-500/10 text-teal-300 border-teal-500/20",
-        "resolved": "bg-slate-500/10 text-slate-300 border-slate-500/20",
-    }
-    return rx.el.div(
-        rx.el.div(
-            rx.el.div(
-                rx.icon("heart-pulse", class_name="w-5 h-5 text-rose-400"),
-                class_name="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center mr-4 border border-rose-500/20",
-            ),
-            rx.el.div(
-                rx.el.h4(
-                    condition.name,
-                    class_name="text-base font-semibold text-white mb-1",
-                ),
-                rx.el.p(
-                    rx.text("ICD-10: ", condition.icd_code),
-                    class_name="text-xs text-slate-400",
-                ),
-                rx.el.p(
-                    rx.text("Diagnosed: ", condition.diagnosed_date),
-                    class_name="text-xs text-slate-400 mt-1",
-                ),
-            ),
-            class_name="flex items-start flex-1",
-        ),
-        rx.el.div(
-            rx.el.span(
-                condition.status.capitalize(),
-                class_name=rx.match(
-                    condition.status,
-                    (
-                        "active",
-                        f"px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border {status_styles['active']}",
-                    ),
-                    (
-                        "managed",
-                        f"px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border {status_styles['managed']}",
-                    ),
-                    (
-                        "resolved",
-                        f"px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border {status_styles['resolved']}",
-                    ),
-                    f"px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border {status_styles['active']}",
-                ),
-            ),
-            rx.el.p(
-                condition.severity.capitalize(),
-                class_name="text-xs text-slate-400 mt-2",
-            ),
-            class_name="flex flex-col items-end",
-        ),
-        on_click=lambda: HealthDashboardState.open_condition_modal(condition),
-        class_name=f"{GlassStyles.CARD_INTERACTIVE} flex justify-between",
-    )
 
 
 def conditions_tab() -> rx.Component:

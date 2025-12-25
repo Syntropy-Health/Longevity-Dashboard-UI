@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import reflex as rx
 from sqlmodel import select
 
@@ -9,11 +11,13 @@ from longevity_clinic.app.config import get_logger
 from longevity_clinic.app.data.schemas.db import (
     FoodLogEntry as FoodLogEntryDB,
     MedicationEntry as MedicationEntryDB,
+    MedicationSubscription as MedicationSubscriptionDB,
     SymptomEntry as SymptomEntryDB,
 )
 from longevity_clinic.app.data.schemas.llm import (
     FoodEntryModel as FoodEntry,
     MedicationEntryModel as MedicationEntry,
+    MedicationSubscriptionModel as MedicationSubscription,
     Symptom,
 )
 
@@ -21,74 +25,159 @@ logger = get_logger("longevity_clinic.db_utils.health")
 
 
 # ============================================================================
-# MEDICATIONS
+# MEDICATION SUBSCRIPTIONS (Prescribed medications)
 # ============================================================================
 
 
-def get_medications_sync(
+def get_medication_subscriptions_sync(
+    user_id: int,
+    status: str | None = None,
+    limit: int = 100,
+) -> list[MedicationSubscription]:
+    """Get medication subscriptions (prescriptions) for a user."""
+    try:
+        with rx.session() as session:
+            query = select(MedicationSubscriptionDB).where(
+                MedicationSubscriptionDB.user_id == user_id
+            )
+            if status:
+                query = query.where(MedicationSubscriptionDB.status == status)
+            query = query.order_by(MedicationSubscriptionDB.created_at.desc()).limit(
+                limit
+            )
+            subscriptions = session.exec(query).all()
+
+            return [
+                MedicationSubscription(
+                    id=str(sub.id),
+                    name=sub.name,
+                    dosage=sub.dosage,
+                    frequency=sub.frequency,
+                    instructions=sub.instructions,
+                    status=sub.status,
+                    adherence_rate=sub.adherence_rate,
+                    prescriber=sub.prescriber,
+                )
+                for sub in subscriptions
+            ]
+    except Exception as e:
+        logger.error(
+            "Failed to get medication subscriptions for user %s: %s", user_id, e
+        )
+        return []
+
+
+def create_medication_subscription_sync(
+    user_id: int,
+    name: str,
+    dosage: str,
+    frequency: str,
+    instructions: str = "",
+    prescriber: str = "",
+    status: str = "active",
+    adherence_rate: float = 100.0,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    source: str = "manual",
+) -> MedicationSubscriptionDB | None:
+    """Create a medication subscription for a user."""
+    try:
+        with rx.session() as session:
+            subscription = MedicationSubscriptionDB(
+                user_id=user_id,
+                name=name,
+                dosage=dosage,
+                frequency=frequency,
+                instructions=instructions,
+                prescriber=prescriber,
+                status=status,
+                adherence_rate=adherence_rate,
+                start_date=start_date,
+                end_date=end_date,
+                source=source,
+            )
+            session.add(subscription)
+            session.commit()
+            session.refresh(subscription)
+            return subscription
+    except Exception as e:
+        logger.error("Failed to create medication subscription: %s", e)
+        return None
+
+
+# ============================================================================
+# MEDICATION LOGS (What patient actually took)
+# ============================================================================
+
+
+def get_medication_logs_sync(
     user_id: int,
     limit: int = 100,
 ) -> list[MedicationEntry]:
-    """Get medications for a user from database."""
+    """Get medication logs (what was taken) for a user."""
     try:
         with rx.session() as session:
-            medications = session.exec(
+            logs = session.exec(
                 select(MedicationEntryDB)
                 .where(MedicationEntryDB.user_id == user_id)
-                .order_by(MedicationEntryDB.created_at.desc())
+                .order_by(MedicationEntryDB.taken_at.desc())
                 .limit(limit)
             ).all()
 
             return [
                 MedicationEntry(
-                    id=str(med.id),
-                    name=med.name,
-                    dosage=med.dosage,
-                    frequency=med.frequency,
-                    status=med.status,
-                    adherence_rate=med.adherence_rate,
+                    id=str(log.id),
+                    name=log.name,
+                    dosage=log.dosage,
+                    taken_at=log.taken_at.isoformat() if log.taken_at else "",
+                    notes=log.notes,
                 )
-                for med in medications
+                for log in logs
             ]
     except Exception as e:
-        logger.error("Failed to get medications for user %s: %s", user_id, e)
+        logger.error("Failed to get medication logs for user %s: %s", user_id, e)
         return []
 
 
-def create_medication_sync(
+def create_medication_log_sync(
     user_id: int,
     name: str,
-    dosage: str,
-    frequency: str,
-    status: str = "active",
-    adherence_rate: float = 1.0,
-) -> MedicationEntry | None:
-    """Create a medication entry for a user."""
+    dosage: str = "",
+    taken_at: datetime | None = None,
+    notes: str = "",
+    checkin_id: int | None = None,
+    subscription_id: int | None = None,
+    source: str = "manual",
+) -> MedicationEntryDB | None:
+    """Create a medication log entry for a user."""
     try:
         with rx.session() as session:
-            medication = MedicationEntryDB(
+            log = MedicationEntryDB(
                 user_id=user_id,
                 name=name,
                 dosage=dosage,
-                frequency=frequency,
-                status=status,
-                adherence_rate=adherence_rate,
+                taken_at=taken_at or datetime.now(),
+                notes=notes,
+                checkin_id=checkin_id,
+                subscription_id=subscription_id,
+                source=source,
             )
-            session.add(medication)
+            session.add(log)
             session.commit()
-            session.refresh(medication)
-
-            return MedicationEntry(
-                id=str(medication.id),
-                name=medication.name,
-                dosage=medication.dosage,
-                frequency=medication.frequency,
-                status=medication.status,
-                adherence_rate=medication.adherence_rate,
-            )
+            session.refresh(log)
+            return log
     except Exception as e:
-        logger.error("Failed to create medication: %s", e)
+        logger.error("Failed to create medication log: %s", e)
         return None
+
+
+# Legacy alias for backward compatibility
+def get_medications_sync(
+    user_id: int,
+    limit: int = 100,
+) -> list[MedicationEntry]:
+    """Get medication logs for a user (legacy alias for get_medication_logs_sync)."""
+    return get_medication_logs_sync(user_id, limit)
 
 
 # ============================================================================

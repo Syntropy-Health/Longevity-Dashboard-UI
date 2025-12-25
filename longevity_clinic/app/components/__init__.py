@@ -7,6 +7,7 @@ Structure:
 - Charts (biomarker charts, tooltip configs)
 - Paginated views (paginated_list, paginated_list_with_filters)
 - Indicators (severity_bar, trend_badge)
+- Tab components (cards, items for patient portal tabs)
 """
 
 # Layout components
@@ -61,6 +62,20 @@ from .shared import (
 )
 from .sidebar import mobile_menu, sidebar, sidebar_item
 
+# Tab components - cards and items for patient portal
+from .tabs import (
+    condition_card,
+    data_source_card,
+    food_entry_card,
+    import_drop_zone,
+    medication_log_card,
+    medication_subscription_card,
+    reminder_item,
+    symptom_card,
+    symptom_log_item,
+    symptom_trend_item,
+)
+
 __all__ = [
     "TOOLTIP_PROPS",
     # Layout
@@ -72,14 +87,21 @@ __all__ = [
     "collapsible_grid",
     # Collapsible
     "collapsible_section",
+    # Tab cards
+    "condition_card",
+    "data_source_card",
     "empty_state",
     "empty_state_box",
+    "food_entry_card",
     "generic_area_chart",
     "generic_bar_chart",
     "generic_line_chart",
     "header",
     "health_metrics_dashboard",
+    "import_drop_zone",
     "loading_spinner",
+    "medication_log_card",
+    "medication_subscription_card",
     "mobile_menu",
     "notification_badge",
     "nutrition_summary_cards",
@@ -89,6 +111,8 @@ __all__ = [
     "paginated_list",
     "paginated_list_with_filters",
     "patient_select_item",
+    # Tab items
+    "reminder_item",
     # Shared UI
     "search_input",
     "section_header",
@@ -99,6 +123,9 @@ __all__ = [
     "sidebar_item",
     "stat_metric_card",
     "status_update_modal",
+    "symptom_card",
+    "symptom_log_item",
+    "symptom_trend_item",
     # Modals
     "transcript_modal",
     "trend_badge",

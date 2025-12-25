@@ -198,36 +198,65 @@ current_config = AppConfig()
 
 
 # =============================================================================
-# VlogsAgent Configuration
+# CDC Processing Configuration
 # =============================================================================
 
 
-class VlogsConfig(BaseModel):
-    """Configuration for VlogsAgent.
-
-    Loads defaults from AppConfig (current_config) automatically.
-    Can override any field when instantiating.
-
-    Attributes:
-        extract_with_llm: Enable LLM-based parsing for structured extraction
-        llm_model: OpenAI model to use for parsing
-        temperature: LLM temperature for response generation
-        limit: Maximum number of call logs to fetch per request
-        output_schema: Pydantic model class for structured LLM output
-    """
+class ProcessConfig(BaseModel):
+    """Centralized CDC pipeline processing configuration."""
 
     model_config = {"arbitrary_types_allowed": True}
 
-    extract_with_llm: bool = Field(
-        default_factory=lambda: current_config.vlogs_process_with_llm
-    )
-    llm_model: str = Field(default_factory=lambda: current_config.vlogs_llm_model)
-    temperature: float = Field(default_factory=lambda: current_config.vlogs_temperature)
-    limit: int = Field(default_factory=lambda: current_config.vlogs_fetch_limit)
-    output_schema: Any | None = Field(
-        default=None
-    )  # Type[BaseModel], use Any to avoid circular imports
-    reprocess_all: bool = Field(
-        default_factory=lambda: current_config.reprocess_call_logs_everytime,
-        description="Debug: reprocess all logs ignoring processed_to_metrics",
-    )
+    # Polling/periodic settings
+    poll_interval: int = Field(default=15, description="Seconds between poll cycles")
+    refresh_interval: int = Field(default=30, description="Seconds for manual refresh periodic")
+
+    # Parallel processing
+    max_parallel_llm: int = Field(default=3, description="Max concurrent LLM calls")
+    max_parallel_db: int = Field(default=5, description="Max concurrent DB writes")
+
+    # LLM settings
+    llm_enabled: bool = Field(default=True)
+    llm_model: str = Field(default="gpt-4o-mini")
+    llm_temperature: float = Field(default=0.3)
+
+    # Fetch limits
+    fetch_limit: int = Field(default=50)
+    checkins_limit: int = Field(default=200)
+
+    # Ghost user ID for unknown phone numbers
+    ghost_user_id: int = Field(default=-1, description="Fallback user_id for unmatched phones")
+
+    # Debug flags
+    reprocess_all: bool = Field(default=False)
+    verbose_logging: bool = Field(default=False)
+
+    @classmethod
+    def from_app(cls) -> "ProcessConfig":
+        """Create from current_config defaults."""
+        return cls(
+            poll_interval=current_config.background_poll_interval,
+            llm_enabled=current_config.vlogs_process_with_llm,
+            llm_model=current_config.vlogs_llm_model,
+            llm_temperature=current_config.vlogs_temperature,
+            fetch_limit=current_config.vlogs_fetch_limit,
+            reprocess_all=current_config.reprocess_call_logs_everytime,
+        )
+
+
+# Global process config instance
+process_config = ProcessConfig.from_app()
+
+
+class VlogsConfig(BaseModel):
+    """Configuration for VlogsAgent (wraps ProcessConfig)."""
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    extract_with_llm: bool = Field(default_factory=lambda: process_config.llm_enabled)
+    llm_model: str = Field(default_factory=lambda: process_config.llm_model)
+    temperature: float = Field(default_factory=lambda: process_config.llm_temperature)
+    limit: int = Field(default_factory=lambda: process_config.fetch_limit)
+    max_parallel: int = Field(default_factory=lambda: process_config.max_parallel_llm)
+    output_schema: Any | None = None
+    reprocess_all: bool = Field(default_factory=lambda: process_config.reprocess_all)

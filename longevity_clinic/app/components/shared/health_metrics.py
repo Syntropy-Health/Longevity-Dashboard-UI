@@ -23,7 +23,7 @@ from ...styles.constants import GlassStyles
 
 
 def _medication_card(med) -> rx.Component:
-    """Medication card for paginated list."""
+    """Medication log card for paginated list."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -31,41 +31,25 @@ def _medication_card(med) -> rx.Component:
                 class_name="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mr-4 border border-purple-500/20",
             ),
             rx.el.div(
-                rx.el.h4(
-                    med.name, class_name="text-base font-semibold text-white mb-1"
-                ),
+                rx.el.h4(med.name, class_name="text-base font-semibold text-white mb-1"),
                 rx.el.p(med.dosage, class_name="text-sm text-slate-300"),
-                rx.el.p(med.frequency, class_name="text-xs text-slate-400 mt-1"),
+                rx.cond(
+                    med.taken_at != "",
+                    rx.el.p(med.taken_at, class_name="text-xs text-slate-400 mt-1"),
+                    rx.el.span(),
+                ),
             ),
             class_name="flex items-start flex-1",
         ),
-        rx.el.div(
+        rx.cond(
+            med.notes != "",
             rx.el.div(
-                rx.el.span(
-                    "Adherence",
-                    class_name="text-[10px] text-slate-400 uppercase tracking-wider",
-                ),
-                rx.el.span(
-                    rx.text(f"{med.adherence_rate:.0f}%"),
-                    class_name=rx.cond(
-                        med.adherence_rate >= 90,
-                        "text-lg font-bold text-teal-400",
-                        "text-lg font-bold text-amber-400",
-                    ),
-                ),
+                rx.el.span(med.notes, class_name="text-xs text-slate-500 truncate max-w-[150px]"),
                 class_name="text-right",
             ),
-            rx.el.span(
-                med.status.capitalize(),
-                class_name=rx.cond(
-                    med.status == "active",
-                    "mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20",
-                    "mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-500/10 text-slate-300 border border-slate-500/20",
-                ),
-            ),
-            class_name="flex flex-col items-end",
+            rx.el.span(),
         ),
-        class_name=f"{GlassStyles.CARD_INTERACTIVE} flex justify-between",
+        class_name=GlassStyles.CARD_INTERACTIVE + " flex items-center justify-between",
     )
 
 
@@ -291,14 +275,14 @@ def medications_section() -> rx.Component:
             class_name="text-lg font-semibold text-white mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.medications_paginated,
+            items=HealthDashboardState.medication_logs_paginated,
             item_renderer=_medication_card,
-            has_previous=HealthDashboardState.medications_has_previous,
-            has_next=HealthDashboardState.medications_has_next,
-            page_info=HealthDashboardState.medications_page_info,
-            showing_info=HealthDashboardState.medications_showing_info,
-            on_previous=HealthDashboardState.medications_previous_page,
-            on_next=HealthDashboardState.medications_next_page,
+            has_previous=HealthDashboardState.medication_logs_has_previous,
+            has_next=HealthDashboardState.medication_logs_has_next,
+            page_info=HealthDashboardState.medication_logs_page_info,
+            showing_info=HealthDashboardState.medication_logs_showing_info,
+            on_previous=HealthDashboardState.medication_logs_previous_page,
+            on_next=HealthDashboardState.medication_logs_next_page,
             empty_icon="pill",
             empty_message="No medications found",
             list_class="space-y-3",

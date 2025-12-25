@@ -10,7 +10,7 @@ from datetime import datetime
 import reflex as rx
 from sqlmodel import select
 
-from longevity_clinic.app.config import current_config, get_logger
+from longevity_clinic.app.config import current_config, get_logger, process_config
 from longevity_clinic.app.data.schemas.db import CallTranscript, CheckIn as CheckInDB
 from longevity_clinic.app.data.schemas.llm import MetricLogsOutput
 from longevity_clinic.app.data.schemas.state import (
@@ -678,10 +678,13 @@ class CheckinState(rx.State):
 
     @rx.event(background=True)
     async def refresh_call_logs(self):
-        """CDC pipeline: fetch → sync raw → load from DB.
+        """CDC pipeline: fetch → sync raw → process LLM → load from DB.
 
-        If reprocess_call_logs_everytime is True, resets processed_to_metrics
-        to force reprocessing of all call logs.
+        Full pipeline:
+        1. Reset processed flags if reprocess_all enabled
+        2. Fetch and sync raw call logs from API
+        3. Process unprocessed logs with LLM (creates CheckIn + health entries)
+        4. Reload checkins from DB
         """
         async with self:
             self.call_logs_syncing = True
@@ -690,15 +693,11 @@ class CheckinState(rx.State):
             user_phone = auth_state.user_phone if auth_state.user else ""
             user_name = auth_state.user_full_name if auth_state.user else "Unknown"
 
-        logger.debug(
-            "refresh_call_logs: user=%s, phone=%s", user_name, user_phone or "(none)"
-        )
+        logger.debug("refresh_call_logs: user=%s, phone=%s", user_name, user_phone or "(none)")
 
         if not user_phone:
             async with self:
-                self.call_logs_sync_error = (
-                    f"No phone number configured for {user_name}"
-                )
+                self.call_logs_sync_error = f"No phone number configured for {user_name}"
                 self.call_logs_syncing = False
             return
 
@@ -706,25 +705,26 @@ class CheckinState(rx.State):
             agent = VlogsAgent.from_config()
             phone_clean = re.sub(r"[()\-\s]", "", user_phone)
 
-            # If reprocess flag is set, reset all processed_to_metrics to False
-            if current_config.reprocess_call_logs_everytime:
-                reset_count = await asyncio.to_thread(
-                    reset_all_processed_to_metrics_sync
-                )
+            # Reset if reprocess flag set
+            if process_config.reprocess_all:
+                reset_count = await asyncio.to_thread(reset_all_processed_to_metrics_sync)
                 logger.info("Reset %d call logs for reprocessing", reset_count)
 
+            # Step 1-2: Fetch and sync raw call logs
             new_raw_count = await agent.fetch_and_sync_raw(phone_number=phone_clean)
             logger.debug("Synced %d raw call logs", new_raw_count)
 
-            # Load checkins based on role
+            # Step 3-4: Process unprocessed logs with LLM → creates CheckIn + health entries
+            processed_count = await agent.process_unprocessed_logs()
+            if processed_count > 0:
+                logger.info("Processed %d call logs to health metrics", processed_count)
+
+            # Reload checkins
             async with self:
                 auth_state = await self.get_state(AuthState)
                 is_admin = auth_state.is_admin
 
-            if is_admin:
-                checkins_from_db = await self._load_all_checkins_from_db()
-            else:
-                checkins_from_db = await self._load_checkins_from_db()
+            checkins_from_db = await (self._load_all_checkins_from_db() if is_admin else self._load_checkins_from_db())
 
             async with self:
                 if checkins_from_db:
@@ -738,6 +738,27 @@ class CheckinState(rx.State):
             async with self:
                 self.call_logs_sync_error = str(e)
                 self.call_logs_syncing = False
+
+    @rx.event(background=True)
+    async def start_periodic_refresh(self):
+        """Start periodic refresh loop for call logs (uses process_config.refresh_interval)."""
+        async with self:
+            if self.is_processing_background:
+                return
+            self.is_processing_background = True
+
+        logger.debug("Periodic refresh started (interval=%ds)", process_config.refresh_interval)
+
+        while True:
+            async with self:
+                if not self.is_processing_background:
+                    break
+
+            # Trigger full refresh pipeline
+            await self.refresh_call_logs()
+            await asyncio.sleep(process_config.refresh_interval)
+
+        logger.debug("Periodic refresh stopped")
 
     async def _load_checkins_from_db(self) -> list[CheckInWithTranscript]:
         """Load all check-ins from database for patient view (all types)."""
@@ -785,96 +806,64 @@ class CheckinState(rx.State):
 
     @rx.event(background=True)
     async def start_calls_to_checkin_sync_loop(self):
-        """Start the background CDC pipeline for call log processing.
+        """Background CDC loop: process unprocessed call logs periodically.
 
-        This method runs as a background event handler and performs:
-        1. Initial load of checkins from database (role-based)
-        2. Periodic polling loop that:
-           - Processes unprocessed call logs (CallLog.processed_to_metrics=False)
-           - Parses transcripts with LLM to extract health data (MetricLogsOutput)
-           - Creates/updates CheckIn records linked to CallLog
-           - Persists health entries (medications, food, symptoms) to normalized tables
-           - Marks CallLog.processed_to_metrics=True when complete
-           - Reloads checkins to reflect new data in UI
-
-        The processing pipeline reuses VlogsAgent.process_unprocessed_logs() which
-        internally calls update_call_log_metrics() to persist:
-        - CheckIn records (summary, topics, sentiment)
-        - MedicationEntry records
-        - FoodLogEntry records
-        - SymptomEntry records
-
-        Lifecycle:
-        - Started via on_mount in checkins_page_wrapper
-        - Stopped via stop_checkin_sync_loop on on_unmount
+        Pipeline per cycle:
+        1. Process unprocessed call logs (LLM → CheckIn + health entries)
+        2. Reload checkins from DB to update UI
         """
         async with self:
             if self.is_processing_background:
                 return
             self.is_processing_background = True
 
-        logger.debug("Checkin sync loop started")
+        logger.debug("Checkin sync loop started (poll_interval=%ds)", process_config.poll_interval)
 
-        # Initial load of checkins from database
+        # Initial load
         try:
             async with self:
                 auth_state = await self.get_state(AuthState)
                 is_admin = auth_state.is_admin
 
-            if is_admin:
-                checkins_from_db = await self._load_all_checkins_from_db()
-            else:
-                checkins_from_db = await self._load_checkins_from_db()
-
+            checkins_from_db = await (self._load_all_checkins_from_db() if is_admin else self._load_checkins_from_db())
             async with self:
                 self.checkins = checkins_from_db
-            logger.debug("Initial load: %d checkins from DB", len(checkins_from_db))
+            logger.debug("Initial load: %d checkins", len(checkins_from_db))
         except Exception as e:
             logger.error("Initial checkin load failed: %s", e)
 
-        # Polling interval (seconds) - process call logs periodically
-        poll_interval = current_config.background_poll_interval
-
+        # Polling loop
         while True:
             async with self:
                 if not self.is_processing_background:
                     break
 
             try:
-                # Process unprocessed call logs via CDC pipeline
-                # This parses transcripts → extracts health data → persists to DB
                 agent = VlogsAgent.from_config()
                 processed_count = await agent.process_unprocessed_logs()
 
                 if processed_count > 0:
-                    logger.info(
-                        "Processed %d call logs to health metrics", processed_count
-                    )
-                    # Reload checkins to reflect newly processed data
+                    logger.info("Processed %d call logs", processed_count)
                     async with self:
                         auth_state = await self.get_state(AuthState)
                         is_admin = auth_state.is_admin
 
-                    if is_admin:
-                        checkins_from_db = await self._load_all_checkins_from_db()
-                    else:
-                        checkins_from_db = await self._load_checkins_from_db()
-
+                    checkins_from_db = await (self._load_all_checkins_from_db() if is_admin else self._load_checkins_from_db())
                     async with self:
                         if checkins_from_db:
                             self.checkins = checkins_from_db
             except Exception as e:
                 logger.error("Background processing error: %s", e)
 
-            await asyncio.sleep(poll_interval)
+            await asyncio.sleep(process_config.poll_interval)
 
         logger.debug("Checkin sync loop stopped")
 
     @rx.event
     def stop_checkin_sync_loop(self):
-        """Stop the background CDC processing loop (on_unmount)."""
+        """Stop the background CDC processing loop."""
         self.is_processing_background = False
 
-    # Legacy aliases for backward compatibility
+    # Legacy aliases
     start_background_processing = start_calls_to_checkin_sync_loop
     stop_background_processing = stop_checkin_sync_loop

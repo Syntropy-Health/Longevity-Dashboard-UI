@@ -191,34 +191,73 @@ class Appointment(rx.Model, table=True):
 
 
 # =============================================================================
-# Extracted Health Data Tables (from LLM processing)
+# Medication Models
 # =============================================================================
 
 
-class MedicationEntry(rx.Model, table=True):
-    """Medication entry extracted from check-ins.
+class MedicationSubscription(rx.Model, table=True):
+    """Prescribed medication for a patient (subscription/Rx).
 
-    Normalized storage for dashboard queries and aggregations.
-    Links to CheckIn as the single source of truth.
+    Tracks medications that a patient is supposed to take, including
+    dosage, frequency, and adherence tracking.
     """
 
-    __tablename__ = "medication_entries"
+    __tablename__ = "medication_subscriptions"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int | None = Field(default=None, foreign_key="users.id", index=True)
+
+    # Prescription data
+    name: str = Field(index=True)
+    dosage: str = Field(default="")
+    frequency: str = Field(default="")  # e.g., "Twice daily with meals"
+    instructions: str = Field(default="")  # Additional taking instructions
+    prescriber: str = Field(default="")  # Prescribing doctor
+
+    # Status and adherence
+    status: str = Field(default="active")  # active | discontinued | paused | completed
+    adherence_rate: float = Field(default=100.0)  # Percentage 0-100
+
+    # Dates
+    start_date: datetime | None = None
+    end_date: datetime | None = None  # None = ongoing
+
+    # Source tracking
+    source: str = Field(default="manual")  # manual | ehr | seed
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class MedicationEntry(rx.Model, table=True):
+    """Log of medication taken (extracted from check-ins).
+
+    Tracks when a patient actually took a medication.
+    Links to CheckIn as the source of truth.
+    """
+
+    __tablename__ = "medication_logs"
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: int | None = Field(default=None, foreign_key="users.id", index=True)
     checkin_id: int | None = Field(default=None, foreign_key="checkins.id", index=True)
+    subscription_id: int | None = Field(
+        default=None, foreign_key="medication_subscriptions.id", index=True
+    )
 
-    # Medication data
+    # Log data
     name: str = Field(index=True)
     dosage: str = Field(default="")
-    frequency: str = Field(default="")
-    status: str = Field(default="active")  # active | discontinued | as-needed
-    adherence_rate: float = Field(default=1.0)
+    taken_at: datetime = Field(default_factory=utc_now)
+    notes: str = Field(default="")
 
     # Source tracking
     source: str = Field(default="manual")  # call | voice | manual | seed
-    mentioned_at: datetime = Field(default_factory=utc_now)
     created_at: datetime = Field(default_factory=utc_now)
+
+
+# =============================================================================
+# Other Extracted Health Data Tables (from LLM processing)
+# =============================================================================
 
 
 class FoodLogEntry(rx.Model, table=True):
@@ -263,7 +302,6 @@ class SymptomEntry(rx.Model, table=True):
     # Symptom data
     name: str = Field(index=True)
     severity: str = Field(default="")  # mild | moderate | severe
-    severity_score: int = Field(default=0)  # 0-10 scale
     frequency: str = Field(default="")
     trend: str = Field(default="stable")  # improving | worsening | stable
     notes: str | None = None

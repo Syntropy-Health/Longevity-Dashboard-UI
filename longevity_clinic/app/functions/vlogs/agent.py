@@ -7,7 +7,8 @@ from datetime import datetime
 
 from langchain_core.language_models import BaseChatModel
 
-from longevity_clinic.app.config import VlogsConfig, get_logger
+from longevity_clinic.app.config import VlogsConfig, get_logger, process_config
+from longevity_clinic.app.data.schemas.db import CallLog
 from longevity_clinic.app.data.schemas.llm import CheckInSummary, MetricLogsOutput
 from longevity_clinic.app.prompts import PARSE_CHECKIN
 
@@ -45,101 +46,53 @@ class VlogsAgent:
                 temperature=self.config.temperature,
             )
 
+    # ==========================================================================
     # Primary Parsing API
+    # ==========================================================================
 
     @staticmethod
     async def parse_checkin_with_health_data(
-        content: str,
-        checkin_type: str = "text",
-        patient_name: str = "",
-        checkin_id: str | None = None,
-        timestamp: str | None = None,
+        content: str, checkin_type: str = "text", patient_name: str = "",
+        checkin_id: str | None = None, timestamp: str | None = None,
     ) -> MetricLogsOutput:
-        """Parse content into MetricLogsOutput with health extraction (meds, food, symptoms).
-        uses function parse_with_structured_output under the hood.
-        """
-        # Generate ID and timestamp if not provided
+        """Parse content into MetricLogsOutput with health extraction."""
         checkin_id = checkin_id or f"chk_{uuid.uuid4().hex[:8]}"
         timestamp = timestamp or datetime.now().strftime("Today, %I:%M %p")
 
-        # Fallback for empty/short content
         if not content or len(content.strip()) < 10:
-            logger.warning(
-                "parse_checkin_with_health_data: empty or short content: %s", content
-            )
-            return VlogsAgent._create_empty_output(
-                checkin_id,
-                checkin_type,
-                content[:500] if content else "",
-                timestamp,
-                patient_name,
-            )
+            return VlogsAgent._create_empty_output(checkin_id, checkin_type, content[:500] if content else "", timestamp, patient_name)
 
-        # Try LLM parsing with full MetricLogsOutput schema
         result = await parse_with_structured_output(
-            content=content,
-            output_schema=MetricLogsOutput,
-            system_prompt=PARSE_CHECKIN,
-            max_content_length=4000,
+            content=content, output_schema=MetricLogsOutput,
+            system_prompt=PARSE_CHECKIN, max_content_length=4000,
         )
 
         if result:
-            # Tag checkin with provided metadata
-            tag_checkin_with_metadata(
-                output=result,
-                checkin_id=checkin_id,
-                checkin_type=checkin_type,
-                timestamp=timestamp,
-                patient_name=patient_name,
-                fallback_summary=content[:500],
-            )
-
-            logger.info(
-                "Parsed checkin with health data: %d meds, %d foods, %d symptoms",
-                len(result.medications_entries),
-                len(result.food_entries),
-                len(result.symptom_entries),
-            )
+            tag_checkin_with_metadata(result, checkin_id, checkin_type, timestamp, patient_name, content[:500])
+            logger.info("Parsed: %d meds, %d foods, %d symptoms",
+                len(result.medications_entries), len(result.food_entries), len(result.symptom_entries))
             return result
 
-        # LLM failed - return empty health data
-        logger.warning("parse_checkin_with_health_data LLM returned None")
-        return VlogsAgent._create_empty_output(
-            checkin_id, checkin_type, content[:500], timestamp, patient_name
-        )
+        return VlogsAgent._create_empty_output(checkin_id, checkin_type, content[:500], timestamp, patient_name)
 
     @staticmethod
-    def _create_empty_output(
-        checkin_id: str,
-        checkin_type: str,
-        summary: str,
-        timestamp: str,
-        patient_name: str,
-    ) -> MetricLogsOutput:
+    def _create_empty_output(checkin_id: str, checkin_type: str, summary: str, timestamp: str, patient_name: str) -> MetricLogsOutput:
         """Create empty MetricLogsOutput (fallback)."""
         return MetricLogsOutput(
             checkin=CheckInSummary(
-                id=checkin_id,
-                type=checkin_type,
-                summary=summary,
-                timestamp=timestamp,
-                sentiment="",
-                key_topics=[],
-                provider_reviewed=False,
-                patient_name=patient_name,
+                id=checkin_id, type=checkin_type, summary=summary, timestamp=timestamp,
+                sentiment="", key_topics=[], provider_reviewed=False, patient_name=patient_name,
             ),
-            medications_entries=[],
-            food_entries=[],
-            symptom_entries=[],
+            medications_entries=[], food_entries=[], symptom_entries=[],
         )
 
+    # ==========================================================================
     # CDC Pipeline
+    # ==========================================================================
 
     async def fetch_and_sync_raw(self, phone_number: str | None = None) -> int:
         """CDC Steps 1-2: Fetch from API and sync raw logs to DB."""
-        call_logs = await fetch_call_logs(
-            phone_number=phone_number, limit=self.config.limit
-        )
+        call_logs = await fetch_call_logs(phone_number=phone_number, limit=self.config.limit)
         if not call_logs:
             return 0
         count = 0
@@ -149,7 +102,7 @@ class VlogsAgent:
         return count
 
     async def process_unprocessed_logs(self) -> int:
-        """CDC Steps 3-4: Process unprocessed logs with LLM, mark all as processed."""
+        """CDC Steps 3-4: Process unprocessed logs with parallel LLM calls."""
         if not self.config.extract_with_llm:
             return 0
 
@@ -157,59 +110,41 @@ class VlogsAgent:
         if not unprocessed:
             return 0
 
-        logger.info("Processing %d unprocessed call logs", len(unprocessed))
-        count = 0
-        for call_log in unprocessed:
+        logger.info("Processing %d unprocessed call logs (max_parallel=%d)", len(unprocessed), self.config.max_parallel)
+
+        # Parallel processing with semaphore limit
+        sem = asyncio.Semaphore(self.config.max_parallel)
+        results = await asyncio.gather(*[self._process_single_log(log, sem) for log in unprocessed], return_exceptions=True)
+        return sum(1 for r in results if r is True)
+
+    async def _process_single_log(self, call_log: CallLog, sem: asyncio.Semaphore) -> bool:
+        """Process single call log with semaphore-limited concurrency."""
+        async with sem:
             try:
-                transcript = await asyncio.to_thread(
-                    get_transcript_for_call_log, call_log.id
-                )
-                # Mark as processed even if no transcript (skip LLM but don't reprocess)
+                transcript = await asyncio.to_thread(get_transcript_for_call_log, call_log.id)
                 if not transcript:
                     await asyncio.to_thread(mark_call_log_processed_sync, call_log.id)
-                    continue
+                    return False
 
-                output = await self._parse_call_log(
-                    transcript,
-                    call_log.call_id,
-                    call_log.started_at.isoformat(),
-                    call_log.phone_number,
-                )
-                if await asyncio.to_thread(
-                    update_call_log_metrics, call_log.id, output, self.config.llm_model
-                ):
-                    count += 1
+                output = await self._parse_call_log(transcript, call_log.call_id, call_log.started_at.isoformat(), call_log.phone_number)
+                return await asyncio.to_thread(update_call_log_metrics, call_log.id, output, self.config.llm_model)
             except Exception as e:
                 logger.error("Failed to process call %s: %s", call_log.call_id, e)
-        return count
+                return False
 
-    # Internal
-
-    async def _parse_call_log(
-        self, transcript: str, call_id: str, call_date: str, patient_phone: str
-    ) -> MetricLogsOutput:
+    async def _parse_call_log(self, transcript: str, call_id: str, call_date: str, patient_phone: str) -> MetricLogsOutput:
         """Parse call transcript using centralized parsing."""
-        patient_name = get_patient_name(patient_phone)
-        formatted_date = format_timestamp(call_date)
+        patient_name, formatted_date = get_patient_name(patient_phone), format_timestamp(call_date)
         checkin_id = f"call_{call_id}"
 
         if not transcript or len(transcript.strip()) < 10:
-            return self._create_empty_output(
-                checkin_id, "call", "", formatted_date, patient_name
-            )
+            return self._create_empty_output(checkin_id, "call", "", formatted_date, patient_name)
 
         try:
-            # Use centralized parsing function
-            result = await self.parse_checkin_with_health_data(
-                content=transcript,
-                checkin_type="call",
-                patient_name=patient_name,
-                checkin_id=checkin_id,
-                timestamp=formatted_date,
+            return await self.parse_checkin_with_health_data(
+                content=transcript, checkin_type="call", patient_name=patient_name,
+                checkin_id=checkin_id, timestamp=formatted_date,
             )
-            return result
         except Exception as e:
             logger.error("Parse failed for call %s: %s", call_id, e)
-            return self._create_empty_output(
-                checkin_id, "call", "", formatted_date, patient_name
-            )
+            return self._create_empty_output(checkin_id, "call", "", formatted_date, patient_name)

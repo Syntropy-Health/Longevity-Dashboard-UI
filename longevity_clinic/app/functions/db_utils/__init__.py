@@ -48,10 +48,13 @@ from .checkins import (
 # Health entries
 from .health import (
     create_food_entry_sync,
-    create_medication_sync,
+    create_medication_log_sync,
+    create_medication_subscription_sync,
     create_symptom_sync,
     get_food_entries_sync,
-    get_medications_sync,
+    get_medication_logs_sync,
+    get_medication_subscriptions_sync,
+    get_medications_sync,  # Legacy alias
     get_symptoms_sync,
 )
 
@@ -88,7 +91,8 @@ __all__ = [
     "create_appointment_sync",
     "create_checkin_sync",
     "create_food_entry_sync",
-    "create_medication_sync",
+    "create_medication_log_sync",
+    "create_medication_subscription_sync",
     "create_symptom_sync",
     "create_treatment_sync",
     "delete_checkin_sync",
@@ -104,7 +108,9 @@ __all__ = [
     "get_checkins_for_user_sync",
     "get_checkins_sync",
     "get_food_entries_sync",
-    "get_medications_sync",
+    "get_medication_logs_sync",
+    "get_medication_subscriptions_sync",
+    "get_medications_sync",  # Legacy alias for get_medication_logs_sync
     "get_notifications_for_role_sync",
     "get_notifications_for_user_sync",
     "get_patient_biomarkers_sync",

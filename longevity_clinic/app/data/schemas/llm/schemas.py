@@ -36,18 +36,40 @@ class FoodEntryModel(BaseModel):
 
 
 class MedicationEntryModel(BaseModel):
-    """Medication entry - Pydantic model for LLM extraction.
+    """Medication log entry - Pydantic model for LLM extraction.
 
     Used by MetricLogsOutput for structured extraction from transcripts.
+    Represents when a patient actually took a medication.
     Maps to MedicationEntry database model.
     """
 
     id: str = Field(default="", description="Unique identifier")
-    name: str = Field(default="", description="Medication name")
+    name: str = Field(default="", description="Medication name taken")
     dosage: str = Field(default="", description="Dosage amount and unit")
-    frequency: str = Field(default="", description="How often taken")
-    status: str = Field(default="active", description="active/discontinued/as-needed")
-    adherence_rate: float = Field(default=1.0, description="Adherence rate 0-1")
+    taken_at: str = Field(default="", description="When the medication was taken")
+    notes: str = Field(default="", description="Additional notes")
+
+
+# Alias for backward compatibility with existing LLM extraction
+MedicationEntryModel = MedicationEntryModel
+
+
+class MedicationSubscriptionModel(BaseModel):
+    """Medication subscription/prescription - Pydantic model.
+
+    Represents a prescribed medication that a patient should take.
+    Used for adherence tracking and medication management.
+    Maps to MedicationSubscription database model.
+    """
+
+    id: str = Field(default="", description="Unique identifier")
+    name: str = Field(default="", description="Medication name")
+    dosage: str = Field(default="", description="Prescribed dosage")
+    frequency: str = Field(default="", description="How often to take")
+    instructions: str = Field(default="", description="Taking instructions")
+    status: str = Field(default="active", description="active/discontinued/paused")
+    adherence_rate: float = Field(default=100.0, description="Adherence rate 0-100%")
+    prescriber: str = Field(default="", description="Prescribing doctor")
 
 
 class Symptom(BaseModel):

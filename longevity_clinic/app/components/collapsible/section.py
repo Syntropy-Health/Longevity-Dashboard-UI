@@ -34,7 +34,9 @@ def collapsible_section(
     """
     section_value = value if value is not None else title
     # Use provided icon_color or default from GlassStyles
-    icon_class = f"w-5 h-5 {icon_color} mr-3" if icon_color else GlassStyles.COLLAPSIBLE_ICON
+    icon_class = (
+        f"w-5 h-5 {icon_color} mr-3" if icon_color else GlassStyles.COLLAPSIBLE_ICON
+    )
 
     # Build badge if count provided - emerald styling to match theme
     badge = (

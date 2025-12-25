@@ -3,38 +3,9 @@
 import reflex as rx
 
 from ....components.paginated_view import paginated_list
+from ....components.tabs import food_entry_card
 from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
-
-
-def food_entry_card(entry) -> rx.Component:
-    """Food entry card.
-
-    Args:
-        entry: FoodEntry instance from PatientDashboardState
-    """
-    return rx.el.div(
-        rx.el.div(
-            rx.el.div(
-                rx.icon("utensils", class_name="w-4 h-4 text-teal-400"),
-                class_name="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center mr-3 border border-teal-500/20",
-            ),
-            rx.el.div(
-                rx.el.h4(entry.name, class_name="text-sm font-semibold text-white"),
-                rx.el.p(
-                    rx.text(entry.time, " • ", entry.meal_type.capitalize()),
-                    class_name="text-xs text-slate-400",
-                ),
-            ),
-            class_name="flex items-center flex-1",
-        ),
-        rx.el.div(
-            rx.el.span(entry.calories, class_name="text-lg font-bold text-white"),
-            rx.el.span(" kcal", class_name="text-xs text-slate-400 ml-1"),
-            class_name="flex items-baseline",
-        ),
-        class_name=f"{GlassStyles.PANEL} p-4 flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer",
-    )
 
 
 def food_tracker_tab() -> rx.Component:

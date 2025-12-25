@@ -5,7 +5,7 @@ All components are now defined in components/shared/biomarker_components.py
 """
 
 # Re-export all biomarker components from shared module
-from ....components.shared.biomarker_components import (
+from ....components.shared.biomarker import (
     biomarker_status_badge as status_badge,  # Alias for backward compatibility
     category_section,
     collapsible_category_section,

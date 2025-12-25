@@ -8,7 +8,7 @@ This module provides the treatment protocols management interface with:
 """
 
 # Re-export category_badge from shared for backwards compatibility
-from ....components.shared.treatment_components import category_badge
+from ....components.shared.treatment import category_badge
 from .components import (
     protocol_card,
     protocol_filters,

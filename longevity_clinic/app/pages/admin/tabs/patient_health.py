@@ -240,7 +240,11 @@ def _analytics_content() -> rx.Component:
                 ),
                 class_name="flex items-start justify-between mb-6",
             ),
-            collapsible_panels_container(BiomarkerState.biomarker_panels_limited),
+            # Collapsible panels - expanded by default for admin view
+            collapsible_panels_container(
+                BiomarkerState.biomarker_panels_limited,
+                default_expanded=BiomarkerState.all_panel_names,
+            ),
             rx.cond(
                 BiomarkerState.has_more_panels,
                 rx.el.div(

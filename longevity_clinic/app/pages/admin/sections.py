@@ -2,7 +2,7 @@
 
 import reflex as rx
 
-from ...components.page_components import section_header
+from ...components.page import section_header
 from ...components.shared import (
     TABLE_DATA_CELL,
     TABLE_HEADER_CELL,

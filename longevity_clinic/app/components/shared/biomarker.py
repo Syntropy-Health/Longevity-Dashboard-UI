@@ -21,9 +21,10 @@ Usage:
 
 import reflex as rx
 
-from ...components.charts import TOOLTIP_PROPS
+from ..charts import TOOLTIP_PROPS
 from ...data import BiomarkerCategory, BiomarkerMetric
 from ...styles.constants import GlassStyles
+from ..collapsible import collapsible_grid, collapsible_section
 
 # =============================================================================
 # Chart Components
@@ -208,7 +209,6 @@ def collapsible_category_section(category: BiomarkerCategory) -> rx.Component:
     Returns:
         Accordion item with expandable metric cards
     """
-    from ..collapsible import collapsible_grid, collapsible_section
 
     return collapsible_section(
         title=category["category"],
@@ -226,14 +226,15 @@ def collapsible_category_section(category: BiomarkerCategory) -> rx.Component:
 
 def collapsible_panels_container(
     panels: list[BiomarkerCategory],
-    default_expanded: list[str] | None = None,
+    default_expanded: list[str] | rx.Var | None = None,
 ) -> rx.Component:
     """Container for collapsible biomarker panels.
 
     Args:
         panels: List of biomarker category panels to display
         default_expanded: List of category names to expand by default.
-                         If None, all panels start collapsed.
+                         Pass a state var like BiomarkerState.all_panel_names
+                         to expand all panels by default.
 
     Returns:
         Accordion root with all panels

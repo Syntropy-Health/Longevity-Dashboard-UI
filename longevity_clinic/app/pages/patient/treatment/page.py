@@ -4,7 +4,7 @@ import reflex as rx
 
 from ....components.collapsible import collapsible_container
 from ....components.layout import authenticated_layout
-from ....components.shared.treatment_components import protocol_filters
+from ....components.shared.treatment import protocol_filters
 from ....states import TreatmentSearchState
 from ....styles.constants import GlassStyles
 from .components import treatment_category_section
@@ -33,7 +33,7 @@ def treatment_search_page() -> rx.Component:
                 on_search_change=TreatmentSearchState.set_search_query,
                 on_category_change=TreatmentSearchState.set_category_filter,
             ),
-            # Collapsible treatment sections by category
+            # Collapsible treatment sections by category - expanded by default
             collapsible_container(
                 [
                     rx.foreach(
@@ -41,7 +41,7 @@ def treatment_search_page() -> rx.Component:
                         treatment_category_section,
                     )
                 ],
-                default_expanded=[],
+                default_expanded=TreatmentSearchState.all_category_names,
             ),
             treatment_details_modal(),
         )

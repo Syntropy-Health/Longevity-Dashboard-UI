@@ -3,7 +3,7 @@
 import reflex as rx
 
 from ....components.collapsible import collapsible_grid, collapsible_section
-from ....components.shared.treatment_components import (
+from ....components.shared.treatment import (
     category_badge,
     protocol_filters,
     treatment_card as shared_treatment_card,

@@ -8,13 +8,15 @@ from collections.abc import Callable
 
 import reflex as rx
 
+from ...styles.constants import GlassStyles
+
 
 def collapsible_section(
     title: str | rx.Var,
     content: rx.Component,
     value: str | rx.Var | None = None,
     icon: str = "layers",
-    icon_color: str = "text-teal-400",
+    icon_color: str | None = None,
     badge_count: int | rx.Var | None = None,
 ) -> rx.Component:
     """Create a collapsible accordion section with glassmorphism styling.
@@ -24,20 +26,21 @@ def collapsible_section(
         content: The content component to show when expanded
         value: Unique value for accordion state (defaults to title)
         icon: Lucide icon name for the section header (default: layers)
-        icon_color: Tailwind text color class for the icon
+        icon_color: Tailwind text color class for the icon (default: emerald-400)
         badge_count: Optional count to show in badge (e.g., item count)
 
     Returns:
         Accordion item component
     """
     section_value = value if value is not None else title
+    # Use provided icon_color or default from GlassStyles
+    icon_class = f"w-5 h-5 {icon_color} mr-3" if icon_color else GlassStyles.COLLAPSIBLE_ICON
 
-    # Build badge if count provided - subtle teal styling
+    # Build badge if count provided - emerald styling to match theme
     badge = (
         rx.el.span(
             badge_count,
-            class_name="text-xs font-medium text-teal-300 bg-teal-500/15 "
-            "px-2.5 py-0.5 rounded-full mr-3 border border-teal-500/25",
+            class_name=GlassStyles.COLLAPSIBLE_BADGE,
         )
         if badge_count is not None
         else rx.fragment()
@@ -49,10 +52,10 @@ def collapsible_section(
                 rx.el.div(
                     # Icon and title
                     rx.el.div(
-                        rx.icon(icon, class_name=f"w-5 h-5 {icon_color} mr-3"),
+                        rx.icon(icon, class_name=icon_class),
                         rx.el.span(
                             title,
-                            class_name="text-lg font-semibold text-slate-200",
+                            class_name=GlassStyles.COLLAPSIBLE_TITLE,
                         ),
                         class_name="flex items-center",
                     ),
@@ -61,42 +64,35 @@ def collapsible_section(
                         badge,
                         rx.icon(
                             "chevron-down",
-                            class_name="w-5 h-5 text-slate-400 transition-transform duration-300 ease-out "
-                            "group-data-[state=open]:rotate-180",
+                            class_name=GlassStyles.COLLAPSIBLE_CHEVRON,
                         ),
                         class_name="flex items-center",
                     ),
                     class_name="flex items-center justify-between w-full",
                 ),
-                class_name="group flex w-full p-4 hover:bg-teal-500/10 "
-                "transition-all duration-300 rounded-xl",
+                class_name=GlassStyles.COLLAPSIBLE_TRIGGER,
             ),
         ),
         rx.accordion.content(
-            rx.el.div(content, class_name="px-4 pb-4 pt-2"),
-            class_name="overflow-hidden data-[state=open]:animate-accordion-down "
-            "data-[state=closed]:animate-accordion-up",
+            rx.el.div(content, class_name=GlassStyles.COLLAPSIBLE_CONTENT_INNER),
+            class_name=GlassStyles.COLLAPSIBLE_CONTENT,
         ),
         value=section_value,
-        class_name=(
-            "bg-slate-800/40 backdrop-blur-xl rounded-2xl "
-            "border border-slate-700/50 hover:border-teal-500/30 "
-            "my-3 overflow-hidden transition-all duration-300 "
-            "shadow-lg shadow-slate-900/20"
-        ),
+        class_name=GlassStyles.COLLAPSIBLE_ITEM,
     )
 
 
 def collapsible_container(
     children: list[rx.Component],
-    default_expanded: list[str] | None = None,
+    default_expanded: list[str] | rx.Var | None = None,
     allow_multiple: bool = True,
 ) -> rx.Component:
     """Container for multiple collapsible sections.
 
     Args:
         children: List of collapsible_section components
-        default_expanded: List of section values to expand by default
+        default_expanded: List of section values to expand by default, or a
+                         Reflex Var containing the list (e.g., State.all_names)
         allow_multiple: If True, multiple sections can be open; if False, only one
 
     Returns:
@@ -105,8 +101,8 @@ def collapsible_container(
     return rx.accordion.root(
         *children,
         type="multiple" if allow_multiple else "single",
-        default_value=default_expanded or [],
-        class_name="w-full space-y-1",
+        default_value=default_expanded if default_expanded is not None else [],
+        class_name=GlassStyles.COLLAPSIBLE_CONTAINER,
     )
 
 

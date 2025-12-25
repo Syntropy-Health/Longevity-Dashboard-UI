@@ -3,7 +3,7 @@
 import reflex as rx
 
 from ....components.layout import authenticated_layout
-from ....components.page_components import page_header
+from ....components.page import page_header
 from ....states import TreatmentState
 from .components import protocol_card, protocol_filters
 from .modals import assignment_modal, treatment_editor_modal

@@ -40,7 +40,7 @@ from .layout import authenticated_layout
 from .modals import checkin_detail_modal, status_update_modal, transcript_modal
 
 # Page-level shared components
-from .page_components import page_header, section_header
+from .page import page_header, section_header
 
 # Paginated view components
 from .paginated_view import (

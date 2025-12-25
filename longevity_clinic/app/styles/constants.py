@@ -368,6 +368,54 @@ class GlassStyles:
         "hover:bg-white/10 transition-colors"
     )
 
+    # ==========================================================================
+    # Collapsible Section Styles (Dark Emerald Glass)
+    # ==========================================================================
+
+    # Collapsible item - emerald-tinted dark glass to match biomarker cards
+    COLLAPSIBLE_ITEM = (
+        "bg-gradient-to-br from-slate-800/50 to-emerald-900/20 backdrop-blur-xl "
+        "rounded-2xl border border-emerald-500/15 "
+        "hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 "
+        "my-4 overflow-hidden transition-all duration-300"
+    )
+
+    # Collapsible trigger header
+    COLLAPSIBLE_TRIGGER = (
+        "group flex w-full p-5 hover:bg-emerald-500/10 "
+        "transition-all duration-300 rounded-xl"
+    )
+
+    # Collapsible chevron with rotation animation
+    COLLAPSIBLE_CHEVRON = (
+        "w-5 h-5 text-slate-400 transition-transform duration-300 ease-out "
+        "group-data-[state=open]:rotate-180"
+    )
+
+    # Collapsible content wrapper
+    COLLAPSIBLE_CONTENT = (
+        "overflow-hidden data-[state=open]:animate-accordion-down "
+        "data-[state=closed]:animate-accordion-up"
+    )
+
+    # Collapsible content inner padding
+    COLLAPSIBLE_CONTENT_INNER = "px-5 pb-5 pt-2"
+
+    # Collapsible container (accordion root)
+    COLLAPSIBLE_CONTAINER = "w-full space-y-2 px-2 py-3"
+
+    # Collapsible badge
+    COLLAPSIBLE_BADGE = (
+        "text-xs font-medium text-emerald-300 bg-emerald-500/15 "
+        "px-2.5 py-0.5 rounded-full mr-3 border border-emerald-500/25"
+    )
+
+    # Collapsible title
+    COLLAPSIBLE_TITLE = "text-lg font-semibold text-slate-200"
+
+    # Collapsible icon default color
+    COLLAPSIBLE_ICON = "w-5 h-5 text-emerald-400 mr-3"
+
 
 # Shared building blocks ----------------------------------------------------
 _MODAL_PANEL_BASE = (

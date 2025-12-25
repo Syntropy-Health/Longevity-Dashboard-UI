@@ -156,6 +156,15 @@ class BiomarkerState(rx.State):
         """Get total number of biomarker panels."""
         return len(get_biomarker_panels())
 
+    @rx.var
+    def all_panel_names(self) -> list[str]:
+        """Get all biomarker panel category names for default accordion expansion.
+
+        Returns:
+            List of category names from all panels
+        """
+        return [panel["category"] for panel in get_biomarker_panels()]
+
     @rx.event
     def export_report(self):
         """Export biomarker analytics report as CSV."""

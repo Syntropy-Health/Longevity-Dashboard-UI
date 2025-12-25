@@ -322,6 +322,15 @@ class TreatmentSearchState(rx.State):
             for cat, treatments in grouped.items()
         ]
 
+    @rx.var
+    def all_category_names(self) -> list[str]:
+        """Get all category names for default accordion expansion.
+
+        Returns:
+            List of category names currently visible
+        """
+        return [group["category"] for group in self.treatments_by_category]
+
     @rx.event
     def set_search_query(self, query: str):
         self.search_query = query

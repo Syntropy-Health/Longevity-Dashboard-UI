@@ -44,8 +44,11 @@ def analytics_page() -> rx.Component:
                 ),
                 class_name="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-10 gap-4",
             ),
-            # Collapsible biomarker panels
-            collapsible_panels_container(BiomarkerState.biomarker_panels),
+            # Collapsible biomarker panels - expanded by default
+            collapsible_panels_container(
+                BiomarkerState.biomarker_panels,
+                default_expanded=BiomarkerState.all_panel_names,
+            ),
             class_name="max-w-7xl mx-auto pb-20",
         )
     )

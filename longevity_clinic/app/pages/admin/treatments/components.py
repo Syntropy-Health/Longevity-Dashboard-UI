@@ -2,7 +2,7 @@
 
 import reflex as rx
 
-from ....components.shared.treatment_components import (
+from ....components.shared.treatment import (
     protocol_filters as shared_protocol_filters,
     treatment_card as shared_treatment_card,
 )

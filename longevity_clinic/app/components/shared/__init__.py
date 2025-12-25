@@ -3,7 +3,7 @@
 This package contains reusable UI components used across both patient and admin views.
 """
 
-from .biomarker_components import (
+from .biomarker import (
     biomarker_status_badge,
     category_section,
     collapsible_category_section,
@@ -40,7 +40,7 @@ from .tables import (
     table_header,
     table_loading_skeleton,
 )
-from .treatment_components import (
+from .treatment import (
     CATEGORY_COLORS,
     category_badge,
     protocol_filters,

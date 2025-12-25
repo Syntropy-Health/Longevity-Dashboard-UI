@@ -52,15 +52,39 @@ def get_treatments_as_protocols_sync() -> list[TreatmentProtocol]:
     ]
 
 
-def get_patient_treatments_sync(user_id: int) -> list[PatientTreatment]:
-    """Get all treatment assignments for a patient."""
+def get_patient_treatments_sync(user_id: int) -> list[dict]:
+    """Get all treatment assignments for a patient with treatment details.
+
+    Returns:
+        List of dicts with both PatientTreatment and Treatment fields
+    """
     try:
         with rx.session() as session:
-            return list(
-                session.exec(
-                    select(PatientTreatment).where(PatientTreatment.user_id == user_id)
-                ).all()
-            )
+            results = session.exec(
+                select(PatientTreatment, Treatment)
+                .join(Treatment, PatientTreatment.treatment_id == Treatment.id)
+                .where(PatientTreatment.user_id == user_id)
+            ).all()
+            return [
+                {
+                    "id": pt.id,
+                    "treatment_id": t.treatment_id,
+                    "treatment_name": t.name,
+                    "treatment_category": t.category,
+                    "treatment_description": t.description,
+                    "start_date": pt.start_date,
+                    "end_date": pt.end_date,
+                    "status": pt.status,
+                    "sessions_completed": pt.sessions_completed,
+                    "sessions_total": pt.sessions_total,
+                    "progress": (
+                        int(pt.sessions_completed / pt.sessions_total * 100)
+                        if pt.sessions_total and pt.sessions_total > 0
+                        else 0
+                    ),
+                }
+                for pt, t in results
+            ]
     except Exception as e:
         logger.error("Failed to get patient treatments for user %s: %s", user_id, e)
         return []

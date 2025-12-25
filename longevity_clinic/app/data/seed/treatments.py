@@ -110,6 +110,79 @@ TREATMENT_CATALOG_SEED: list[dict] = [
         "cost": 35.0,
         "status": "Active",
     },
+    # =========================================================================
+    # Medications (Rx) - category = "Medications"
+    # =========================================================================
+    {
+        "treatment_id": "T011",
+        "name": "Metformin",
+        "category": "Medications",
+        "description": "Biguanide medication for blood sugar control and longevity benefits.",
+        "duration": "N/A",
+        "frequency": "Twice daily with meals",
+        "cost": 15.0,
+        "status": "Active",
+    },
+    {
+        "treatment_id": "T012",
+        "name": "Lisinopril",
+        "category": "Medications",
+        "description": "ACE inhibitor for blood pressure management and cardiovascular protection.",
+        "duration": "N/A",
+        "frequency": "Once daily in morning",
+        "cost": 12.0,
+        "status": "Active",
+    },
+    {
+        "treatment_id": "T013",
+        "name": "Vitamin D3",
+        "category": "Medications",
+        "description": "High-dose vitamin D supplementation for bone health and immune function.",
+        "duration": "N/A",
+        "frequency": "Once daily with food",
+        "cost": 20.0,
+        "status": "Active",
+    },
+    {
+        "treatment_id": "T014",
+        "name": "Omega-3 Fish Oil",
+        "category": "Medications",
+        "description": "Essential fatty acid supplementation for cardiovascular and brain health.",
+        "duration": "N/A",
+        "frequency": "Twice daily",
+        "cost": 25.0,
+        "status": "Active",
+    },
+    {
+        "treatment_id": "T015",
+        "name": "Magnesium Glycinate (Rx)",
+        "category": "Medications",
+        "description": "High-dose magnesium for sleep, relaxation, and muscle function.",
+        "duration": "N/A",
+        "frequency": "Once daily at bedtime",
+        "cost": 18.0,
+        "status": "Active",
+    },
+    {
+        "treatment_id": "T016",
+        "name": "CoQ10",
+        "category": "Medications",
+        "description": "Coenzyme Q10 for cellular energy production and heart health.",
+        "duration": "N/A",
+        "frequency": "Once daily with food",
+        "cost": 35.0,
+        "status": "Active",
+    },
+    {
+        "treatment_id": "T017",
+        "name": "Atorvastatin",
+        "category": "Medications",
+        "description": "Statin medication for cholesterol management and cardiovascular protection.",
+        "duration": "N/A",
+        "frequency": "Once daily at bedtime",
+        "cost": 22.0,
+        "status": "Active",
+    },
 ]
 
 # =============================================================================
@@ -311,6 +384,94 @@ PATIENT_TREATMENT_ASSIGNMENTS_SEED: list[dict] = [
         "notes": "Initial gut health protocol for anemia",
         "sessions_completed": 2,
         "sessions_total": 30,
+    },
+    # =========================================================================
+    # Sarah Chen (P001) - Medication Prescriptions (category=Medications)
+    # These replace the old MedicationSubscription model
+    # =========================================================================
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T011",  # Metformin
+        "assigned_by": "Dr. Sarah Johnson",
+        "status": "active",
+        "notes": "Take with breakfast and dinner. Monitor blood sugar levels.",
+        "dosage": "500mg",
+        "instructions": "Take with breakfast and dinner. Monitor blood sugar levels.",
+        "adherence_rate": 96.0,
+        "sessions_completed": 180,  # ~6 months daily
+        "sessions_total": None,
+    },
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T012",  # Lisinopril
+        "assigned_by": "Dr. Michael Chen",
+        "status": "active",
+        "notes": "Take first thing in the morning on an empty stomach.",
+        "dosage": "10mg",
+        "instructions": "Take first thing in the morning on an empty stomach.",
+        "adherence_rate": 92.0,
+        "sessions_completed": 365,  # ~1 year daily
+        "sessions_total": None,
+    },
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T013",  # Vitamin D3
+        "assigned_by": "Dr. Emily Davis",
+        "status": "active",
+        "notes": "Take with a meal containing fat for better absorption.",
+        "dosage": "5000 IU",
+        "instructions": "Take with a meal containing fat for better absorption.",
+        "adherence_rate": 88.0,
+        "sessions_completed": 90,  # 3 months
+        "sessions_total": None,
+    },
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T014",  # Omega-3 Fish Oil
+        "assigned_by": "Dr. Emily Davis",
+        "status": "active",
+        "notes": "Take with meals to reduce fishy aftertaste.",
+        "dosage": "1200mg",
+        "instructions": "Take with meals to reduce fishy aftertaste.",
+        "adherence_rate": 85.0,
+        "sessions_completed": 120,  # 4 months
+        "sessions_total": None,
+    },
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T015",  # Magnesium Glycinate (Rx)
+        "assigned_by": "Dr. Emily Davis",
+        "status": "active",
+        "notes": "Take before bed to promote relaxation and sleep.",
+        "dosage": "400mg",
+        "instructions": "Take before bed to promote relaxation and sleep.",
+        "adherence_rate": 90.0,
+        "sessions_completed": 60,  # 2 months
+        "sessions_total": None,
+    },
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T016",  # CoQ10
+        "assigned_by": "Dr. Michael Chen",
+        "status": "active",
+        "notes": "Take with a fatty meal for optimal absorption.",
+        "dosage": "100mg",
+        "instructions": "Take with a fatty meal for optimal absorption.",
+        "adherence_rate": 82.0,
+        "sessions_completed": 45,  # 1.5 months
+        "sessions_total": None,
+    },
+    {
+        "patient_external_id": "P001",
+        "treatment_id": "T017",  # Atorvastatin
+        "assigned_by": "Dr. Sarah Johnson",
+        "status": "paused",
+        "notes": "Take at the same time each night. Avoid grapefruit.",
+        "dosage": "20mg",
+        "instructions": "Take at the same time each night. Avoid grapefruit.",
+        "adherence_rate": 78.0,
+        "sessions_completed": 30,  # 1 month
+        "sessions_total": None,
     },
 ]
 

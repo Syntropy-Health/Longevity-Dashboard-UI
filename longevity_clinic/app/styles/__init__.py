@@ -1,6 +1,7 @@
 """Public interface for the styles package."""
 
 from .constants import (
+    TREATMENT_CATEGORY_COLORS,
     AlertStyles,
     AppStyles,
     BadgeStyles,
@@ -12,7 +13,6 @@ from .constants import (
     GridStyles,
     ModalStyles,
     StatusBadgeStyles,
-    TREATMENT_CATEGORY_COLORS,
     TextStyles,
     TreatmentCategoryEnum,
     ZIndexStyles,
@@ -20,6 +20,7 @@ from .constants import (
 )
 
 __all__ = [
+    "TREATMENT_CATEGORY_COLORS",
     "AlertStyles",
     "AppStyles",
     "BadgeStyles",
@@ -31,7 +32,6 @@ __all__ = [
     "GridStyles",
     "ModalStyles",
     "StatusBadgeStyles",
-    "TREATMENT_CATEGORY_COLORS",
     "TextStyles",
     "TreatmentCategoryEnum",
     "ZIndexStyles",

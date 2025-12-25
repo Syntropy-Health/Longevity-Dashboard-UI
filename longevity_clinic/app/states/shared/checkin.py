@@ -693,11 +693,15 @@ class CheckinState(rx.State):
             user_phone = auth_state.user_phone if auth_state.user else ""
             user_name = auth_state.user_full_name if auth_state.user else "Unknown"
 
-        logger.debug("refresh_call_logs: user=%s, phone=%s", user_name, user_phone or "(none)")
+        logger.debug(
+            "refresh_call_logs: user=%s, phone=%s", user_name, user_phone or "(none)"
+        )
 
         if not user_phone:
             async with self:
-                self.call_logs_sync_error = f"No phone number configured for {user_name}"
+                self.call_logs_sync_error = (
+                    f"No phone number configured for {user_name}"
+                )
                 self.call_logs_syncing = False
             return
 
@@ -707,7 +711,9 @@ class CheckinState(rx.State):
 
             # Reset if reprocess flag set
             if process_config.reprocess_all:
-                reset_count = await asyncio.to_thread(reset_all_processed_to_metrics_sync)
+                reset_count = await asyncio.to_thread(
+                    reset_all_processed_to_metrics_sync
+                )
                 logger.info("Reset %d call logs for reprocessing", reset_count)
 
             # Step 1-2: Fetch and sync raw call logs
@@ -724,7 +730,11 @@ class CheckinState(rx.State):
                 auth_state = await self.get_state(AuthState)
                 is_admin = auth_state.is_admin
 
-            checkins_from_db = await (self._load_all_checkins_from_db() if is_admin else self._load_checkins_from_db())
+            checkins_from_db = await (
+                self._load_all_checkins_from_db()
+                if is_admin
+                else self._load_checkins_from_db()
+            )
 
             async with self:
                 if checkins_from_db:
@@ -747,7 +757,9 @@ class CheckinState(rx.State):
                 return
             self.is_processing_background = True
 
-        logger.debug("Periodic refresh started (interval=%ds)", process_config.refresh_interval)
+        logger.debug(
+            "Periodic refresh started (interval=%ds)", process_config.refresh_interval
+        )
 
         while True:
             async with self:
@@ -817,7 +829,10 @@ class CheckinState(rx.State):
                 return
             self.is_processing_background = True
 
-        logger.debug("Checkin sync loop started (poll_interval=%ds)", process_config.poll_interval)
+        logger.debug(
+            "Checkin sync loop started (poll_interval=%ds)",
+            process_config.poll_interval,
+        )
 
         # Initial load
         try:
@@ -825,7 +840,11 @@ class CheckinState(rx.State):
                 auth_state = await self.get_state(AuthState)
                 is_admin = auth_state.is_admin
 
-            checkins_from_db = await (self._load_all_checkins_from_db() if is_admin else self._load_checkins_from_db())
+            checkins_from_db = await (
+                self._load_all_checkins_from_db()
+                if is_admin
+                else self._load_checkins_from_db()
+            )
             async with self:
                 self.checkins = checkins_from_db
             logger.debug("Initial load: %d checkins", len(checkins_from_db))
@@ -848,7 +867,11 @@ class CheckinState(rx.State):
                         auth_state = await self.get_state(AuthState)
                         is_admin = auth_state.is_admin
 
-                    checkins_from_db = await (self._load_all_checkins_from_db() if is_admin else self._load_checkins_from_db())
+                    checkins_from_db = await (
+                        self._load_all_checkins_from_db()
+                        if is_admin
+                        else self._load_checkins_from_db()
+                    )
                     async with self:
                         if checkins_from_db:
                             self.checkins = checkins_from_db

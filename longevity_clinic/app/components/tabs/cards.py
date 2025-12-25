@@ -10,11 +10,11 @@ from ...styles.constants import GlassStyles
 from ..indicators import trend_text
 
 
-def medication_log_card(log) -> rx.Component:
-    """Medication log card (what patient took).
+def medication_entry_card(log) -> rx.Component:
+    """Medication Entry card (what patient took).
 
     Args:
-        log: MedicationEntry instance
+        log: MedicationEntry instance (Pydantic model from state)
     """
     return rx.el.div(
         rx.el.div(
@@ -33,7 +33,7 @@ def medication_log_card(log) -> rx.Component:
         rx.el.div(
             rx.el.span(
                 rx.cond(
-                    log.taken_at,
+                    log.taken_at != "",
                     rx.moment(log.taken_at, format="MMM D, h:mm A"),
                     "Unknown",
                 ),

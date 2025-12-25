@@ -21,9 +21,9 @@ Usage:
 
 import reflex as rx
 
-from ..charts import TOOLTIP_PROPS
 from ...data import BiomarkerCategory, BiomarkerMetric
 from ...styles.constants import GlassStyles
+from ..charts import TOOLTIP_PROPS
 from ..collapsible import collapsible_grid, collapsible_section
 
 # =============================================================================

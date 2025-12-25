@@ -25,7 +25,7 @@ def load_appointments(engine: Engine, user_id_map: dict[str, int]) -> SeedResult
     Returns:
         SeedResult with counts and any errors
     """
-    from longevity_clinic.app.data.model import Appointment
+    from longevity_clinic.app.data.schemas.db import Appointment
     from longevity_clinic.app.data.seed import APPOINTMENTS_SEED
 
     errors: list[str] = []

@@ -1,14 +1,14 @@
 """Medications tab component for patient portal.
 
 Dual-panel view:
-- Left: Medication Logs (what patient has taken)
+- Left: Medication Entries (what patient has taken)
 - Right: Medication Subscriptions (prescriptions with adherence tracking)
 """
 
 import reflex as rx
 
 from ....components.paginated_view import paginated_list
-from ....components.tabs import medication_log_card, medication_subscription_card
+from ....components.tabs import medication_entry_card, medication_subscription_card
 from ....states import HealthDashboardState
 from ....styles.constants import GlassStyles
 
@@ -59,7 +59,7 @@ def _summary_stats() -> rx.Component:
                 class_name="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5",
             ),
             rx.el.span(
-                HealthDashboardState.medication_logs_count,
+                HealthDashboardState.medication_entries_count,
                 class_name="text-2xl font-bold text-white",
             ),
             class_name=f"{GlassStyles.PANEL} p-4",
@@ -68,14 +68,15 @@ def _summary_stats() -> rx.Component:
     )
 
 
-def _medication_logs_panel() -> rx.Component:
-    """Left panel: Medication Logs (what was taken)."""
+def _medication_entries_panel() -> rx.Component:
+    """Left panel: Medication Entries (what was taken)."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
                 rx.icon("clipboard-list", class_name="w-5 h-5 text-teal-400"),
                 rx.el.h3(
-                    "Medication Log", class_name="text-lg font-semibold text-white ml-2"
+                    "Medication Entry",
+                    class_name="text-lg font-semibold text-white ml-2",
                 ),
             ),
             rx.el.p(
@@ -85,14 +86,14 @@ def _medication_logs_panel() -> rx.Component:
             class_name="flex flex-col mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.medication_logs_paginated,
-            item_renderer=medication_log_card,
-            has_previous=HealthDashboardState.medication_logs_has_previous,
-            has_next=HealthDashboardState.medication_logs_has_next,
-            page_info=HealthDashboardState.medication_logs_page_info,
-            showing_info=HealthDashboardState.medication_logs_showing_info,
-            on_previous=HealthDashboardState.medication_logs_previous_page,
-            on_next=HealthDashboardState.medication_logs_next_page,
+            items=HealthDashboardState.medication_entries_paginated,
+            item_renderer=medication_entry_card,
+            has_previous=HealthDashboardState.medication_entries_has_previous,
+            has_next=HealthDashboardState.medication_entries_has_next,
+            page_info=HealthDashboardState.medication_entries_page_info,
+            showing_info=HealthDashboardState.medication_entries_showing_info,
+            on_previous=HealthDashboardState.medication_entries_previous_page,
+            on_next=HealthDashboardState.medication_entries_next_page,
             empty_icon="clipboard-check",
             empty_message="No doses logged",
             empty_subtitle="Log your first dose to start tracking",
@@ -152,7 +153,7 @@ def medications_tab() -> rx.Component:
         _summary_stats(),
         # Dual Panel Layout
         rx.el.div(
-            _medication_logs_panel(),
+            _medication_entries_panel(),
             _medication_subscriptions_panel(),
             class_name="grid grid-cols-1 lg:grid-cols-2 gap-4",
         ),

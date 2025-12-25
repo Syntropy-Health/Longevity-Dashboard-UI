@@ -209,7 +209,9 @@ class ProcessConfig(BaseModel):
 
     # Polling/periodic settings
     poll_interval: int = Field(default=15, description="Seconds between poll cycles")
-    refresh_interval: int = Field(default=30, description="Seconds for manual refresh periodic")
+    refresh_interval: int = Field(
+        default=30, description="Seconds for manual refresh periodic"
+    )
 
     # Parallel processing
     max_parallel_llm: int = Field(default=3, description="Max concurrent LLM calls")
@@ -225,7 +227,9 @@ class ProcessConfig(BaseModel):
     checkins_limit: int = Field(default=200)
 
     # Ghost user ID for unknown phone numbers
-    ghost_user_id: int = Field(default=-1, description="Fallback user_id for unmatched phones")
+    ghost_user_id: int = Field(
+        default=-1, description="Fallback user_id for unmatched phones"
+    )
 
     # Debug flags
     reprocess_all: bool = Field(default=False)

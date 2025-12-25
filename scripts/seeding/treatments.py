@@ -168,6 +168,10 @@ def load_patient_treatment_assignments(
             sessions_completed=assignment.get("sessions_completed", 0),
             sessions_total=assignment.get("sessions_total"),
             last_session_at=datetime.now(UTC) - timedelta(days=3),
+            # Medication-specific fields (for category=Medications)
+            dosage=assignment.get("dosage"),
+            instructions=assignment.get("instructions"),
+            adherence_rate=assignment.get("adherence_rate"),
         )
         session.add(patient_treatment)
         result.loaded += 1

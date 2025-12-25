@@ -11,7 +11,6 @@ since they're used directly in component props.
 
 from typing import TypedDict
 
-
 # =============================================================================
 # Patient Schemas
 # =============================================================================

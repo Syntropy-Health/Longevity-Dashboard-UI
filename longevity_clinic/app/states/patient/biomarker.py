@@ -1,9 +1,10 @@
 import reflex as rx
 
 from ...config import get_logger
-from ...data import BiomarkerCategory, get_biomarker_panels
-from ...functions.patients.biomarkers import load_all_biomarker_data
+from ...data import BiomarkerCategory
 from ...data.schemas.state import Biomarker, BiomarkerDataPoint
+from ...functions.db_utils import get_biomarker_panels_sync as get_biomarker_panels
+from ...functions.patients.biomarkers import load_all_biomarker_data
 from ...states.auth import AuthState
 
 logger = get_logger("longevity_clinic.biomarker")

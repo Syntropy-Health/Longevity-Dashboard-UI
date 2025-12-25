@@ -18,14 +18,14 @@ from ...data.schemas.llm import (
     DataSource,
     FoodEntryModel as FoodEntry,
     MedicationEntryModel as MedicationEntry,
-    MedicationSubscriptionModel as MedicationSubscription,
+    PatientTreatmentModel as MedicationSubscription,  # Alias for backwards compat
     Symptom,
     SymptomEntryModel as SymptomEntry,
     SymptomTrend,
 )
 from ...functions.db_utils import (
     get_food_entries_sync,
-    get_medication_logs_sync,
+    get_medication_entries_sync,
     get_medication_subscriptions_sync,
     get_symptoms_sync,
     get_user_by_external_id_sync,
@@ -129,7 +129,7 @@ class HealthDashboardState(rx.State):
     # Data (loaded via load_dashboard_data)
     nutrition_summary: dict[str, Any] = {}
     food_entries: list[FoodEntry] = []
-    medication_logs: list[MedicationEntry] = []  # What patient actually took
+    medication_entries: list[MedicationEntry] = []  # What patient actually took
     medication_subscriptions: list[MedicationSubscription] = []  # Prescribed meds
     conditions: list[Condition] = []
     symptoms: list[Symptom] = []
@@ -159,7 +159,7 @@ class HealthDashboardState(rx.State):
     _DATA_SOURCES_PAGE_SIZE: int = 6
 
     # Current page numbers (1-indexed)
-    medication_logs_page: int = 1
+    medication_entries_page: int = 1
     medication_subscriptions_page: int = 1
     food_entries_page: int = 1
     conditions_page: int = 1
@@ -188,9 +188,9 @@ class HealthDashboardState(rx.State):
         return len([s for s in self.medication_subscriptions if s.status == "active"])
 
     @rx.var
-    def medication_logs_count(self) -> int:
-        """Count of medication logs."""
-        return len(self.medication_logs)
+    def medication_entries_count(self) -> int:
+        """Count of Medication Entries."""
+        return len(self.medication_entries)
 
     @rx.var
     def active_conditions_count(self) -> int:
@@ -229,43 +229,43 @@ class HealthDashboardState(rx.State):
         )
 
     # =========================================================================
-    # Pagination Computed Variables - Medication Logs (What was taken)
+    # Pagination Computed Variables - Medication Entries (What was taken)
     # =========================================================================
 
     @rx.var
-    def medication_logs_paginated(self) -> list[MedicationEntry]:
-        """Paginated slice of medication logs."""
-        start = (self.medication_logs_page - 1) * self._MED_LOGS_PAGE_SIZE
+    def medication_entries_paginated(self) -> list[MedicationEntry]:
+        """Paginated slice of Medication Entries."""
+        start = (self.medication_entries_page - 1) * self._MED_LOGS_PAGE_SIZE
         end = start + self._MED_LOGS_PAGE_SIZE
-        return self.medication_logs[start:end]
+        return self.medication_entries[start:end]
 
     @rx.var
-    def medication_logs_total_pages(self) -> int:
+    def medication_entries_total_pages(self) -> int:
         return max(
             1,
-            (len(self.medication_logs) + self._MED_LOGS_PAGE_SIZE - 1)
+            (len(self.medication_entries) + self._MED_LOGS_PAGE_SIZE - 1)
             // self._MED_LOGS_PAGE_SIZE,
         )
 
     @rx.var
-    def medication_logs_has_previous(self) -> bool:
-        return self.medication_logs_page > 1
+    def medication_entries_has_previous(self) -> bool:
+        return self.medication_entries_page > 1
 
     @rx.var
-    def medication_logs_has_next(self) -> bool:
-        return self.medication_logs_page < self.medication_logs_total_pages
+    def medication_entries_has_next(self) -> bool:
+        return self.medication_entries_page < self.medication_entries_total_pages
 
     @rx.var
-    def medication_logs_page_info(self) -> str:
-        return f"Page {self.medication_logs_page} of {self.medication_logs_total_pages}"
+    def medication_entries_page_info(self) -> str:
+        return f"Page {self.medication_entries_page} of {self.medication_entries_total_pages}"
 
     @rx.var
-    def medication_logs_showing_info(self) -> str:
-        total = len(self.medication_logs)
+    def medication_entries_showing_info(self) -> str:
+        total = len(self.medication_entries)
         if total == 0:
-            return "No medication logs"
-        start = (self.medication_logs_page - 1) * self._MED_LOGS_PAGE_SIZE + 1
-        end = min(self.medication_logs_page * self._MED_LOGS_PAGE_SIZE, total)
+            return "No Medication Entries"
+        start = (self.medication_entries_page - 1) * self._MED_LOGS_PAGE_SIZE + 1
+        end = min(self.medication_entries_page * self._MED_LOGS_PAGE_SIZE, total)
         return f"Showing {start}-{end} of {total}"
 
     # =========================================================================
@@ -623,7 +623,7 @@ class HealthDashboardState(rx.State):
             async with self:
                 self.nutrition_summary = _calculate_nutrition(db_data["food_entries"])
                 self.food_entries = db_data["food_entries"]
-                self.medication_logs = db_data["medication_logs"]
+                self.medication_entries = db_data["medication_entries"]
                 self.medication_subscriptions = db_data["medication_subscriptions"]
                 self.symptoms = db_data["symptoms"]
                 self.conditions = static_data.get("conditions", [])
@@ -636,7 +636,7 @@ class HealthDashboardState(rx.State):
 
             logger.info(
                 "load_dashboard_data: Complete (%d med_logs, %d med_subs, %d foods, %d symptoms)",
-                len(db_data["medication_logs"]),
+                len(db_data["medication_entries"]),
                 len(db_data["medication_subscriptions"]),
                 len(db_data["food_entries"]),
                 len(db_data["symptoms"]),
@@ -652,7 +652,7 @@ class HealthDashboardState(rx.State):
         if not user_id:
             logger.warning("_load_health_entries_from_db: No user ID set")
             return {
-                "medication_logs": [],
+                "medication_entries": [],
                 "medication_subscriptions": [],
                 "food_entries": [],
                 "symptoms": [],
@@ -660,7 +660,7 @@ class HealthDashboardState(rx.State):
 
         def _query(uid: int):
             return (
-                get_medication_logs_sync(uid, limit=50),
+                get_medication_entries_sync(uid, limit=50),
                 get_medication_subscriptions_sync(uid, limit=50),
                 get_food_entries_sync(uid, limit=50),
                 get_symptoms_sync(uid, limit=50),
@@ -671,7 +671,7 @@ class HealthDashboardState(rx.State):
                 _query, user_id
             )
             return {
-                "medication_logs": med_logs,
+                "medication_entries": med_logs,
                 "medication_subscriptions": med_subs,
                 "food_entries": foods,
                 "symptoms": symptoms,
@@ -679,7 +679,7 @@ class HealthDashboardState(rx.State):
         except Exception as e:
             logger.error("_load_health_entries_from_db: %s", e)
             return {
-                "medication_logs": [],
+                "medication_entries": [],
                 "medication_subscriptions": [],
                 "food_entries": [],
                 "symptoms": [],
@@ -721,15 +721,18 @@ class HealthDashboardState(rx.State):
                     user_id,
                 )
                 return (
-                    get_medication_logs_sync(user_id, limit=50),
+                    get_medication_entries_sync(user_id, limit=50),
                     get_medication_subscriptions_sync(user_id, limit=50),
                     get_food_entries_sync(user_id, limit=50),
                     get_symptoms_sync(user_id, limit=50),
                 )
 
-            medication_logs, medication_subscriptions, food_entries, symptoms = (
-                await asyncio.to_thread(_load_db_health_data)
-            )
+            (
+                medication_entries,
+                medication_subscriptions,
+                food_entries,
+                symptoms,
+            ) = await asyncio.to_thread(_load_db_health_data)
 
             # Calculate nutrition summary from food entries
             nutrition_summary = (
@@ -739,7 +742,7 @@ class HealthDashboardState(rx.State):
             async with self:
                 self.nutrition_summary = nutrition_summary
                 self.food_entries = food_entries
-                self.medication_logs = medication_logs
+                self.medication_entries = medication_entries
                 self.medication_subscriptions = medication_subscriptions
                 self.conditions = data.get("conditions", [])
                 self.symptoms = symptoms
@@ -752,7 +755,7 @@ class HealthDashboardState(rx.State):
 
             logger.info(
                 "load_patient_health_data: Loaded %d med_logs, %d med_subs, %d foods, %d symptoms for %s",
-                len(medication_logs),
+                len(medication_entries),
                 len(medication_subscriptions),
                 len(food_entries),
                 len(symptoms),
@@ -785,8 +788,8 @@ class HealthDashboardState(rx.State):
                 return
 
             async with self:
-                if db_data["medication_logs"]:
-                    self.medication_logs = db_data["medication_logs"]
+                if db_data["medication_entries"]:
+                    self.medication_entries = db_data["medication_entries"]
                 if db_data["medication_subscriptions"]:
                     self.medication_subscriptions = db_data["medication_subscriptions"]
                 if db_data["food_entries"]:
@@ -799,7 +802,7 @@ class HealthDashboardState(rx.State):
 
             logger.info(
                 "load_health_data_from_db: %d med_logs, %d med_subs, %d foods, %d symptoms",
-                len(db_data["medication_logs"]),
+                len(db_data["medication_entries"]),
                 len(db_data["medication_subscriptions"]),
                 len(db_data["food_entries"]),
                 len(db_data["symptoms"]),
@@ -814,7 +817,7 @@ class HealthDashboardState(rx.State):
         self._data_loaded = False
         self.nutrition_summary = {}
         self.food_entries = []
-        self.medication_logs = []
+        self.medication_entries = []
         self.medication_subscriptions = []
         self.conditions = []
         self.symptoms = []
@@ -840,13 +843,13 @@ class HealthDashboardState(rx.State):
     # Pagination Handlers
     # =========================================================================
 
-    def medication_logs_previous_page(self):
-        if self.medication_logs_page > 1:
-            self.medication_logs_page -= 1
+    def medication_entries_previous_page(self):
+        if self.medication_entries_page > 1:
+            self.medication_entries_page -= 1
 
-    def medication_logs_next_page(self):
-        if self.medication_logs_page < self.medication_logs_total_pages:
-            self.medication_logs_page += 1
+    def medication_entries_next_page(self):
+        if self.medication_entries_page < self.medication_entries_total_pages:
+            self.medication_entries_page += 1
 
     def medication_subscriptions_previous_page(self):
         if self.medication_subscriptions_page > 1:

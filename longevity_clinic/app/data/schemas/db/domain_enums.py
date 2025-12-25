@@ -39,6 +39,7 @@ class TreatmentCategoryEnum(StrEnum):
     HORMONE_THERAPY = "Hormone Therapy"
     PHYSICAL_THERAPY = "Physical Therapy"
     SPA_SERVICES = "Spa Services"
+    MEDICATIONS = "Medications"  # Prescribed medications (Rx)
 
 
 class TreatmentFrequencyEnum(StrEnum):
@@ -198,27 +199,27 @@ HEALTH_KEYWORDS: Final[list[str]] = _enum_values(HealthKeywordEnum)
 
 
 __all__ = [
-    # Treatment enums
-    "TreatmentCategoryEnum",
-    "TreatmentFrequencyEnum",
-    "TreatmentStatusEnum",
-    "PatientStatusEnum",
-    "TREATMENT_CATEGORIES",
-    "TREATMENT_FREQUENCIES",
-    "TREATMENT_STATUSES",
-    "PATIENT_STATUSES",
-    # Biomarker enums
-    "BiomarkerCategoryEnum",
-    "BiomarkerSimpleCategoryEnum",
-    "MeasurementUnitEnum",
-    "BiomarkerMetricNameEnum",
-    "BiomarkerStatusEnum",
-    "BiomarkerTrendEnum",
     "BIOMARKER_CATEGORIES",
     "BIOMARKER_SIMPLE_CATEGORIES",
     "BIOMARKER_STATUSES",
     "BIOMARKER_TRENDS",
+    "HEALTH_KEYWORDS",
+    "PATIENT_STATUSES",
+    "TREATMENT_CATEGORIES",
+    "TREATMENT_FREQUENCIES",
+    "TREATMENT_STATUSES",
+    # Biomarker enums
+    "BiomarkerCategoryEnum",
+    "BiomarkerMetricNameEnum",
+    "BiomarkerSimpleCategoryEnum",
+    "BiomarkerStatusEnum",
+    "BiomarkerTrendEnum",
     # Health keywords
     "HealthKeywordEnum",
-    "HEALTH_KEYWORDS",
+    "MeasurementUnitEnum",
+    "PatientStatusEnum",
+    # Treatment enums
+    "TreatmentCategoryEnum",
+    "TreatmentFrequencyEnum",
+    "TreatmentStatusEnum",
 ]

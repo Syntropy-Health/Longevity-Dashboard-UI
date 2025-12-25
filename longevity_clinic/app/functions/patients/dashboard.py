@@ -15,18 +15,18 @@ from typing import Any
 
 # Local application
 from longevity_clinic.app.config import get_logger
+from longevity_clinic.app.data.schemas.llm import (
+    Condition,
+    DataSource,
+    SymptomEntryModel as SymptomEntry,
+    SymptomTrend,
+)
 from longevity_clinic.app.data.seed import (
     CONDITIONS_SEED,
     DATA_SOURCES_SEED,
     REMINDERS_SEED,
     SYMPTOM_LOGS_SEED,
     SYMPTOM_TRENDS_SEED,
-)
-from longevity_clinic.app.data.schemas.llm import (
-    Condition,
-    DataSource,
-    SymptomEntryModel as SymptomEntry,
-    SymptomTrend,
 )
 
 logger = get_logger("longevity_clinic.dashboard_functions")

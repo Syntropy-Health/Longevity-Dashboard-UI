@@ -1,6 +1,7 @@
 """Database seeding module for Longevity Clinic.
 
 Modular seed data loading organized by domain:
+- enums: Reference tables (treatment_categories, urgency_levels, etc.)
 - users: User accounts (patients, admin)
 - checkins: Patient check-ins
 - notifications: Admin and patient notifications
@@ -33,6 +34,14 @@ from .clinic_metrics import (
     load_patient_visits,
     load_provider_metrics,
 )
+from .enums import (
+    load_all_enums,
+    load_biomarker_categories,
+    load_checkin_types,
+    load_treatment_categories,
+    load_treatment_statuses,
+    load_urgency_levels,
+)
 from .health import load_health_entries
 from .notifications import load_notifications
 from .treatments import (
@@ -63,6 +72,10 @@ def load_all_seed_data(reset: bool = False) -> dict[str, SeedResult]:
     create_tables(engine)
 
     with Session(engine) as session:
+        # Reference/enum tables FIRST (other tables may reference these)
+        enum_results = load_all_enums(session)
+        results.update(enum_results)
+
         # Core data (order matters - users first)
         results["users"] = load_users(session)
         user_id_map = results["users"].id_map
@@ -82,6 +95,8 @@ def load_all_seed_data(reset: bool = False) -> dict[str, SeedResult]:
 
         # Health entries for primary user
         results["health"] = load_health_entries(session, user_id_map)
+        # NOTE: Medication subscriptions now loaded via patient_treatments
+        # (category=Medications) - see load_patient_treatment_assignments()
 
         # Biomarkers
         results["biomarker_definitions"] = load_biomarker_definitions(session)
@@ -105,13 +120,18 @@ __all__ = [
     "drop_tables",
     # Base utilities
     "get_engine",
+    # Enum loaders (run first)
+    "load_all_enums",
     # Convenience function
     "load_all_seed_data",
+    # Individual loaders
     "load_appointments",
     "load_biomarker_aggregates",
+    "load_biomarker_categories",
     "load_biomarker_definitions",
     "load_biomarker_readings",
     "load_call_logs",
+    "load_checkin_types",
     "load_checkins",
     "load_daily_metrics",
     "load_health_entries",
@@ -119,8 +139,10 @@ __all__ = [
     "load_patient_treatment_assignments",
     "load_patient_visits",
     "load_provider_metrics",
+    "load_treatment_categories",
     "load_treatment_protocol_metrics",
+    "load_treatment_statuses",
     "load_treatments",
-    # Individual loaders
+    "load_urgency_levels",
     "load_users",
 ]

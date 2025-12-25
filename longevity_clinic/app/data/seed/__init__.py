@@ -49,10 +49,10 @@ from .notifications import (
     ADMIN_NOTIFICATIONS_SEED,
     PATIENT_NOTIFICATIONS_SEED,
 )
-from .medication_subscriptions import (
-    MEDICATION_SUBSCRIPTIONS_SEED,
-    get_medication_subscriptions_for_user,
-)
+
+# NOTE: medication_subscriptions module removed.
+# Medications now in Treatment catalog (category=Medications)
+# and seeded via PATIENT_TREATMENT_ASSIGNMENTS_SEED in treatments.py
 from .nutrition import (
     CONDITIONS_SEED,
     DATA_SOURCES_SEED,
@@ -104,8 +104,6 @@ __all__ = [
     "DEMO_PHONE_NUMBER",
     "FOOD_ENTRIES_SEED",
     "HOURLY_FLOW_SEED",
-    # Medication Subscriptions
-    "MEDICATION_SUBSCRIPTIONS_SEED",
     "MEDICATIONS_SEED",
     # Nutrition/Health
     "NUTRITION_SUMMARY_SEED",
@@ -134,6 +132,5 @@ __all__ = [
     # Patients
     "DemoPatientSeed",
     "get_all_demo_patients",
-    "get_medication_subscriptions_for_user",
     "get_phone_to_patient_seed",
 ]

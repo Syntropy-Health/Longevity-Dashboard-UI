@@ -11,11 +11,9 @@ import pytest
 from longevity_clinic.app.config import VlogsConfig
 from longevity_clinic.app.data.schemas.llm import (
     CheckInSummary,
-    MetricLogsOutput,
-)
-from longevity_clinic.app.data.schemas.llm import (
     FoodEntryModel as FoodEntrySchema,
     MedicationEntryModel as MedicationEntrySchema,
+    MetricLogsOutput,
     Symptom as SymptomSchema,
 )
 from longevity_clinic.app.functions.vlogs import VlogsAgent

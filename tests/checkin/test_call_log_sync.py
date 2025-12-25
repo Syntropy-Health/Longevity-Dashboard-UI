@@ -20,10 +20,11 @@ from longevity_clinic.app.data.schemas.db import (
     MedicationEntry,
     SymptomEntry,
 )
-from longevity_clinic.app.data.schemas.llm import CheckInSummary, MetricLogsOutput
 from longevity_clinic.app.data.schemas.llm import (
+    CheckInSummary,
     FoodEntryModel as FoodEntrySchema,
     MedicationEntryModel as MedicationEntrySchema,
+    MetricLogsOutput,
     Symptom as SymptomSchema,
 )
 

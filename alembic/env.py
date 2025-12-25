@@ -38,6 +38,37 @@ except ImportError:
 # This enables autogenerate to detect model changes
 from sqlmodel import SQLModel
 
+from longevity_clinic.app.data.schemas.db.enums import (  # noqa: F401
+    BiomarkerCategory,
+    CheckInType,
+    TreatmentCategory,
+    TreatmentStatus,
+    UrgencyLevel,
+)
+
+# Import all models to register them with SQLModel.metadata
+# This MUST happen before accessing SQLModel.metadata for autogenerate to work
+from longevity_clinic.app.data.schemas.db.models import (  # noqa: F401
+    Appointment,
+    BiomarkerAggregate,
+    BiomarkerDefinition,
+    BiomarkerReading,
+    CallLog,
+    CallTranscript,
+    CheckIn,
+    ClinicDailyMetrics,
+    FoodLogEntry,
+    MedicationEntry,
+    Notification,
+    PatientTreatment,
+    PatientVisit,
+    ProviderMetrics,
+    SymptomEntry,
+    Treatment,
+    TreatmentProtocolMetric,
+    User,
+)
+
 # Alembic Config object
 config = context.config
 
@@ -81,13 +112,19 @@ def run_migrations_offline() -> None:
     Useful for reviewing migration SQL before applying.
     """
     url = get_database_url()
+    is_sqlite = url.startswith("sqlite")
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        compare_type=True,
-        compare_server_default=True,
+        # Enable batch mode for SQLite (required for ALTER TABLE operations)
+        render_as_batch=is_sqlite,
+        # Don't compare types for SQLite - TEXT/VARCHAR are equivalent
+        compare_type=not is_sqlite,
+        # Don't compare server defaults - causes false positives with datetime
+        compare_server_default=False,
     )
 
     with context.begin_transaction():
@@ -100,6 +137,7 @@ def run_migrations_online() -> None:
     Creates an engine and runs migrations against the live database.
     """
     url = get_database_url()
+    is_sqlite = url.startswith("sqlite")
 
     # Create engine directly with the URL (not from config section)
     connectable = create_engine(
@@ -117,8 +155,12 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            compare_type=True,
-            compare_server_default=True,
+            # Enable batch mode for SQLite (required for ALTER TABLE operations)
+            render_as_batch=is_sqlite,
+            # Don't compare types for SQLite - TEXT/VARCHAR are equivalent
+            compare_type=not is_sqlite,
+            # Don't compare server defaults - causes false positives with datetime
+            compare_server_default=False,
         )
 
         with context.begin_transaction():

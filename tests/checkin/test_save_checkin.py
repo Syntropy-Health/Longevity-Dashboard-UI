@@ -21,11 +21,9 @@ from longevity_clinic.app.data.schemas.db import (
 )
 from longevity_clinic.app.data.schemas.llm import (
     CheckInSummary,
-    MetricLogsOutput,
-)
-from longevity_clinic.app.data.schemas.llm import (
     FoodEntryModel as FoodEntrySchema,
     MedicationEntryModel as MedicationEntrySchema,
+    MetricLogsOutput,
     Symptom as SymptomSchema,
 )
 

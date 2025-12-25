@@ -41,7 +41,7 @@ def load_health_entries(session: Session, user_id_map: dict[str, int]) -> SeedRe
 
     med_count = food_count = symptom_count = 0
 
-    # Load medications
+    # Load medication entries (doses taken logs)
     for med_data in MEDICATIONS_SEED:
         existing = session.exec(
             select(MedicationEntry).where(
@@ -58,11 +58,9 @@ def load_health_entries(session: Session, user_id_map: dict[str, int]) -> SeedRe
             user_id=primary_user_id,
             name=med_data["name"],
             dosage=med_data.get("dosage", ""),
-            frequency=med_data.get("frequency", ""),
-            status=med_data.get("status", "active"),
-            adherence_rate=med_data.get("adherence_rate", 1.0),
+            notes="Seed data entry",
             source="seed",
-            mentioned_at=datetime.now(UTC),
+            taken_at=datetime.now(UTC),
         )
         session.add(med)
         med_count += 1
@@ -128,3 +126,8 @@ def load_health_entries(session: Session, user_id_map: dict[str, int]) -> SeedRe
         f"  ✓ Loaded {med_count} medications, {food_count} food entries, {symptom_count} symptoms"
     )
     return result
+
+
+# NOTE: load_medication_subscriptions() removed.
+# Medications are now part of Treatment catalog (category=Medications)
+# and loaded via load_patient_treatment_assignments() in scripts/seeding/treatments.py

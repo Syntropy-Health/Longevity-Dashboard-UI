@@ -11,13 +11,13 @@ from datetime import datetime
 from typing import Any
 
 from longevity_clinic.app.config import get_logger
+from longevity_clinic.app.data.schemas.state import Biomarker, BiomarkerDataPoint
 from longevity_clinic.app.functions.db_utils import (
     get_appointments_for_patient_sync,
     get_patient_biomarkers_sync,
     get_patient_treatments_sync,
 )
 from longevity_clinic.app.functions.db_utils.users import get_user_by_external_id_sync
-from longevity_clinic.app.data.schemas.state import Biomarker, BiomarkerDataPoint
 
 logger = get_logger("longevity_clinic.biomarkers")
 
@@ -140,11 +140,13 @@ async def fetch_treatments(
             )
             return [
                 {
-                    "id": t.treatment_id,
-                    "name": t.treatment.name if t.treatment else "",
-                    "start_date": t.start_date.isoformat() if t.start_date else "",
-                    "status": t.status,
-                    "progress": t.progress or 0,
+                    "id": t["treatment_id"],
+                    "name": t["treatment_name"],
+                    "start_date": (
+                        t["start_date"].isoformat() if t["start_date"] else ""
+                    ),
+                    "status": t["status"],
+                    "progress": t["progress"],
                 }
                 for t in treatments
             ]
@@ -183,10 +185,8 @@ async def fetch_appointments(
             appointments = [
                 a
                 for a in appointments
-                if isinstance(a.get("date"), str)
-                and a["date"] >= today.isoformat()
-                or isinstance(a.get("date"), datetime)
-                and a["date"].date() >= today
+                if (isinstance(a.get("date"), str) and a["date"] >= today.isoformat())
+                or (isinstance(a.get("date"), datetime) and a["date"].date() >= today)
             ]
         logger.info(
             "fetch_appointments: Loaded %d appointments from DB", len(appointments)

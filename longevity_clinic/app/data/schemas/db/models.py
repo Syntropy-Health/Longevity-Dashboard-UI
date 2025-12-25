@@ -191,57 +191,24 @@ class Appointment(rx.Model, table=True):
 
 
 # =============================================================================
-# Medication Models
+# Medication Entry (logs of doses taken)
 # =============================================================================
-
-
-class MedicationSubscription(rx.Model, table=True):
-    """Prescribed medication for a patient (subscription/Rx).
-
-    Tracks medications that a patient is supposed to take, including
-    dosage, frequency, and adherence tracking.
-    """
-
-    __tablename__ = "medication_subscriptions"
-
-    id: int | None = Field(default=None, primary_key=True)
-    user_id: int | None = Field(default=None, foreign_key="users.id", index=True)
-
-    # Prescription data
-    name: str = Field(index=True)
-    dosage: str = Field(default="")
-    frequency: str = Field(default="")  # e.g., "Twice daily with meals"
-    instructions: str = Field(default="")  # Additional taking instructions
-    prescriber: str = Field(default="")  # Prescribing doctor
-
-    # Status and adherence
-    status: str = Field(default="active")  # active | discontinued | paused | completed
-    adherence_rate: float = Field(default=100.0)  # Percentage 0-100
-
-    # Dates
-    start_date: datetime | None = None
-    end_date: datetime | None = None  # None = ongoing
-
-    # Source tracking
-    source: str = Field(default="manual")  # manual | ehr | seed
-    created_at: datetime = Field(default_factory=utc_now)
-    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class MedicationEntry(rx.Model, table=True):
     """Log of medication taken (extracted from check-ins).
 
     Tracks when a patient actually took a medication.
-    Links to CheckIn as the source of truth.
+    Links to CheckIn and optionally to PatientTreatment (for Medications category).
     """
 
-    __tablename__ = "medication_logs"
+    __tablename__ = "medication_entries"
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: int | None = Field(default=None, foreign_key="users.id", index=True)
     checkin_id: int | None = Field(default=None, foreign_key="checkins.id", index=True)
-    subscription_id: int | None = Field(
-        default=None, foreign_key="medication_subscriptions.id", index=True
+    patient_treatment_id: int | None = Field(
+        default=None, foreign_key="patient_treatments.id", index=True
     )
 
     # Log data
@@ -445,6 +412,7 @@ class PatientTreatment(rx.Model, table=True):
     """Junction table for patient-treatment assignments.
 
     Tracks which treatments are assigned to which patients with progress.
+    For Medications category: includes dosage and adherence tracking.
     """
 
     __tablename__ = "patient_treatments"
@@ -459,6 +427,11 @@ class PatientTreatment(rx.Model, table=True):
     end_date: datetime | None = None
     status: str = Field(default="active")  # active | completed | paused | cancelled
     notes: str | None = None
+
+    # Medication-specific fields (for category=Medications)
+    dosage: str = Field(default="")  # e.g., "500mg", "10mg"
+    instructions: str = Field(default="")  # e.g., "Take with food"
+    adherence_rate: float = Field(default=100.0)  # Percentage 0-100
 
     # Progress tracking
     sessions_completed: int = Field(default=0)

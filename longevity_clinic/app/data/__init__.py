@@ -33,29 +33,29 @@ Usage:
 # Domain Enums (from schemas/db/domain_enums.py)
 # =============================================================================
 from .schemas.db import (
-    # Treatment enums
-    PATIENT_STATUSES,
-    TREATMENT_CATEGORIES,
-    TREATMENT_FREQUENCIES,
-    TREATMENT_STATUSES,
-    PatientStatusEnum,
-    TreatmentCategoryEnum,
-    TreatmentFrequencyEnum,
-    TreatmentStatusEnum,
     # Biomarker enums
     BIOMARKER_CATEGORIES,
     BIOMARKER_SIMPLE_CATEGORIES,
     BIOMARKER_STATUSES,
     BIOMARKER_TRENDS,
+    # Health keywords
+    HEALTH_KEYWORDS,
+    # Treatment enums
+    PATIENT_STATUSES,
+    TREATMENT_CATEGORIES,
+    TREATMENT_FREQUENCIES,
+    TREATMENT_STATUSES,
     BiomarkerCategoryEnum,
     BiomarkerMetricNameEnum,
     BiomarkerSimpleCategoryEnum,
     BiomarkerStatusEnum,
     BiomarkerTrendEnum,
-    MeasurementUnitEnum,
-    # Health keywords
-    HEALTH_KEYWORDS,
     HealthKeywordEnum,
+    MeasurementUnitEnum,
+    PatientStatusEnum,
+    TreatmentCategoryEnum,
+    TreatmentFrequencyEnum,
+    TreatmentStatusEnum,
 )
 
 # =============================================================================
@@ -70,9 +70,10 @@ from .schemas.state import (
 # =============================================================================
 # Utility Functions
 # =============================================================================
-from ..functions.utils import generate_biomarker_history as generate_history
-from ..functions.db_utils import get_biomarker_panels_sync as get_biomarker_panels
-
+# NOTE: Function imports removed to avoid circular dependency.
+# Import directly from functions modules:
+#   - from longevity_clinic.app.functions.utils import generate_biomarker_history
+#   - from longevity_clinic.app.functions.db_utils import get_biomarker_panels_sync
 # =============================================================================
 # Seed Data - Demo data for development/testing (seed/)
 # =============================================================================
@@ -128,62 +129,16 @@ HealthKeyword = HealthKeywordEnum
 
 __all__ = [
     # ==========================================================================
-    # Domain Enums (StrEnum)
-    # ==========================================================================
-    # Treatment
-    "TreatmentCategoryEnum",
-    "TreatmentFrequencyEnum",
-    "TreatmentStatusEnum",
-    "PatientStatusEnum",
-    "TREATMENT_CATEGORIES",
-    "TREATMENT_FREQUENCIES",
-    "TREATMENT_STATUSES",
-    "PATIENT_STATUSES",
-    # Biomarker
-    "BiomarkerCategoryEnum",
-    "BiomarkerSimpleCategoryEnum",
-    "MeasurementUnitEnum",
-    "BiomarkerMetricNameEnum",
-    "BiomarkerStatusEnum",
-    "BiomarkerTrendEnum",
-    "BIOMARKER_CATEGORIES",
-    "BIOMARKER_SIMPLE_CATEGORIES",
-    "BIOMARKER_STATUSES",
-    "BIOMARKER_TRENDS",
-    # Health keywords
-    "HealthKeywordEnum",
-    "HEALTH_KEYWORDS",
-    # ==========================================================================
-    # State TypedDicts
-    # ==========================================================================
-    "BiomarkerCategoryPanel",
-    "BiomarkerMetric",
-    "BiomarkerMetricSeed",
-    # ==========================================================================
-    # Utility Functions
-    # ==========================================================================
-    "generate_history",
-    "get_biomarker_panels",
-    # ==========================================================================
-    # Backwards Compatibility Aliases
-    # ==========================================================================
-    "BiomarkerCategory",
-    "BiomarkerMetricName",
-    "BiomarkerStatus",
-    "BiomarkerTrend",
-    "MeasurementUnit",
-    "TreatmentCategory",
-    "TreatmentFrequency",
-    "TreatmentStatus",
-    "PatientStatus",
-    "HealthKeyword",
-    # ==========================================================================
     # Seed Data
     # ==========================================================================
     "ADMIN_CHECKINS_SEED",
     "ADMIN_NOTIFICATIONS_SEED",
+    "BIOMARKER_CATEGORIES",
     "BIOMARKER_CHART_SEED",
     "BIOMARKER_METRIC_SEED_DATA",
+    "BIOMARKER_SIMPLE_CATEGORIES",
+    "BIOMARKER_STATUSES",
+    "BIOMARKER_TRENDS",
     "CHECKIN_SEED_DATA",
     "CONDITIONS_SEED",
     "DATA_SOURCES_SEED",
@@ -191,14 +146,58 @@ __all__ = [
     "DEMO_PATIENTS_STATE",
     "DEMO_PHONE_NUMBER",
     "FOOD_ENTRIES_SEED",
+    "HEALTH_KEYWORDS",
     "MEDICATIONS_SEED",
     "NUTRITION_SUMMARY_SEED",
     "PATIENT_NOTIFICATIONS_SEED",
+    "PATIENT_STATUSES",
     "PATIENT_TREND_SEED",
     "PHONE_TO_PATIENT_SEED",
     "REMINDERS_SEED",
     "SYMPTOMS_SEED",
     "SYMPTOM_LOGS_SEED",
     "SYMPTOM_TRENDS_SEED",
+    "TREATMENT_CATEGORIES",
     "TREATMENT_CHART_SEED",
+    "TREATMENT_FREQUENCIES",
+    "TREATMENT_STATUSES",
+    # ==========================================================================
+    # Utility Functions (see functions/ modules directly)
+    # ==========================================================================
+    # ==========================================================================
+    # Backwards Compatibility Aliases
+    # ==========================================================================
+    "BiomarkerCategory",
+    # Biomarker
+    "BiomarkerCategoryEnum",
+    # ==========================================================================
+    # State TypedDicts
+    # ==========================================================================
+    "BiomarkerCategoryPanel",
+    "BiomarkerMetric",
+    "BiomarkerMetricName",
+    "BiomarkerMetricNameEnum",
+    "BiomarkerMetricSeed",
+    "BiomarkerSimpleCategoryEnum",
+    "BiomarkerStatus",
+    "BiomarkerStatusEnum",
+    "BiomarkerTrend",
+    "BiomarkerTrendEnum",
+    "HealthKeyword",
+    # Health keywords
+    "HealthKeywordEnum",
+    "MeasurementUnit",
+    "MeasurementUnitEnum",
+    "PatientStatus",
+    "PatientStatusEnum",
+    "TreatmentCategory",
+    # ==========================================================================
+    # Domain Enums (StrEnum)
+    # ==========================================================================
+    # Treatment
+    "TreatmentCategoryEnum",
+    "TreatmentFrequency",
+    "TreatmentFrequencyEnum",
+    "TreatmentStatus",
+    "TreatmentStatusEnum",
 ]

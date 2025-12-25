@@ -595,6 +595,7 @@ TREATMENT_CATEGORY_COLORS: dict[TreatmentCategoryEnum, CategoryColorConfig] = {
 
 
 __all__ = [
+    "TREATMENT_CATEGORY_COLORS",
     "AlertStyles",
     "AppStyles",
     "BadgeStyles",
@@ -606,7 +607,6 @@ __all__ = [
     "GridStyles",
     "ModalStyles",
     "StatusBadgeStyles",
-    "TREATMENT_CATEGORY_COLORS",
     "TextStyles",
     "TreatmentCategoryEnum",  # Re-exported from domain_enums
     "ZIndexStyles",

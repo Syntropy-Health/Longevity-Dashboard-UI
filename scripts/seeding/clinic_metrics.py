@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlmodel import Session, select
 
-from longevity_clinic.app.data.model import (
+from longevity_clinic.app.data.schemas.db import (
     ClinicDailyMetrics,
     PatientVisit,
     ProviderMetrics,

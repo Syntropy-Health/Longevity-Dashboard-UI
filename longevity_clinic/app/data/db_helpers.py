@@ -19,7 +19,7 @@ from sqlmodel import select
 from longevity_clinic.app.config import get_logger
 from longevity_clinic.app.functions.utils import normalize_phone
 
-from .model import BiomarkerDefinition, BiomarkerReading, CheckIn, User
+from .model import BiomarkerDefinition, CheckIn, User
 
 logger = get_logger("longevity_clinic.db_helpers")
 

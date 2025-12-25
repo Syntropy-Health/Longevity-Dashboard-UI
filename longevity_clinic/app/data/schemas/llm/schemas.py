@@ -11,7 +11,6 @@ to distinguish from state TypedDicts.
 
 from pydantic import BaseModel, Field
 
-
 # =============================================================================
 # Health Entry Models (for LLM extraction)
 # =============================================================================
@@ -36,7 +35,7 @@ class FoodEntryModel(BaseModel):
 
 
 class MedicationEntryModel(BaseModel):
-    """Medication log entry - Pydantic model for LLM extraction.
+    """Medication Entry entry - Pydantic model for LLM extraction.
 
     Used by MetricLogsOutput for structured extraction from transcripts.
     Represents when a patient actually took a medication.
@@ -54,22 +53,29 @@ class MedicationEntryModel(BaseModel):
 MedicationEntryModel = MedicationEntryModel
 
 
-class MedicationSubscriptionModel(BaseModel):
-    """Medication subscription/prescription - Pydantic model.
+class PatientTreatmentModel(BaseModel):
+    """Patient treatment assignment - Pydantic model for state.
 
-    Represents a prescribed medication that a patient should take.
-    Used for adherence tracking and medication management.
-    Maps to MedicationSubscription database model.
+    Represents a treatment assigned to a patient, including medications.
+    For Medications category: includes dosage and adherence tracking.
+    Maps to PatientTreatment database model.
     """
 
     id: str = Field(default="", description="Unique identifier")
-    name: str = Field(default="", description="Medication name")
-    dosage: str = Field(default="", description="Prescribed dosage")
-    frequency: str = Field(default="", description="How often to take")
+    name: str = Field(default="", description="Treatment name")
+    category: str = Field(default="", description="Treatment category")
+    dosage: str = Field(default="", description="Dosage (for medications)")
+    frequency: str = Field(default="", description="How often")
     instructions: str = Field(default="", description="Taking instructions")
-    status: str = Field(default="active", description="active/discontinued/paused")
+    status: str = Field(default="active", description="active/completed/paused")
     adherence_rate: float = Field(default=100.0, description="Adherence rate 0-100%")
-    prescriber: str = Field(default="", description="Prescribing doctor")
+    assigned_by: str = Field(default="", description="Assigning provider")
+    sessions_completed: int = Field(default=0, description="Sessions completed")
+    sessions_total: int | None = Field(default=None, description="Total sessions")
+
+
+# Backwards compatibility alias
+MedicationSubscriptionModel = PatientTreatmentModel
 
 
 class Symptom(BaseModel):

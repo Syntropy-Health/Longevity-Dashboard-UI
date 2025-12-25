@@ -23,7 +23,7 @@ from ...styles.constants import GlassStyles
 
 
 def _medication_card(med) -> rx.Component:
-    """Medication log card for paginated list."""
+    """Medication Entry card for paginated list."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -31,7 +31,9 @@ def _medication_card(med) -> rx.Component:
                 class_name="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mr-4 border border-purple-500/20",
             ),
             rx.el.div(
-                rx.el.h4(med.name, class_name="text-base font-semibold text-white mb-1"),
+                rx.el.h4(
+                    med.name, class_name="text-base font-semibold text-white mb-1"
+                ),
                 rx.el.p(med.dosage, class_name="text-sm text-slate-300"),
                 rx.cond(
                     med.taken_at != "",
@@ -44,7 +46,10 @@ def _medication_card(med) -> rx.Component:
         rx.cond(
             med.notes != "",
             rx.el.div(
-                rx.el.span(med.notes, class_name="text-xs text-slate-500 truncate max-w-[150px]"),
+                rx.el.span(
+                    med.notes,
+                    class_name="text-xs text-slate-500 truncate max-w-[150px]",
+                ),
                 class_name="text-right",
             ),
             rx.el.span(),
@@ -275,14 +280,14 @@ def medications_section() -> rx.Component:
             class_name="text-lg font-semibold text-white mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.medication_logs_paginated,
+            items=HealthDashboardState.medication_entries_paginated,
             item_renderer=_medication_card,
-            has_previous=HealthDashboardState.medication_logs_has_previous,
-            has_next=HealthDashboardState.medication_logs_has_next,
-            page_info=HealthDashboardState.medication_logs_page_info,
-            showing_info=HealthDashboardState.medication_logs_showing_info,
-            on_previous=HealthDashboardState.medication_logs_previous_page,
-            on_next=HealthDashboardState.medication_logs_next_page,
+            has_previous=HealthDashboardState.medication_entries_has_previous,
+            has_next=HealthDashboardState.medication_entries_has_next,
+            page_info=HealthDashboardState.medication_entries_page_info,
+            showing_info=HealthDashboardState.medication_entries_showing_info,
+            on_previous=HealthDashboardState.medication_entries_previous_page,
+            on_next=HealthDashboardState.medication_entries_next_page,
             empty_icon="pill",
             empty_message="No medications found",
             list_class="space-y-3",

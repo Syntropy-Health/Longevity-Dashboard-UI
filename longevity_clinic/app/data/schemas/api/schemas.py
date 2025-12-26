@@ -16,10 +16,11 @@ class CallLogsQueryParams(BaseModel):
     """Query parameters for the call logs API.
 
     Used to construct API requests for fetching call logs from Directus.
+    Supports smart filtering by date to fetch only newer calls.
     """
 
-    limit: int = Field(
-        default=50, ge=1, le=100, description="Maximum number of records to return"
+    limit: int | None = Field(
+        default=None, ge=1, description="Maximum records to return (None = no limit)"
     )
     offset: int = Field(default=0, ge=0, description="Number of records to skip")
     page: int = Field(default=1, ge=1, description="Page number for pagination")
@@ -36,22 +37,33 @@ class CallLogsQueryParams(BaseModel):
     require_transcript: bool = Field(
         default=True, description="Only return records with transcripts"
     )
+    since_date: str | None = Field(
+        default=None,
+        description="ISO date string - only fetch calls after this date (exclusive)",
+    )
 
     def to_api_params(self) -> dict:
         """Convert to API query parameters dictionary."""
         params = {
-            "limit": self.limit,
             "offset": self.offset,
             "page": self.page,
             "sort": self.sort,
             "fields": self.fields,
         }
 
+        # Only add limit if explicitly set (smart fetch = no limit by default)
+        if self.limit is not None:
+            params["limit"] = self.limit
+
         if self.caller_phone:
             params["filter[caller_phone][_eq]"] = self.caller_phone
 
         if self.require_transcript:
             params["filter[full_transcript][_nnull]"] = "true"
+
+        # Smart filter: only fetch calls newer than since_date
+        if self.since_date:
+            params["filter[call_date][_gt]"] = self.since_date
 
         return params
 

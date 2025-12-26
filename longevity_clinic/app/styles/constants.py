@@ -369,26 +369,26 @@ class GlassStyles:
     )
 
     # ==========================================================================
-    # Collapsible Section Styles (Dark Emerald Glass)
+    # Collapsible Section Styles (Dark Teal/Emerald Glass)
     # ==========================================================================
 
-    # Collapsible item - emerald-tinted dark glass to match biomarker cards
+    # Collapsible item - deep teal glass to match dark UI theme
     COLLAPSIBLE_ITEM = (
-        "bg-gradient-to-br from-slate-800/50 to-emerald-900/20 backdrop-blur-xl "
-        "rounded-2xl border border-emerald-500/15 "
-        "hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 "
+        "bg-gradient-to-br from-slate-800/60 to-teal-900/30 backdrop-blur-xl "
+        "rounded-2xl border border-teal-600/20 "
+        "hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/10 "
         "my-4 overflow-hidden transition-all duration-300"
     )
 
     # Collapsible trigger header
     COLLAPSIBLE_TRIGGER = (
-        "group flex w-full p-5 hover:bg-emerald-500/10 "
+        "group flex w-full p-5 hover:bg-teal-600/15 "
         "transition-all duration-300 rounded-xl"
     )
 
     # Collapsible chevron with rotation animation
     COLLAPSIBLE_CHEVRON = (
-        "w-5 h-5 text-slate-400 transition-transform duration-300 ease-out "
+        "w-5 h-5 text-teal-400 transition-transform duration-300 ease-out "
         "group-data-[state=open]:rotate-180"
     )
 
@@ -406,15 +406,15 @@ class GlassStyles:
 
     # Collapsible badge
     COLLAPSIBLE_BADGE = (
-        "text-xs font-medium text-emerald-300 bg-emerald-500/15 "
-        "px-2.5 py-0.5 rounded-full mr-3 border border-emerald-500/25"
+        "text-xs font-medium text-teal-300 bg-teal-600/20 "
+        "px-2.5 py-0.5 rounded-full mr-3 border border-teal-500/30"
     )
 
     # Collapsible title
     COLLAPSIBLE_TITLE = "text-lg font-semibold text-slate-200"
 
     # Collapsible icon default color
-    COLLAPSIBLE_ICON = "w-5 h-5 text-emerald-400 mr-3"
+    COLLAPSIBLE_ICON = "w-5 h-5 text-teal-400 mr-3"
 
 
 # Shared building blocks ----------------------------------------------------

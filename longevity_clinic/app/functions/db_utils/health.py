@@ -21,6 +21,7 @@ from longevity_clinic.app.data.schemas.llm import (
     MedicationEntryModel as MedicationEntry,
     PatientTreatmentModel as PatientTreatment,
     Symptom,
+    SymptomEntryModel as SymptomLog,
 )
 
 logger = get_logger("longevity_clinic.db_utils.health")
@@ -245,11 +246,39 @@ def create_food_entry_sync(
 # ============================================================================
 
 
+def _normalize_enum_value(
+    value: str | None, valid_values: set[str], default: str
+) -> str:
+    """Normalize enum values from DB to match StrEnum expectations.
+
+    Handles case mismatches (e.g., 'unknown' -> 'UNKNOWN') and None values.
+    """
+    if value is None:
+        return default
+    # Try exact match first
+    if value in valid_values:
+        return value
+    # Try uppercase for UNKNOWN case
+    upper_value = value.upper()
+    if upper_value in valid_values:
+        return upper_value
+    # Return default if no match
+    return default
+
+
+# Valid enum values for normalization
+_SEVERITY_VALUES = {"UNKNOWN", "mild", "moderate", "severe"}
+_TREND_VALUES = {"UNKNOWN", "improving", "worsening", "stable"}
+
+
 def get_symptoms_sync(
     user_id: int,
     limit: int = 100,
 ) -> list[Symptom]:
-    """Get symptom entries for a user from database."""
+    """Get symptom entries for a user from database.
+
+    Normalizes enum values from DB to ensure compatibility with Pydantic validation.
+    """
     try:
         with rx.session() as session:
             symptoms = session.exec(
@@ -263,14 +292,60 @@ def get_symptoms_sync(
                 Symptom(
                     id=str(symptom.id),
                     name=symptom.name,
-                    severity=symptom.severity,
-                    frequency=symptom.frequency,
-                    trend=symptom.trend,
+                    severity=_normalize_enum_value(
+                        symptom.severity, _SEVERITY_VALUES, "UNKNOWN"
+                    ),
+                    frequency=symptom.frequency or "unknown",
+                    trend=_normalize_enum_value(
+                        symptom.trend, _TREND_VALUES, "UNKNOWN"
+                    ),
                 )
                 for symptom in symptoms
             ]
     except Exception as e:
         logger.error("Failed to get symptoms for user %s: %s", user_id, e)
+        return []
+
+
+def get_symptom_logs_sync(
+    user_id: int,
+    limit: int = 100,
+) -> list[SymptomLog]:
+    """Get symptom log entries for timeline display.
+
+    Returns SymptomEntryModel (SymptomLog) with fields formatted for UI:
+    - symptom_name (from DB name)
+    - severity as int (mapped from enum string: mild=3, moderate=5, severe=8, unknown=0)
+    - timestamp (formatted from reported_at)
+    - notes
+    """
+    severity_map = {"mild": 3, "moderate": 5, "severe": 8, "unknown": 0}
+
+    try:
+        with rx.session() as session:
+            symptoms = session.exec(
+                select(SymptomEntryDB)
+                .where(SymptomEntryDB.user_id == user_id)
+                .order_by(SymptomEntryDB.reported_at.desc())
+                .limit(limit)
+            ).all()
+
+            return [
+                SymptomLog(
+                    id=str(symptom.id),
+                    symptom_name=symptom.name,
+                    severity=severity_map.get(symptom.severity or "unknown", 0),
+                    notes=symptom.notes or "",
+                    timestamp=(
+                        symptom.reported_at.strftime("%b %d, %I:%M %p")
+                        if symptom.reported_at
+                        else ""
+                    ),
+                )
+                for symptom in symptoms
+            ]
+    except Exception as e:
+        logger.error("Failed to get symptom logs for user %s: %s", user_id, e)
         return []
 
 

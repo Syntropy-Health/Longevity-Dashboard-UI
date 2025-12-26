@@ -27,6 +27,7 @@ from ...functions.db_utils import (
     get_food_entries_sync,
     get_medication_entries_sync,
     get_medication_subscriptions_sync,
+    get_symptom_logs_sync,
     get_symptoms_sync,
     get_user_by_external_id_sync,
 )
@@ -626,8 +627,13 @@ class HealthDashboardState(rx.State):
                 self.medication_entries = db_data["medication_entries"]
                 self.medication_subscriptions = db_data["medication_subscriptions"]
                 self.symptoms = db_data["symptoms"]
+                # Symptom logs from DB, fallback to static if empty
+                self.symptom_logs = (
+                    db_data["symptom_logs"]
+                    if db_data["symptom_logs"]
+                    else static_data.get("symptom_logs", [])
+                )
                 self.conditions = static_data.get("conditions", [])
-                self.symptom_logs = static_data.get("symptom_logs", [])
                 self.symptom_trends = static_data.get("symptom_trends", [])
                 self.reminders = static_data.get("reminders", [])
                 self.data_sources = static_data.get("data_sources", [])
@@ -635,11 +641,12 @@ class HealthDashboardState(rx.State):
                 self._data_loaded = True
 
             logger.info(
-                "load_dashboard_data: Complete (%d med_logs, %d med_subs, %d foods, %d symptoms)",
+                "load_dashboard_data: Complete (%d med_logs, %d med_subs, %d foods, %d symptoms, %d symptom_logs)",
                 len(db_data["medication_entries"]),
                 len(db_data["medication_subscriptions"]),
                 len(db_data["food_entries"]),
                 len(db_data["symptoms"]),
+                len(db_data["symptom_logs"]),
             )
         except Exception as e:
             logger.error("load_dashboard_data: Failed - %s", e)
@@ -656,6 +663,7 @@ class HealthDashboardState(rx.State):
                 "medication_subscriptions": [],
                 "food_entries": [],
                 "symptoms": [],
+                "symptom_logs": [],
             }
 
         def _query(uid: int):
@@ -664,10 +672,11 @@ class HealthDashboardState(rx.State):
                 get_medication_subscriptions_sync(uid, limit=50),
                 get_food_entries_sync(uid, limit=50),
                 get_symptoms_sync(uid, limit=50),
+                get_symptom_logs_sync(uid, limit=50),
             )
 
         try:
-            med_logs, med_subs, foods, symptoms = await asyncio.to_thread(
+            med_logs, med_subs, foods, symptoms, symptom_logs = await asyncio.to_thread(
                 _query, user_id
             )
             return {
@@ -675,6 +684,7 @@ class HealthDashboardState(rx.State):
                 "medication_subscriptions": med_subs,
                 "food_entries": foods,
                 "symptoms": symptoms,
+                "symptom_logs": symptom_logs,
             }
         except Exception as e:
             logger.error("_load_health_entries_from_db: %s", e)
@@ -683,6 +693,7 @@ class HealthDashboardState(rx.State):
                 "medication_subscriptions": [],
                 "food_entries": [],
                 "symptoms": [],
+                "symptom_logs": [],
             }
 
     @rx.event(background=True)
@@ -700,7 +711,7 @@ class HealthDashboardState(rx.State):
             self._data_loaded = False
 
         try:
-            # Load static data (conditions, symptom_logs, reminders, data_sources)
+            # Load static data (conditions, symptom_trends, reminders, data_sources)
             data = await load_all_dashboard_data(patient_id=patient_id)
 
             # Load health entries from database
@@ -712,7 +723,7 @@ class HealthDashboardState(rx.State):
                         "load_patient_health_data: No user found for external_id=%s",
                         patient_id,
                     )
-                    return [], [], [], []
+                    return [], [], [], [], []
 
                 user_id = user.id
                 logger.debug(
@@ -725,6 +736,7 @@ class HealthDashboardState(rx.State):
                     get_medication_subscriptions_sync(user_id, limit=50),
                     get_food_entries_sync(user_id, limit=50),
                     get_symptoms_sync(user_id, limit=50),
+                    get_symptom_logs_sync(user_id, limit=50),
                 )
 
             (
@@ -732,6 +744,7 @@ class HealthDashboardState(rx.State):
                 medication_subscriptions,
                 food_entries,
                 symptoms,
+                symptom_logs,
             ) = await asyncio.to_thread(_load_db_health_data)
 
             # Calculate nutrition summary from food entries
@@ -746,7 +759,10 @@ class HealthDashboardState(rx.State):
                 self.medication_subscriptions = medication_subscriptions
                 self.conditions = data.get("conditions", [])
                 self.symptoms = symptoms
-                self.symptom_logs = data.get("symptom_logs", [])
+                # Symptom logs from DB, fallback to static if empty
+                self.symptom_logs = (
+                    symptom_logs if symptom_logs else data.get("symptom_logs", [])
+                )
                 self.symptom_trends = data.get("symptom_trends", [])
                 self.reminders = data.get("reminders", [])
                 self.data_sources = data.get("data_sources", [])
@@ -754,11 +770,12 @@ class HealthDashboardState(rx.State):
                 self._data_loaded = True
 
             logger.info(
-                "load_patient_health_data: Loaded %d med_logs, %d med_subs, %d foods, %d symptoms for %s",
+                "load_patient_health_data: Loaded %d med_logs, %d med_subs, %d foods, %d symptoms, %d symptom_logs for %s",
                 len(medication_entries),
                 len(medication_subscriptions),
                 len(food_entries),
                 len(symptoms),
+                len(symptom_logs),
                 patient_id,
             )
         except Exception as e:
@@ -799,13 +816,16 @@ class HealthDashboardState(rx.State):
                     )
                 if db_data["symptoms"]:
                     self.symptoms = db_data["symptoms"]
+                if db_data["symptom_logs"]:
+                    self.symptom_logs = db_data["symptom_logs"]
 
             logger.info(
-                "load_health_data_from_db: %d med_logs, %d med_subs, %d foods, %d symptoms",
+                "load_health_data_from_db: %d med_logs, %d med_subs, %d foods, %d symptoms, %d symptom_logs",
                 len(db_data["medication_entries"]),
                 len(db_data["medication_subscriptions"]),
                 len(db_data["food_entries"]),
                 len(db_data["symptoms"]),
+                len(db_data["symptom_logs"]),
             )
         except Exception as e:
             logger.error("load_health_data_from_db: %s", e)
@@ -936,7 +956,7 @@ class HealthDashboardState(rx.State):
         if self.selected_symptom:
             new_log = SymptomEntry(
                 id=f"sym_{uuid.uuid4().hex[:8]}",
-                symptom_name=self.selected_symptom.get("name", "Unknown"),
+                symptom_name=self.selected_symptom.get("name", "UNKNOWN"),
                 severity=5,
                 notes="",
                 timestamp=datetime.now().strftime("Today, %I:%M %p"),

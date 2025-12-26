@@ -17,9 +17,8 @@ from .schemas import (
     DataSource,
     FoodEntryModel,
     MedicationEntryModel,
-    MedicationSubscriptionModel,  # Alias → PatientTreatmentModel (backward compat)
     MetricLogsOutput,
-    PatientTreatmentModel,
+    PatientTreatmentModel,  # Alias → PatientTreatmentModel (backward compat)
     Symptom,
     SymptomEntryModel,
     SymptomTrend,
@@ -32,8 +31,8 @@ __all__ = [
     "DataSource",
     "FoodEntryModel",
     "MedicationEntryModel",
-    "MedicationSubscriptionModel",  # Alias → PatientTreatmentModel (backward compat)
     "MetricLogsOutput",
+    "PatientTreatmentModel",  # Alias → PatientTreatmentModel (backward compat)
     "PatientTreatmentModel",
     "Symptom",
     "SymptomEntryModel",

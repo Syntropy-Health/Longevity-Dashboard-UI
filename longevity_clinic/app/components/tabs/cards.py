@@ -35,7 +35,7 @@ def medication_entry_card(log) -> rx.Component:
                 rx.cond(
                     log.taken_at != "",
                     rx.moment(log.taken_at, format="MMM D, h:mm A"),
-                    "Unknown",
+                    "UNKNOWN",
                 ),
                 class_name="text-xs text-slate-400",
             ),

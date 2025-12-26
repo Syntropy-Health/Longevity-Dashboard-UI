@@ -99,9 +99,9 @@ class CheckIn(rx.Model, table=True):
 
     # Health data (from LLM extraction)
     health_topics: str | None = None  # JSON array
-    sentiment: str | None = None  # "positive" | "neutral" | "negative"
-    mood: str | None = None
-    energy_level: int | None = None  # 1-10
+    sentiment: str = Field(default="UNKNOWN")  # unknown | positive | neutral | negative
+    mood: str = Field(default="UNKNOWN")  # unknown when not determined
+    energy_level: int | None = None  # 1-10 (None is fine - numeric)
     urgency_level: str = Field(default="routine")  # "routine" | "follow_up" | "urgent"
 
     # Processing metadata
@@ -268,9 +268,9 @@ class SymptomEntry(rx.Model, table=True):
 
     # Symptom data
     name: str = Field(index=True)
-    severity: str = Field(default="")  # mild | moderate | severe
-    frequency: str = Field(default="")
-    trend: str = Field(default="stable")  # improving | worsening | stable
+    severity: str = Field(default="UNKNOWN")  # unknown | mild | moderate | severe
+    frequency: str = Field(default="UNKNOWN")  # unknown when not specified
+    trend: str = Field(default="UNKNOWN")  # unknown | improving | worsening | stable
     notes: str | None = None
 
     # Source tracking

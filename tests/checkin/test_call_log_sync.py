@@ -127,7 +127,7 @@ def update_call_log_with_metrics_direct(
             checkin_id=checkin_id,
             call_log_id=call_log_id,
             user_id=user_id or call_log.user_id,
-            patient_name=output.checkin.patient_name or "Unknown",
+            patient_name=output.checkin.patient_name or "UNKNOWN",
             checkin_type="call",
             summary=output.checkin.summary,
             raw_content=None,
@@ -146,10 +146,10 @@ def update_call_log_with_metrics_direct(
                 checkin_id=checkin.id,
                 name=med.name,
                 dosage=med.dosage or "",
-                frequency=med.frequency or "",
-                status=med.status or "active",
+                taken_at=now,
+                notes=med.notes or "",
                 source="call",
-                mentioned_at=now,
+                created_at=now,
             )
         )
 

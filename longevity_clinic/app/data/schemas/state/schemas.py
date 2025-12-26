@@ -112,16 +112,60 @@ class AdminCheckIn(TypedDict):
     reviewed_at: str
 
 
+class CheckInBasic(TypedDict):
+    """Minimal check-in for user lists."""
+
+    id: str
+    type: str
+    summary: str
+    timestamp: str
+    status: str
+
+
+class CheckInStatusUpdate(TypedDict):
+    """Result of status update operation."""
+
+    id: str
+    status: str
+    reviewed_by: str
+    reviewed_at: str
+
+
+class CheckInCreated(TypedDict):
+    """Result of check-in creation."""
+
+    id: str
+    db_id: int
+    patient_name: str
+    summary: str
+    status: str
+
+
 # =============================================================================
 # Call Log Schemas
 # =============================================================================
 
 
+class CallerPhoneExpanded(TypedDict, total=False):
+    """Expanded caller phone information from API."""
+
+    phone_number: str
+    customer_name: str | None
+    first_call_date: str | None
+    last_call_date: str | None
+    notes: str | None
+    calls: list[int]
+
+
 class CallLogEntry(TypedDict):
-    """Call log entry from the API."""
+    """Call log entry from the API.
+
+    caller_phone can be either a string (E.164 format) or CallerPhoneExpanded dict
+    when using fields=*.* in API request.
+    """
 
     id: int
-    caller_phone: str
+    caller_phone: str | CallerPhoneExpanded
     call_date: str
     call_duration: int
     summary: str

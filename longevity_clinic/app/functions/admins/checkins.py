@@ -6,10 +6,10 @@ Seed data with: python scripts/load_seed_data.py
 """
 
 from datetime import datetime
-from typing import Any
 
 from ...config import get_logger
 from ...data.schemas.db import HealthKeywordEnum as HealthKeyword
+from ...data.schemas.state import AdminCheckIn, CheckInStatusUpdate
 from ..db_utils import (
     get_checkins_sync,
     get_patient_name_by_phone,
@@ -64,31 +64,13 @@ def extract_health_topics(text: str, max_topics: int = 5) -> list[str]:
 async def fetch_all_checkins(
     status_filter: str | None = None,
     limit: int = 100,
-) -> list[dict[str, Any]]:
-    """Fetch all check-ins for admin view from database.
-
-    Args:
-        status_filter: Filter by status ('pending', 'reviewed', 'flagged')
-        limit: Maximum number of check-ins to return
-
-    Returns:
-        List of admin check-in records
-
-    Note: Requires seeded database. Run: python scripts/load_seed_data.py
-    """
-    logger.info(
-        "Fetching admin checkins (status=%s, limit=%d)",
-        status_filter,
-        limit,
-    )
-
-    # Query from database
-    logger.debug("fetch_all_checkins: Querying database")
+) -> list[AdminCheckIn]:
+    """Fetch all check-ins for admin view from database."""
+    logger.info("Fetching admin checkins (status=%s, limit=%d)", status_filter, limit)
     checkins = get_checkins_sync(status=status_filter, limit=limit)
     if not checkins:
         logger.warning(
-            "No check-ins found in database. "
-            "Run 'python scripts/load_seed_data.py' to seed data."
+            "No check-ins found. Run 'python scripts/load_seed_data.py' to seed."
         )
     return checkins
 
@@ -97,60 +79,33 @@ async def update_checkin_status(
     checkin_id: str,
     status: str,
     reviewed_by: str,
-) -> dict[str, Any]:
-    """Update check-in status.
-
-    Args:
-        checkin_id: Check-in ID
-        status: New status
-        reviewed_by: Reviewer name/ID
-
-    Returns:
-        Updated check-in record
-    """
-    logger.info(
-        "Updating checkin %s status to %s by %s", checkin_id, status, reviewed_by
-    )
-
-    # Try database update first
+) -> CheckInStatusUpdate:
+    """Update check-in status."""
+    logger.info("Updating checkin %s to %s by %s", checkin_id, status, reviewed_by)
     result = update_checkin_status_sync(checkin_id, status, reviewed_by)
     if result:
         return result
-
     # Fallback for demo/in-memory data
-    logger.debug("update_checkin_status: DB update failed, returning placeholder")
-    return {
-        "id": checkin_id,
-        "status": status,
-        "reviewed_by": reviewed_by,
-        "reviewed_at": datetime.now().isoformat(),
-    }
+    return CheckInStatusUpdate(
+        id=checkin_id,
+        status=status,
+        reviewed_by=reviewed_by,
+        reviewed_at=datetime.now().isoformat(),
+    )
 
 
 def filter_checkins(
-    checkins: list[dict[str, Any]],
+    checkins: list[AdminCheckIn],
     status: str | None = None,
     search_query: str | None = None,
-) -> list[dict[str, Any]]:
-    """Filter check-ins by status and search query.
-
-    Args:
-        checkins: List of check-in records
-        status: Filter by status (None or 'all' = no filter)
-        search_query: Search in patient name, summary, topics
-
-    Returns:
-        Filtered list of check-ins
-    """
+) -> list[AdminCheckIn]:
+    """Filter check-ins by status and search query."""
     results = checkins
 
-    # Filter by status
     if status and status != "all":
         results = [c for c in results if c.get("status") == status]
 
-    # Filter by search query
-    if search_query and search_query.strip():
-        q = search_query.lower()
+    if search_query and (q := search_query.strip().lower()):
         results = [
             c
             for c in results
@@ -159,31 +114,13 @@ def filter_checkins(
             or any(q in t.lower() for t in c.get("key_topics", []))
         ]
 
-    # Sort by submission date (newest first)
-    return sorted(results, key=lambda x: x.get("submitted_at", ""), reverse=True)
+    return sorted(results, key=lambda x: x.get("timestamp", ""), reverse=True)
 
 
-def count_checkins_by_status(
-    checkins: list[dict[str, Any]],
-) -> dict[str, int]:
-    """Count check-ins by status.
-
-    Args:
-        checkins: List of check-in records
-
-    Returns:
-        Dict with counts per status
-    """
-    counts = {
-        "pending": 0,
-        "reviewed": 0,
-        "flagged": 0,
-        "total": len(checkins),
-    }
-
+def count_checkins_by_status(checkins: list[AdminCheckIn]) -> dict[str, int]:
+    """Count check-ins by status."""
+    counts = {"pending": 0, "reviewed": 0, "flagged": 0, "total": len(checkins)}
     for checkin in checkins:
-        status = checkin.get("status", "pending")
-        if status in counts:
+        if (status := checkin.get("status", "pending")) in counts:
             counts[status] += 1
-
     return counts

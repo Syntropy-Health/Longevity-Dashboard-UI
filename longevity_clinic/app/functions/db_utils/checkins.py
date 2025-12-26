@@ -49,7 +49,7 @@ def get_checkins_sync(
             return [
                 {
                     "id": c.checkin_id,
-                    "patient_id": c.user_id or "unknown",
+                    "patient_id": c.user_id or "UNKNOWN",
                     "patient_name": c.patient_name,
                     "type": c.checkin_type,
                     "summary": c.summary,
@@ -264,11 +264,10 @@ def save_health_entries_sync(
                     checkin_id=checkin_db_id,
                     name=med.name,
                     dosage=med.dosage or "",
-                    frequency=med.frequency or "",
-                    status=med.status or "active",
-                    adherence_rate=med.adherence_rate if med.adherence_rate else 1.0,
+                    taken_at=now,
+                    notes=med.notes or "",
                     source=source,
-                    mentioned_at=now,
+                    created_at=now,
                 )
             )
             counts["medications"] += 1

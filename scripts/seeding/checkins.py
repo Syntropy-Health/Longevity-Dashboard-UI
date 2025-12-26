@@ -48,7 +48,7 @@ def load_checkins(session: Session, user_id_map: dict[str, int]) -> SeedResult:
 
         # Get user_id from patient_name
         user_id = None
-        patient_name = checkin_data.get("patient_name", "Unknown")
+        patient_name = checkin_data.get("patient_name", "UNKNOWN")
         for ext_id, db_id in user_id_map.items():
             # Simple name matching
             if ext_id in checkin_data.get("patient_id", ""):

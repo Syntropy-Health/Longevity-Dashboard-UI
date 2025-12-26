@@ -2,14 +2,79 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import reflex as rx
-from sqlmodel import select
+from sqlmodel import func, select
 
 from longevity_clinic.app.config import get_logger
 from longevity_clinic.app.data.schemas.db import User
 from longevity_clinic.app.functions.utils import normalize_phone
 
 logger = get_logger("longevity_clinic.db_utils.users")
+
+
+def create_user_sync(
+    name: str,
+    phone: str,
+    role: str = "patient",
+    email: str | None = None,
+) -> User | None:
+    """Create a new user in the database.
+
+    Args:
+        name: User's full name
+        phone: Phone number (E.164 format preferred)
+        role: User role ('patient' or 'admin')
+        email: Optional email address
+
+    Returns:
+        Created User object or None on failure
+    """
+    if not name or not phone:
+        logger.warning("create_user_sync: name and phone are required")
+        return None
+
+    try:
+        with rx.session() as session:
+            # Check if user already exists
+            existing = session.exec(select(User).where(User.phone == phone)).first()
+            if existing:
+                logger.info("User already exists for phone %s", phone)
+                return existing
+
+            # Generate external_id (P + next number)
+            max_id = session.exec(
+                select(func.max(User.id)).where(User.role == "patient")
+            ).first()
+            next_num = (max_id or 0) + 1
+            external_id = f"P{next_num:03d}"
+
+            now = datetime.now(UTC)
+            user = User(
+                name=name,
+                email=email or f"{external_id.lower()}@patient.longevityclinic.com",
+                phone=phone,
+                role=role,
+                external_id=external_id,
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+
+            logger.info(
+                "Created new user: id=%d, name=%s, phone=%s, external_id=%s",
+                user.id,
+                name,
+                phone,
+                external_id,
+            )
+            return user
+    except Exception as e:
+        logger.error("Failed to create user (name=%s, phone=%s): %s", name, phone, e)
+        return None
 
 
 def get_user_by_phone_sync(phone: str) -> User | None:
@@ -101,7 +166,7 @@ def get_recently_active_patients_sync(limit: int = 5) -> list[User]:
     """
     from sqlmodel import desc, func
 
-    from longevity_clinic.app.data.model import CheckIn
+    from longevity_clinic.app.data.schemas.db import CheckIn
 
     try:
         with rx.session() as session:

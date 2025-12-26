@@ -9,16 +9,18 @@ from langchain_core.language_models import BaseChatModel
 
 from longevity_clinic.app.config import VlogsConfig, get_logger
 from longevity_clinic.app.data.schemas.db import CallLog
+from longevity_clinic.app.data.schemas.db.domain_enums import SentimentEnum
 from longevity_clinic.app.data.schemas.llm import CheckInSummary, MetricLogsOutput
 from longevity_clinic.app.prompts import PARSE_CHECKIN
 
 from ..llm import get_structured_output_model, parse_with_structured_output
 from ..utils import fetch_call_logs, format_timestamp
 from .db import (
+    claim_unprocessed_call_logs_sync,
+    get_latest_call_date_sync,
     get_transcript_for_call_log,
-    get_unprocessed_call_logs_sync,
-    mark_call_log_processed_sync,
     sync_raw_log_to_db,
+    unclaim_call_log_sync,
     update_call_log_metrics,
 )
 from .utils import get_patient_name, tag_checkin_with_metadata
@@ -109,7 +111,7 @@ class VlogsAgent:
                 type=checkin_type,
                 summary=summary,
                 timestamp=timestamp,
-                sentiment="",
+                sentiment=SentimentEnum.UNKNOWN,
                 key_topics=[],
                 provider_reviewed=False,
                 patient_name=patient_name,
@@ -124,66 +126,91 @@ class VlogsAgent:
     # ==========================================================================
 
     async def fetch_and_sync_raw(self, phone_number: str | None = None) -> int:
-        """CDC Steps 1-2: Fetch from API and sync raw logs to DB."""
+        """CDC Steps 1-2: Fetch from API and sync raw logs to DB.
+
+        Uses smart incremental fetch: only fetches calls newer than the most
+        recent call in the database, eliminating redundant API calls.
+        """
+        # Smart filter: get latest call date from DB for incremental sync
+        since_date = await asyncio.to_thread(get_latest_call_date_sync, phone_number)
+        if since_date:
+            logger.info("Smart fetch: only calls after %s", since_date)
+
         call_logs = await fetch_call_logs(
-            phone_number=phone_number, limit=self.config.limit
+            phone_number=phone_number,
+            since_date=since_date,
+            limit=self.config.limit if self.config.limit else None,
         )
         if not call_logs:
+            logger.info("No new call logs to sync")
             return 0
+
         count = 0
         for log in call_logs:
             if await asyncio.to_thread(sync_raw_log_to_db, log):
                 count += 1
+        logger.info("Synced %d new call logs to DB", count)
         return count
 
     async def process_unprocessed_logs(self) -> int:
-        """CDC Steps 3-4: Process unprocessed logs with parallel LLM calls."""
+        """CDC Steps 3-4: Process unprocessed logs sequentially.
+
+        Uses claim-based processing to prevent race conditions:
+        1. Atomically claim logs (marks processed_to_metrics=True)
+        2. Process each log sequentially
+        3. On failure, unclaim the log for retry
+
+        Sequential processing avoids duplicate entries from parallel access.
+        """
         if not self.config.extract_with_llm:
             return 0
 
-        unprocessed = await asyncio.to_thread(get_unprocessed_call_logs_sync)
-        if not unprocessed:
+        # Atomically claim logs - prevents race conditions
+        claimed = await asyncio.to_thread(
+            claim_unprocessed_call_logs_sync, self.config.max_parallel
+        )
+        if not claimed:
             return 0
 
-        logger.info(
-            "Processing %d unprocessed call logs (max_parallel=%d)",
-            len(unprocessed),
-            self.config.max_parallel,
-        )
+        logger.info("Processing %d claimed call logs", len(claimed))
 
-        # Parallel processing with semaphore limit
-        sem = asyncio.Semaphore(self.config.max_parallel)
-        results = await asyncio.gather(
-            *[self._process_single_log(log, sem) for log in unprocessed],
-            return_exceptions=True,
-        )
-        return sum(1 for r in results if r is True)
-
-    async def _process_single_log(
-        self, call_log: CallLog, sem: asyncio.Semaphore
-    ) -> bool:
-        """Process single call log with semaphore-limited concurrency."""
-        async with sem:
+        # Sequential processing to avoid duplicates
+        success_count = 0
+        for call_log in claimed:
             try:
-                transcript = await asyncio.to_thread(
-                    get_transcript_for_call_log, call_log.id
-                )
-                if not transcript:
-                    await asyncio.to_thread(mark_call_log_processed_sync, call_log.id)
-                    return False
-
-                output = await self._parse_call_log(
-                    transcript,
-                    call_log.call_id,
-                    call_log.started_at.isoformat(),
-                    call_log.phone_number,
-                )
-                return await asyncio.to_thread(
-                    update_call_log_metrics, call_log.id, output, self.config.llm_model
-                )
+                if await self._process_single_log(call_log):
+                    success_count += 1
             except Exception as e:
                 logger.error("Failed to process call %s: %s", call_log.call_id, e)
+                # Unclaim on failure so it can be retried later
+                await asyncio.to_thread(unclaim_call_log_sync, call_log.id)
+
+        return success_count
+
+    async def _process_single_log(self, call_log: CallLog) -> bool:
+        """Process single call log (already claimed)."""
+        try:
+            transcript = await asyncio.to_thread(
+                get_transcript_for_call_log, call_log.id
+            )
+            if not transcript:
+                # No transcript - already marked processed by claim
                 return False
+
+            output = await self._parse_call_log(
+                transcript,
+                call_log.call_id,
+                call_log.started_at.isoformat(),
+                call_log.phone_number,
+            )
+            return await asyncio.to_thread(
+                update_call_log_metrics, call_log.id, output, self.config.llm_model
+            )
+        except Exception as e:
+            logger.error("Failed to process call %s: %s", call_log.call_id, e)
+            # Unclaim on failure for retry
+            await asyncio.to_thread(unclaim_call_log_sync, call_log.id)
+            return False
 
     async def _parse_call_log(
         self, transcript: str, call_id: str, call_date: str, patient_phone: str

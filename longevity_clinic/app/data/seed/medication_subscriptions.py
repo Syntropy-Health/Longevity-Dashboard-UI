@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from ..schemas.llm import MedicationSubscriptionModel as MedicationSubscription
+from ..schemas.llm import PatientTreatmentModel as MedicationSubscription
 
 # =============================================================================
 # Medication Subscription Seed Data for Sarah Chen (Demo Patient)

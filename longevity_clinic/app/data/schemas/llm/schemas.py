@@ -11,46 +11,81 @@ to distinguish from state TypedDicts.
 
 from pydantic import BaseModel, Field
 
+from longevity_clinic.app.data.schemas.db.domain_enums import (
+    MealTypeEnum,
+    SentimentEnum,
+    SeverityLevelEnum,
+    SymptomTrendEnum,
+)
+
 # =============================================================================
 # Health Entry Models (for LLM extraction)
 # =============================================================================
 
 
 class FoodEntryModel(BaseModel):
-    """Food entry - Pydantic model for LLM extraction.
+    """Food/nutrition entry extracted from patient transcript.
 
-    Used by MetricLogsOutput for structured extraction from transcripts.
-    Maps to FoodLogEntry database model.
+    Create ONE entry per distinct food item. If patient mentions "eggs and toast",
+    create separate entries for eggs and toast.
     """
 
-    name: str = Field(default="", description="Food, supplement or edible item name")
-    calories: int = Field(default=0, description="Estimated calories")
-    protein: float = Field(default=0.0, description="Protein in grams")
-    carbs: float = Field(default=0.0, description="Carbs in grams")
-    fat: float = Field(default=0.0, description="Fat in grams")
-    time: str = Field(default="", description="Time consumed")
-    meal_type: str = Field(
-        default="snack", description="breakfast/lunch/dinner/snack/supplement"
+    name: str = Field(
+        default="",
+        description="Food item name. Be specific (e.g., 'scrambled eggs' not just 'eggs').",
+    )
+    amount: str = Field(
+        default="",
+        description="Quantity or serving size as stated (e.g., '2 cups', 'a bowl', 'large portion'). Estimate if context suggests size.",
+    )
+    calories: int = Field(
+        default=0,
+        description="Estimated calories based on typical serving. Use common food knowledge to estimate.",
+    )
+    protein: float = Field(
+        default=0.0,
+        description="Estimated protein in grams. Use common food knowledge (e.g., egg ~6g, chicken breast ~25g).",
+    )
+    carbs: float = Field(
+        default=0.0,
+        description="Estimated carbohydrates in grams. Use common food knowledge (e.g., bread slice ~15g, rice cup ~45g).",
+    )
+    fat: float = Field(
+        default=0.0,
+        description="Estimated fat in grams. Use common food knowledge (e.g., egg ~5g, avocado ~15g).",
+    )
+    time: str | None = Field(
+        default=None,
+        description="Time consumed if explicitly stated (e.g., '8am', 'morning'). None if not mentioned.",
+    )
+    meal_type: MealTypeEnum = Field(
+        default=MealTypeEnum.SNACK,
+        description="Meal category. Infer from time of day or context if not stated directly.",
     )
 
 
 class MedicationEntryModel(BaseModel):
-    """Medication Entry entry - Pydantic model for LLM extraction.
+    """Medication intake log extracted from patient transcript.
 
-    Used by MetricLogsOutput for structured extraction from transcripts.
-    Represents when a patient actually took a medication.
-    Maps to MedicationEntry database model.
+    Create ONE entry per medication/supplement mentioned.
     """
 
-    id: str = Field(default="", description="Unique identifier")
-    name: str = Field(default="", description="Medication name taken")
-    dosage: str = Field(default="", description="Dosage amount and unit")
-    taken_at: str = Field(default="", description="When the medication was taken")
-    notes: str = Field(default="", description="Additional notes")
-
-
-# Alias for backward compatibility with existing LLM extraction
-MedicationEntryModel = MedicationEntryModel
+    name: str = Field(
+        default="",
+        description="Medication or supplement name exactly as mentioned (e.g., 'lisinopril', 'vitamin D').",
+    )
+    dosage: str = Field(
+        default="",
+        description="Dosage with units if stated (e.g., '10mg', '500mg'). Leave empty only if truly not mentioned.",
+    )
+    taken_at: str | None = Field(
+        default=None,
+        description="When taken if explicitly stated (e.g., 'this morning'). None if not mentioned.",
+    )
+    notes: str = Field(
+        default="",
+        description="Additional context like 'with food', 'missed yesterday', 'felt dizzy after'. Keep brief.",
+    )
 
 
 class PatientTreatmentModel(BaseModel):
@@ -74,21 +109,29 @@ class PatientTreatmentModel(BaseModel):
     sessions_total: int | None = Field(default=None, description="Total sessions")
 
 
-# Backwards compatibility alias
-MedicationSubscriptionModel = PatientTreatmentModel
-
-
 class Symptom(BaseModel):
-    """Symptom - Pydantic model for LLM extraction.
+    """Symptom or health concern extracted from patient transcript.
 
-    Used by MetricLogsOutput for structured extraction from transcripts.
-    Maps to SymptomEntry database model.
+    Create ONE entry per distinct symptom. Group related complaints
+    (e.g., 'joint pain in knees and shoulders' = one entry for 'joint pain').
     """
 
-    name: str = Field(default="", description="Symptom name")
-    severity: str = Field(default="", description="Severity level")
-    frequency: str = Field(default="", description="Frequency of occurrence")
-    trend: str = Field(default="", description="Trend direction")
+    name: str = Field(
+        default="",
+        description="Symptom name using standard medical terms when possible (e.g., 'headache', 'fatigue', 'nausea').",
+    )
+    severity: SeverityLevelEnum = Field(
+        default=SeverityLevelEnum.UNKNOWN,
+        description="Severity level. Infer from patient's language (e.g., 'terrible' → severe, 'a bit' → mild). Use UNKNOWN if unclear.",
+    )
+    frequency: str = Field(
+        default="UNKNOWN",
+        description="How often it occurs (e.g., 'daily', 'occasional', 'constant'). Use 'unknown' if not mentioned.",
+    )
+    trend: SymptomTrendEnum = Field(
+        default=SymptomTrendEnum.UNKNOWN,
+        description="Change over time. Infer from phrases like 'getting better', 'worse than before'. Use UNKNOWN if first report or unclear.",
+    )
 
 
 class SymptomEntryModel(BaseModel):
@@ -149,19 +192,40 @@ class DataSource(BaseModel):
 
 
 class CheckInSummary(BaseModel):
-    """Summary check-in data from call log.
+    """Check-in summary extracted from patient transcript."""
 
-    Used by MetricLogsOutput as the check-in component.
-    """
-
-    id: str = Field(default="", description="Check-in ID")
-    type: str = Field(default="call", description="voice/text/call")
-    summary: str = Field(default="", description="Clinical summary")
-    timestamp: str = Field(default="", description="ISO timestamp")
-    sentiment: str = Field(default="neutral", description="positive/negative/neutral")
-    key_topics: list[str] = Field(default_factory=list, description="Health topics")
-    provider_reviewed: bool = Field(default=False)
-    patient_name: str = Field(default="")
+    id: str = Field(
+        default="",
+        description="Leave empty - system generated.",
+    )
+    type: str = Field(
+        default="call",
+        description="Leave as default - system sets this.",
+    )
+    summary: str = Field(
+        default="",
+        description="Concise clinical summary (2-3 sentences). Focus on: main concerns, actions taken, patient mood/outlook.",
+    )
+    timestamp: str | None = Field(
+        default=None,
+        description="Only set if a specific date/time is explicitly stated in transcript. None otherwise.",
+    )
+    sentiment: SentimentEnum = Field(
+        default=SentimentEnum.UNKNOWN,
+        description="Overall tone. Positive = improving/hopeful, Negative = concerning/frustrated, Neutral = routine update. UNKNOWN if unclear.",
+    )
+    key_topics: list[str] = Field(
+        default_factory=list,
+        description="Main health topics (max 5). Use keywords like: sleep, diet, medication, pain, energy, mood, exercise.",
+    )
+    provider_reviewed: bool = Field(
+        default=False,
+        description="Always False - system updates after provider review.",
+    )
+    patient_name: str = Field(
+        default="",
+        description="Patient name if they identify themselves. Empty if not stated.",
+    )
 
 
 class CheckInModel(BaseModel):
@@ -176,9 +240,9 @@ class CheckInModel(BaseModel):
         description="Concise clinical summary of the check-in focusing on key health concerns, symptoms, and updates"
     )
     timestamp: str = Field(description="ISO timestamp of when the check-in occurred")
-    sentiment: str = Field(
-        default="neutral",
-        description="Sentiment of the check-in: 'positive', 'negative', or 'neutral'",
+    sentiment: SentimentEnum = Field(
+        default=SentimentEnum.NEUTRAL,
+        description="Sentiment of the check-in: positive, negative, or neutral.",
     )
     key_topics: list[str] = Field(
         default_factory=list,
@@ -199,31 +263,28 @@ class CheckInModel(BaseModel):
 
 
 class MetricLogsOutput(BaseModel):
-    """Combined structured output from call log processing.
+    """Structured health data extracted from patient check-in transcript.
 
-    ToolStrategy pattern: single schema combining all extractable data.
-    Used by both patient check-ins (voice/text) and CDC call log processing.
-
-    Data Flow:
-    1. Patient check-ins: save_checkin_and_log_health() → parse_checkin_with_health_data()
-       → MetricLogsOutput → create_checkin_sync() + save_health_entries_sync()
-    2. Call logs: VlogsAgent.process_unprocessed_logs() → update_call_log_metrics()
-       → Persists to CheckIn, MedicationEntry, FoodLogEntry, SymptomEntry tables
-
-    Dashboard data is fetched via HealthDashboardState using get_*_sync() functions.
+    Extract all health-related information mentioned by the patient.
+    Be thorough but avoid duplicates - each distinct item gets ONE entry.
+    Use your knowledge to estimate nutritional values for foods.
     """
 
     checkin: CheckInSummary = Field(
-        default_factory=CheckInSummary, description="Check-in summary data"
+        default_factory=CheckInSummary,
+        description="Overall summary of the conversation. Always include.",
     )
     medications_entries: list[MedicationEntryModel] = Field(
-        default_factory=list, description="Medications"
+        default_factory=list,
+        description="ONE entry per medication/supplement mentioned. Do not duplicate if patient mentions same medication twice.",
     )
     food_entries: list[FoodEntryModel] = Field(
-        default_factory=list, description="Food or Nutrition"
+        default_factory=list,
+        description="ONE entry per distinct food item. 'Eggs and toast' = 2 entries. Estimate nutrition based on typical portions.",
     )
     symptom_entries: list[Symptom] = Field(
-        default_factory=list, description="Health-related symptoms"
+        default_factory=list,
+        description="ONE entry per symptom type. Group related complaints (e.g., 'knee and hip pain' = one 'joint pain' entry).",
     )
 
 

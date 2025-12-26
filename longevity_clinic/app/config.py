@@ -10,18 +10,33 @@ from pydantic import BaseModel, Field, computed_field
 
 # LOG_FILE_PATH = Path(__file__).parent.parent.parent / "dev.logs"
 
+# Read LOGLEVEL from environment variable (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+# Defaults to DEBUG for development. Use INFO for production to reduce log verbosity.
+_LOGLEVEL_STR = os.getenv("LOGLEVEL", "DEBUG").upper()
+_LOGLEVEL_MAP = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "WARN": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+}
+DEFAULT_LOG_LEVEL = _LOGLEVEL_MAP.get(_LOGLEVEL_STR, logging.DEBUG)
 
-def get_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
+
+def get_logger(name: str, level: int | None = None) -> logging.Logger:
     """
-    Get a configured logger instance with DEBUG level and console output.
+    Get a configured logger instance with console output.
 
     Args:
         name: Logger name (e.g., 'longevity_clinic.call_logs')
-        level: Logging level (default: DEBUG)
+        level: Logging level (default: from LOGLEVEL env var, or DEBUG)
 
     Returns:
         Configured logger instance
     """
+    if level is None:
+        level = DEFAULT_LOG_LEVEL
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
@@ -40,18 +55,21 @@ def get_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
     return logger
 
 
+# Create config logger (before any other code that might log)
+_config_logger = get_logger("longevity_clinic.config")
+
 # Ensure OpenAI API key is loaded from environment
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 CALL_API_TOKEN = os.getenv("CALL_API_TOKEN", "")
 
 # Validate required API keys on startup
 if not OPENAI_API_KEY:
-    print(
-        "WARNING: OPENAI_API_KEY not set. Voice transcription and AI features will not work."
+    _config_logger.warning(
+        "OPENAI_API_KEY not set. Voice transcription and AI features will not work."
     )
 
 if not CALL_API_TOKEN:
-    print("WARNING: CALL_API_TOKEN not set. Call log fetching will not work.")
+    _config_logger.warning("CALL_API_TOKEN not set. Call log fetching will not work.")
 
 
 class DemoUserConfig(BaseModel):
@@ -59,7 +77,7 @@ class DemoUserConfig(BaseModel):
 
     full_name: str = "Sarah Chen"
     email: str = "sarah.chen@longevityclinic.com"
-    phone: str = "+14129339056"  # Demo phone for call logs
+    phone: str = "+14087585046"  # Demo phone for call logs
     role: Literal["admin", "patient"] = "patient"
 
     # User IDs for seeding and auth

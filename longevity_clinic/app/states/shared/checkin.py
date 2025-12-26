@@ -23,6 +23,7 @@ from longevity_clinic.app.functions.db_utils import (
     save_health_entries_sync,
     update_checkin_sync,
 )
+from longevity_clinic.app.states.shared.dashboard import HealthDashboardState
 
 from ...functions import VlogsAgent
 from ...functions.admins import filter_checkins
@@ -362,7 +363,7 @@ class CheckinState(rx.State):
             async with self:
                 auth_state = await self.get_state(AuthState)
                 user_id = auth_state.user_id if auth_state.user_id else None
-                patient_name = auth_state.user_full_name or "Unknown"
+                patient_name = auth_state.user_full_name or "UNKNOWN"
 
             # Step 2: Persist CheckIn to database
             health_topics_json = (
@@ -392,7 +393,7 @@ class CheckinState(rx.State):
                 if checkin_db_id:
                     # Determine source based on checkin type
                     source = "voice" if checkin_type == "voice" else "manual"
-
+                    # Persist health entries linked to this checkin
                     health_counts = await asyncio.to_thread(
                         save_health_entries_sync,
                         checkin_db_id,
@@ -681,17 +682,16 @@ class CheckinState(rx.State):
         """CDC pipeline: fetch → sync raw → process LLM → load from DB.
 
         Full pipeline:
-        1. Reset processed flags if reprocess_all enabled
-        2. Fetch and sync raw call logs from API
-        3. Process unprocessed logs with LLM (creates CheckIn + health entries)
-        4. Reload checkins from DB
+        1. Fetch and sync raw call logs from API
+        2. Process unprocessed logs with LLM (creates CheckIn + health entries)
+        3. Reload checkins from DB
         """
         async with self:
             self.call_logs_syncing = True
             self.call_logs_sync_error = ""
             auth_state = await self.get_state(AuthState)
             user_phone = auth_state.user_phone if auth_state.user else ""
-            user_name = auth_state.user_full_name if auth_state.user else "Unknown"
+            user_name = auth_state.user_full_name if auth_state.user else "UNKNOWN"
 
         logger.debug(
             "refresh_call_logs: user=%s, phone=%s", user_name, user_phone or "(none)"
@@ -741,7 +741,12 @@ class CheckinState(rx.State):
                     self.checkins = checkins_from_db
                 self.last_sync_time = datetime.now().strftime("%I:%M %p")
                 self.call_logs_syncing = False
+
             logger.debug("Loaded %d checkins from DB", len(checkins_from_db))
+
+            # Trigger dashboard refresh so user sees new health entries
+            if processed_count > 0:
+                yield HealthDashboardState.load_health_data_from_db
 
         except Exception as e:
             logger.error("refresh_call_logs failed: %s", e)
@@ -750,7 +755,7 @@ class CheckinState(rx.State):
                 self.call_logs_syncing = False
 
     @rx.event(background=True)
-    async def start_periodic_refresh(self):
+    async def start_periodic_call_logs_refresh(self):
         """Start periodic refresh loop for call logs (uses process_config.refresh_interval)."""
         async with self:
             if self.is_processing_background:
@@ -767,7 +772,7 @@ class CheckinState(rx.State):
                     break
 
             # Trigger full refresh pipeline
-            await self.refresh_call_logs()
+            yield CheckinState.refresh_call_logs
             await asyncio.sleep(process_config.refresh_interval)
 
         logger.debug("Periodic refresh stopped")

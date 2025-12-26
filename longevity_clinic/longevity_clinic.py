@@ -75,7 +75,7 @@ app.add_page(
         BiomarkerState.load_biomarkers,
         HealthDashboardState.load_dashboard_data,
         HealthDashboardState.load_health_data_from_db,
-        CheckinState.refresh_call_logs,
+        CheckinState.start_periodic_call_logs_refresh,
     ],
 )
 app.add_page(settings_page, route="/patient/settings")

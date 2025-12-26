@@ -55,7 +55,7 @@ def _compute_patient_health_score(user_id: int) -> int:
     import reflex as rx
     from sqlmodel import func, select
 
-    from longevity_clinic.app.data.model import CheckIn
+    from longevity_clinic.app.data.schemas.db import CheckIn
 
     try:
         with rx.session() as session:

@@ -118,25 +118,33 @@ def format_timestamp(date_str: str, fmt: str = "%B %d, %Y at %I:%M %p") -> str:
 
 async def fetch_call_logs(
     phone_number: str | None = None,
-    limit: int = 50,
+    limit: int | None = None,
     offset: int = 0,
     page: int = 1,
     require_transcript: bool = True,
+    since_date: str | None = None,
 ) -> list[CallLogEntry]:
-    """Fetch call logs from API.
+    """Fetch call logs from API with smart incremental filtering.
+
+    By default, fetches ALL newer calls (no limit) when since_date is provided.
+    This enables efficient CDC (Change Data Capture) to sync only new data.
 
     Args:
         phone_number: Filter by phone (None = all logs for admin)
-        limit: Max records to return (1-100)
+        limit: Max records to return (None = no limit for smart fetch)
         offset: Records to skip
         page: Page number
         require_transcript: Only return records with transcripts
+        since_date: ISO date string - only fetch calls after this date (exclusive)
 
     Returns:
         List of call log entries
     """
     logger.info(
-        "Fetching call logs (phone=%s, limit=%d, page=%d)", phone_number, limit, page
+        "Fetching call logs (phone=%s, limit=%s, since=%s)",
+        phone_number,
+        limit or "unlimited",
+        since_date or "all",
     )
 
     query_params = CallLogsQueryParams(
@@ -145,6 +153,7 @@ async def fetch_call_logs(
         limit=limit,
         offset=offset,
         page=page,
+        since_date=since_date,
     )
 
     async with httpx.AsyncClient() as client:
@@ -157,4 +166,5 @@ async def fetch_call_logs(
         response.raise_for_status()
         data = response.json()
         call_logs = data.get("data", [])
+        logger.info("Fetched %d call logs from API", len(call_logs))
         return call_logs

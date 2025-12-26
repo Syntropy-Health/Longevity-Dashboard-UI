@@ -19,6 +19,11 @@ from longevity_clinic.app.data.schemas.db import (
     MedicationEntry,
     SymptomEntry,
 )
+from longevity_clinic.app.data.schemas.db.domain_enums import (
+    SentimentEnum,
+    SeverityLevelEnum,
+    SymptomTrendEnum,
+)
 from longevity_clinic.app.data.schemas.llm import (
     CheckInSummary,
     FoodEntryModel as FoodEntrySchema,
@@ -47,7 +52,7 @@ def create_mock_parse_result(
             type=checkin_type,
             summary=summary,
             timestamp=datetime.now().strftime("Today, %I:%M %p"),
-            sentiment="neutral",
+            sentiment=SentimentEnum.UNKNOWN,
             key_topics=["test"],
             provider_reviewed=False,
             patient_name="Test Patient",
@@ -55,7 +60,7 @@ def create_mock_parse_result(
         medications_entries=[
             MedicationEntrySchema(
                 id=f"med_{i}",
-                name=m.get("name", "Unknown"),
+                name=m.get("name", "UNKNOWN"),
                 dosage=m.get("dosage", ""),
                 frequency=m.get("frequency", ""),
                 status=m.get("status", "active"),
@@ -66,23 +71,22 @@ def create_mock_parse_result(
         food_entries=[
             FoodEntrySchema(
                 id=f"food_{i}",
-                name=f.get("name", "Unknown"),
+                name=f.get("name", "UNKNOWN"),
                 calories=f.get("calories", 0),
                 protein=f.get("protein", 0.0),
                 carbs=f.get("carbs", 0.0),
                 fat=f.get("fat", 0.0),
-                time=f.get("time", ""),
+                time=f.get("time"),
                 meal_type=f.get("meal_type", "snack"),
             )
             for i, f in enumerate(food_list)
         ],
         symptom_entries=[
             SymptomSchema(
-                id=f"sym_{i}",
-                name=s.get("name", "Unknown"),
-                severity=s.get("severity", ""),
-                frequency=s.get("frequency", ""),
-                trend=s.get("trend", "stable"),
+                name=s.get("name", "UNKNOWN"),
+                severity=s.get("severity", SeverityLevelEnum.UNKNOWN),
+                frequency=s.get("frequency", "UNKNOWN"),
+                trend=s.get("trend", SymptomTrendEnum.UNKNOWN),
             )
             for i, s in enumerate(symptom_list)
         ],
@@ -112,11 +116,10 @@ def save_health_entries_direct(
             checkin_id=checkin_db_id,
             name=med.name,
             dosage=med.dosage or "",
-            frequency=med.frequency or "",
-            status=med.status or "active",
-            adherence_rate=med.adherence_rate if med.adherence_rate else 1.0,
+            taken_at=now,
+            notes=med.notes or "",
             source=source,
-            mentioned_at=now,
+            created_at=now,
         )
         session.add(entry)
         counts["medications"] += 1

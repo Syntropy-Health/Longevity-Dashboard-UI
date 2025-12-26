@@ -45,6 +45,7 @@ class TreatmentCategoryEnum(StrEnum):
 class TreatmentFrequencyEnum(StrEnum):
     """Treatment frequency options."""
 
+    ONE_OFF = "One-off"
     DAILY = "Daily"
     WEEKLY = "Weekly"
     BI_WEEKLY = "Bi-Weekly"
@@ -198,13 +199,79 @@ class HealthKeywordEnum(StrEnum):
 HEALTH_KEYWORDS: Final[list[str]] = _enum_values(HealthKeywordEnum)
 
 
+# =============================================================================
+# LLM EXTRACTION ENUMS
+# =============================================================================
+
+
+class MealTypeEnum(StrEnum):
+    """Meal type categories for food intake logging."""
+
+    BREAKFAST = "breakfast"
+    LUNCH = "lunch"
+    DINNER = "dinner"
+    SNACK = "snack"
+    SUPPLEMENT = "supplement"
+    BEVERAGE = "beverage"
+
+
+class SentimentEnum(StrEnum):
+    """Sentiment classification for patient check-ins.
+
+    UNKNOWN is used when sentiment could not be determined from the check-in.
+    This prevents misinterpreting missing data as 'neutral'.
+    """
+
+    UNKNOWN = "UNKNOWN"
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+    NEUTRAL = "neutral"
+
+
+class SymptomTrendEnum(StrEnum):
+    """Symptom progression trend indicators.
+
+    UNKNOWN is used when trend could not be determined (e.g., first report).
+    This prevents misinterpreting missing data as 'stable'.
+    """
+
+    UNKNOWN = "UNKNOWN"
+    IMPROVING = "improving"
+    WORSENING = "worsening"
+    STABLE = "stable"
+
+
+class SeverityLevelEnum(StrEnum):
+    """Severity levels for symptoms and conditions.
+
+    UNKNOWN is used when severity was not explicitly stated in the check-in.
+    This prevents misinterpreting missing data as 'not severe'.
+    """
+
+    UNKNOWN = "UNKNOWN"
+    MILD = "mild"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+
+
+# Legacy list exports
+MEAL_TYPES: Final[list[str]] = _enum_values(MealTypeEnum)
+SENTIMENTS: Final[list[str]] = _enum_values(SentimentEnum)
+SYMPTOM_TRENDS: Final[list[str]] = _enum_values(SymptomTrendEnum)
+SEVERITY_LEVELS: Final[list[str]] = _enum_values(SeverityLevelEnum)
+
+
 __all__ = [
     "BIOMARKER_CATEGORIES",
     "BIOMARKER_SIMPLE_CATEGORIES",
     "BIOMARKER_STATUSES",
     "BIOMARKER_TRENDS",
     "HEALTH_KEYWORDS",
+    "MEAL_TYPES",
     "PATIENT_STATUSES",
+    "SENTIMENTS",
+    "SEVERITY_LEVELS",
+    "SYMPTOM_TRENDS",
     "TREATMENT_CATEGORIES",
     "TREATMENT_FREQUENCIES",
     "TREATMENT_STATUSES",
@@ -216,8 +283,13 @@ __all__ = [
     "BiomarkerTrendEnum",
     # Health keywords
     "HealthKeywordEnum",
+    # LLM extraction enums
+    "MealTypeEnum",
     "MeasurementUnitEnum",
     "PatientStatusEnum",
+    "SentimentEnum",
+    "SeverityLevelEnum",
+    "SymptomTrendEnum",
     # Treatment enums
     "TreatmentCategoryEnum",
     "TreatmentFrequencyEnum",

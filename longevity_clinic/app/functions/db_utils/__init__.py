@@ -54,6 +54,7 @@ from .health import (
     get_medication_entries_sync,
     get_medication_subscriptions_sync,
     get_medications_sync,  # Legacy alias
+    get_symptom_logs_sync,
     get_symptoms_sync,
 )
 
@@ -77,6 +78,7 @@ from .treatments import (
 
 # Users
 from .users import (
+    create_user_sync,
     get_all_patients_sync,
     get_patient_name_by_phone,
     get_phone_to_patient_map,
@@ -93,6 +95,7 @@ __all__ = [
     "create_medication_entry_sync",
     "create_symptom_sync",
     "create_treatment_sync",
+    "create_user_sync",
     "delete_checkin_sync",
     "delete_notification_sync",
     "get_all_patients_sync",
@@ -116,6 +119,7 @@ __all__ = [
     "get_patient_treatments_sync",
     "get_phone_to_patient_map",
     "get_recently_active_patients_sync",
+    "get_symptom_logs_sync",
     "get_symptoms_sync",
     "get_treatment_by_id_sync",
     "get_treatments_as_protocols_sync",

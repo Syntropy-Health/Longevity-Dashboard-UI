@@ -73,13 +73,11 @@ deploy_service() {
     
     cd "$PROJECT_ROOT"
     
-    # Set Railway environment variables for this deployment
+    # Set Railway project ID for authentication context
     export RAILWAY_PROJECT_ID="$RAILWAY_PROJECT_ID"
-    export RAILWAY_SERVICE_ID="$service_id"
-    export RAILWAY_ENVIRONMENT_ID="$RAILWAY_ENVIRONMENT_ID"
     
-    # Deploy using railway up with environment variables (no link needed)
-    railway up -d 2>&1 || error "Failed to deploy $service_name"
+    # Deploy using railway up with explicit service and environment flags
+    railway up -d --service "$service_name" --environment "$RAILWAY_ENVIRONMENT" 2>&1 || error "Failed to deploy $service_name"
     
     # Cleanup
     rm -f "$PROJECT_ROOT/Dockerfile"

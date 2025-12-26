@@ -2,11 +2,11 @@
 # deploy_longevity_clinic.sh - Deploy Longevity Clinic to Railway
 # Usage: ./scripts/deploy_longevity_clinic.sh [ENVIRONMENT]
 #
-# App-specific wrapper for Railway deployment.
-# Loads env files and delegates to reflex-railway-deploy/deploy_all.sh.
+# Deploys both backend and frontend services to Railway using service IDs.
+# This script is CI/CD friendly - no interactive prompts.
 #
-# Environment: APP_ENV=test (default) | APP_ENV=prod
-# Railway env: test (default) | prod
+# Environment: test (default) | prod
+# Requires: RAILWAY_TOKEN environment variable
 
 set -e
 
@@ -14,36 +14,100 @@ set -e
 # ║ CONFIGURATION                                                      ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
-# Railway project settings (required)
-export RAILWAY_PROJECT="syntropy"
-export RAILWAY_ENVIRONMENT="${1:-test}"
-export BACKEND_SERVICE="longevity-clinic-backend"
-export FRONTEND_SERVICE="longevity-clinic"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Map Railway environment to APP_ENV
+# Railway project ID (syntropy)
+RAILWAY_PROJECT_ID="6f1a2867-4f3f-4787-bc15-3235a93dddc6"
+
+# Environment configuration
+RAILWAY_ENVIRONMENT="${1:-test}"
 case "$RAILWAY_ENVIRONMENT" in
-    prod|production) export APP_ENV="prod" ;;
-    *)               export APP_ENV="test" ;;
+    prod|production)
+        RAILWAY_ENVIRONMENT_ID="590b420e-e662-48c1-8b03-73930e535050"
+        export APP_ENV="prod"
+        ;;
+    *)
+        RAILWAY_ENVIRONMENT_ID="164a9416-0a44-4630-9dc7-060f868340e0"
+        export APP_ENV="test"
+        ;;
 esac
 
-# Skip database if not using Railway Postgres (we use Supabase)
-# Set to false if you want to use Railway Postgres
-export SKIP_DB="${SKIP_DB:-false}"
+# Service IDs
+BACKEND_SERVICE_ID="9178afdf-da33-4114-b570-e41211aa2f69"
+FRONTEND_SERVICE_ID="f5960f86-8af2-42b1-8da3-2491cce58437"
+BACKEND_SERVICE_NAME="longevity-clinic-backend"
+FRONTEND_SERVICE_NAME="longevity-clinic"
 
-# App-specific variables to sync to Railway (from .env files)
-export APP_ENV_VARS="APP_NAME,CLINIC_NAME,ADMIN_ROLE_NAME,PATIENT_ROLE_NAME,THEME_COLOR"
+# Dockerfile locations
+DEPLOY_DIR="$PROJECT_ROOT/reflex-railway-deploy"
+DOCKERFILE_BACKEND="$DEPLOY_DIR/Dockerfile.backend"
+DOCKERFILE_FRONTEND="$DEPLOY_DIR/Dockerfile.frontend"
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║ HELPER FUNCTIONS                                                   ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+log() { echo "[INFO] $*"; }
+success() { echo "[✓] $*"; }
+error() { echo "[✗] $*" >&2; exit 1; }
+warn() { echo "[!] $*"; }
+
+load_env_files() {
+    local envs_dir="$PROJECT_ROOT/envs"
+    
+    [ -f "$envs_dir/.env.base" ] && { set -a; source "$envs_dir/.env.base"; set +a; log "Loaded .env.base"; }
+    [ -f "$envs_dir/.env.$APP_ENV" ] && { set -a; source "$envs_dir/.env.$APP_ENV"; set +a; log "Loaded .env.$APP_ENV"; }
+    [ -f "$envs_dir/.env.secrets" ] && { set -a; source "$envs_dir/.env.secrets"; set +a; log "Loaded .env.secrets"; }
+}
+
+deploy_service() {
+    local service_id=$1
+    local service_name=$2
+    local dockerfile=$3
+    
+    log "Deploying $service_name..."
+    
+    # Copy Dockerfile to project root
+    cp "$dockerfile" "$PROJECT_ROOT/Dockerfile" || error "Failed to copy Dockerfile"
+    
+    cd "$PROJECT_ROOT"
+    
+    # Set Railway environment variables for this deployment
+    export RAILWAY_PROJECT_ID="$RAILWAY_PROJECT_ID"
+    export RAILWAY_SERVICE_ID="$service_id"
+    export RAILWAY_ENVIRONMENT_ID="$RAILWAY_ENVIRONMENT_ID"
+    
+    # Deploy using railway up with environment variables (no link needed)
+    railway up -d 2>&1 || error "Failed to deploy $service_name"
+    
+    # Cleanup
+    rm -f "$PROJECT_ROOT/Dockerfile"
+    
+    success "$service_name deployed"
+}
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║ VALIDATION                                                         ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
-# Validate deploy script exists
-DEPLOY_SCRIPT="./reflex-railway-deploy/deploy_all.sh"
-if [ ! -f "$DEPLOY_SCRIPT" ]; then
-    echo "[ERROR] Deploy script not found: $DEPLOY_SCRIPT"
-    echo "        Run: git submodule update --init --recursive"
-    exit 1
+# Check Railway CLI
+command -v railway &>/dev/null || error "Railway CLI not found. Install: npm install -g @railway/cli"
+
+# Check RAILWAY_TOKEN for CI/CD
+if [ -z "$RAILWAY_TOKEN" ]; then
+    # Try interactive login check
+    if ! railway whoami &>/dev/null; then
+        error "Not authenticated. Set RAILWAY_TOKEN or run: railway login"
+    fi
+    log "Using interactive Railway session"
+else
+    log "Using RAILWAY_TOKEN for authentication"
 fi
+
+# Check Dockerfiles exist
+[ -f "$DOCKERFILE_BACKEND" ] || error "Backend Dockerfile not found: $DOCKERFILE_BACKEND"
+[ -f "$DOCKERFILE_FRONTEND" ] || error "Frontend Dockerfile not found: $DOCKERFILE_FRONTEND"
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║ DEPLOYMENT                                                         ║
@@ -53,19 +117,24 @@ echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║         LONGEVITY CLINIC DEPLOYMENT                          ║"
 echo "╠══════════════════════════════════════════════════════════════╣"
-echo "║ Railway Project:  $RAILWAY_PROJECT"
 echo "║ Environment:      $RAILWAY_ENVIRONMENT (APP_ENV=$APP_ENV)"
-echo "║ Backend Service:  $BACKEND_SERVICE"
-echo "║ Frontend Service: $FRONTEND_SERVICE"
-echo "║ Skip DB:          $SKIP_DB"
+echo "║ Project ID:       $RAILWAY_PROJECT_ID"
+echo "║ Environment ID:   $RAILWAY_ENVIRONMENT_ID"
+echo "║ Backend:          $BACKEND_SERVICE_NAME ($BACKEND_SERVICE_ID)"
+echo "║ Frontend:         $FRONTEND_SERVICE_NAME ($FRONTEND_SERVICE_ID)"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
-# Call the generic deployment script
-# Note: deploy_all.sh handles env file loading via functions/env.sh
-exec "$DEPLOY_SCRIPT" \
-    -p "$RAILWAY_PROJECT" \
-    -e "$RAILWAY_ENVIRONMENT" \
-    -b "$BACKEND_SERVICE" \
-    -n "$FRONTEND_SERVICE" \
-    ${SKIP_DB:+--skip-db}
+# Load environment files
+load_env_files
+
+# Deploy backend
+deploy_service "$BACKEND_SERVICE_ID" "$BACKEND_SERVICE_NAME" "$DOCKERFILE_BACKEND"
+
+# Deploy frontend  
+deploy_service "$FRONTEND_SERVICE_ID" "$FRONTEND_SERVICE_NAME" "$DOCKERFILE_FRONTEND"
+
+echo ""
+success "Deployment complete!"
+echo "  Backend:  https://$BACKEND_SERVICE_NAME-$RAILWAY_ENVIRONMENT.up.railway.app"
+echo "  Frontend: https://$FRONTEND_SERVICE_NAME-$RAILWAY_ENVIRONMENT.up.railway.app"

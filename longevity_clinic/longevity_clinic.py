@@ -14,7 +14,12 @@ from .app.pages.patient import (
 )
 
 # Pages - Shared
-from .app.pages.shared import appointments_page, auth_page, notifications_page
+from .app.pages.shared import (
+    appointments_page,
+    auth_page,
+    notifications_page,
+    register_page,
+)
 
 # States
 from .app.states import (
@@ -43,6 +48,7 @@ app = rx.App(
 )
 app.add_page(auth_page, route="/")
 app.add_page(auth_page, route="/login")
+app.add_page(register_page, route="/register")
 
 # Admin
 app.add_page(admin_dashboard, route="/admin/dashboard")

@@ -114,6 +114,19 @@ def login_form() -> rx.Component:
                     ),
                     class_name="mt-12 p-6 bg-slate-800/30 rounded-[2rem] border border-slate-600/30 backdrop-blur-lg",
                 ),
+                # Link to register
+                rx.el.div(
+                    rx.el.p(
+                        "New patient?",
+                        class_name="text-slate-400 text-sm",
+                    ),
+                    rx.link(
+                        "Create an account",
+                        href="/register",
+                        class_name="text-teal-400 hover:text-teal-300 text-sm font-medium underline underline-offset-2",
+                    ),
+                    class_name="mt-8 flex flex-col items-center gap-2",
+                ),
                 on_submit=AuthState.login,
             ),
             class_name="bg-slate-800/40 backdrop-blur-[40px] py-16 px-8 sm:px-12 shadow-[0_20px_60px_rgba(0,0,0,0.3)] rounded-[3rem] w-full max-w-md border border-slate-600/30",

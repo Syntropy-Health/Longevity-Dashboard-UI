@@ -778,12 +778,19 @@ class CheckinState(rx.State):
         logger.debug("Periodic refresh stopped")
 
     async def _load_checkins_from_db(self) -> list[CheckInWithTranscript]:
-        """Load all check-ins from database for patient view (all types)."""
+        """Load check-ins from database for authenticated patient (filtered by user_id)."""
+        # Get user_id from AuthState
+        auth_state = await self.get_state(AuthState)
+        user_id = auth_state.user_id
+        if not user_id:
+            logger.warning("_load_checkins_from_db: No authenticated user")
+            return []
 
-        def _query_checkins() -> list[CheckInWithTranscript]:
+        def _query_checkins(uid: int) -> list[CheckInWithTranscript]:
             with rx.session() as session:
                 result = session.exec(
                     select(CheckInDB, CallTranscript.raw_transcript)
+                    .where(CheckInDB.user_id == uid)
                     .outerjoin(
                         CallTranscript,
                         CheckInDB.call_log_id == CallTranscript.call_log_id,
@@ -812,7 +819,7 @@ class CheckinState(rx.State):
                 return checkins
 
         try:
-            return await asyncio.to_thread(_query_checkins)
+            return await asyncio.to_thread(_query_checkins, user_id)
         except Exception as e:
             logger.error("_load_checkins_from_db failed: %s", e)
             return []

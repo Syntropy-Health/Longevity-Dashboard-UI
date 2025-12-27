@@ -345,22 +345,28 @@ class AppointmentState(rx.State):
                 return
             self.is_loading = True
 
-            # Get user_id from auth state
+            # Get user_id and role from auth state
             auth_state = await self.get_state(AuthState)
-            user_id_str = auth_state.user.get("id") if auth_state.user else None
-            user_id = int(user_id_str) if user_id_str else None
+            is_admin = auth_state.is_admin
+            user_id = auth_state.user_id
 
-        logger.info("load_appointments: Starting for user_id %s", user_id or "all")
+        logger.info(
+            "load_appointments: Starting for user_id=%s, is_admin=%s",
+            user_id or "none",
+            is_admin,
+        )
 
         try:
-            # Fetch appointments for specific user if authenticated
-            if user_id:
+            # Admins see all appointments, patients see only their own
+            if is_admin:
+                db_appointments = get_appointments_sync(limit=100)
+            elif user_id:
                 db_appointments = get_appointments_for_user_sync(
                     user_id=user_id, limit=100
                 )
             else:
-                # Fallback to all appointments (admin view)
-                db_appointments = get_appointments_sync(limit=100)
+                logger.warning("load_appointments: No authenticated user")
+                db_appointments = []
 
             # Fall back to seed data if no DB results
             if not db_appointments:

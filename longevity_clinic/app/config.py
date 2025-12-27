@@ -61,6 +61,7 @@ _config_logger = get_logger("longevity_clinic.config")
 # Ensure OpenAI API key is loaded from environment
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 CALL_API_TOKEN = os.getenv("CALL_API_TOKEN", "")
+PASSWORD_PEPPER = os.getenv("PASSWORD_PEPPER", "default-pepper-change-in-production")
 
 # Validate required API keys on startup
 if not OPENAI_API_KEY:
@@ -70,6 +71,15 @@ if not OPENAI_API_KEY:
 
 if not CALL_API_TOKEN:
     _config_logger.warning("CALL_API_TOKEN not set. Call log fetching will not work.")
+
+
+# =============================================================================
+# Demo Credentials (for testing/demo purposes only)
+# =============================================================================
+DEMO_ADMIN_USERNAME = "admin"
+DEMO_ADMIN_PASSWORD = "admin"
+DEMO_PATIENT_USERNAME = "patient"
+DEMO_PATIENT_PASSWORD = "patient"
 
 
 class DemoUserConfig(BaseModel):

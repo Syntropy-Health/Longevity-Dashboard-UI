@@ -9,6 +9,7 @@ import reflex as rx
 from ...config import get_logger
 from ...functions.db_utils import (
     get_notifications_for_role_sync,
+    get_notifications_for_user_sync,
 )
 from ..auth.base import AuthState
 
@@ -37,23 +38,42 @@ class NotificationState(rx.State):
         return self.notifications
 
     async def load_notifications_for_role(self):
-        """Load notifications based on user role from AuthState."""
-        auth_state = await self.get_state(AuthState)
-        role = "admin" if auth_state.is_admin else "patient"
+        """Load notifications based on user role and ID from AuthState.
 
-        db_notifications = get_notifications_for_role_sync(role)
-        if db_notifications:
-            self.notifications = db_notifications
+        For patients: loads notifications by user_id for user-specific data
+        For admins: loads notifications by role for all admin notifications
+        """
+        auth_state = await self.get_state(AuthState)
+        is_admin = auth_state.is_admin
+        user_id = auth_state.user_id
+
+        if is_admin:
+            # Admins see all admin-role notifications
+            db_notifications = get_notifications_for_role_sync("admin")
             logger.info(
-                "Loaded %d notifications from DB for %s",
-                len(db_notifications),
-                role,
+                "Loaded %d notifications from DB for admin role",
+                len(db_notifications) if db_notifications else 0,
             )
         else:
+            # Patients see only their own notifications
+            if not user_id:
+                logger.warning("load_notifications_for_role: No authenticated user")
+                self.notifications = []
+                return
+
+            db_notifications = get_notifications_for_user_sync(user_id)
+            logger.info(
+                "Loaded %d notifications from DB for user_id=%s",
+                len(db_notifications) if db_notifications else 0,
+                user_id,
+            )
+
+        if db_notifications:
+            self.notifications = db_notifications
+        else:
             logger.warning(
-                "No notifications in DB for %s. "
-                "Run 'python scripts/load_seed_data.py' to seed data.",
-                role,
+                "No notifications in DB. "
+                "Run 'python scripts/load_seed_data.py' to seed data."
             )
             self.notifications = []
 

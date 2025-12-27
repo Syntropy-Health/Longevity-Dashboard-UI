@@ -26,6 +26,8 @@ class User(rx.Model, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     external_id: str = Field(index=True, unique=True)  # e.g., "P001"
+    username: str | None = Field(default=None, index=True, unique=True)  # Login username
+    password_hash: str | None = Field(default=None)  # bcrypt hashed password
     name: str
     email: str = Field(index=True, unique=True)
     phone: str | None = Field(default=None, index=True)

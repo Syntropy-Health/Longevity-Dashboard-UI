@@ -218,3 +218,38 @@ def get_recently_active_patients_sync(limit: int = 5) -> list[User]:
         except Exception as fallback_error:
             logger.error("Fallback query also failed: %s", fallback_error)
             return []
+
+
+def get_demo_patients_sync() -> list[dict]:
+    """Get patient users as dicts for appointment booking UI.
+
+    Returns list of dicts with id, name, email format expected by UI.
+    """
+    patients = get_all_patients_sync()
+    return [
+        {
+            "id": p.external_id,
+            "name": p.name,
+            "email": p.email or "",
+            "full_name": p.name,
+        }
+        for p in patients
+    ]
+
+
+def get_providers_sync() -> list[str]:
+    """Get list of provider names from database.
+
+    Currently returns admin users as providers.
+    Returns default list if no admins found.
+    """
+    try:
+        with rx.session() as session:
+            admins = session.exec(select(User).where(User.role == "admin")).all()
+            if admins:
+                return [f"Dr. {a.name.split()[0]}" for a in admins]
+            # Default providers if no admins exist
+            return ["Dr. Johnson", "Dr. Williams", "Dr. Chen", "Dr. Patel"]
+    except Exception as e:
+        logger.error("Failed to get providers: %s", e)
+        return ["Dr. Johnson", "Dr. Williams", "Dr. Chen", "Dr. Patel"]

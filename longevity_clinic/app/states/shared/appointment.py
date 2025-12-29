@@ -6,15 +6,12 @@ from datetime import date, datetime
 import reflex as rx
 
 from ...config import get_logger
-from ...data.seed import (
-    APPOINTMENTS_SEED,
-    DEMO_PATIENTS,
-    PROVIDERS,
-)
 from ...functions.db_utils import (
     create_appointment_sync,
     get_appointments_for_user_sync,
     get_appointments_sync,
+    get_demo_patients_sync,
+    get_providers_sync,
     update_appointment_status_sync,
 )
 from ..auth import AuthState
@@ -54,15 +51,23 @@ class AppointmentState(rx.State):
     upcoming_page: int = 1
     upcoming_page_size: int = 3
 
+    # Cached providers and patients (loaded on demand)
+    _providers_cache: list[str] = []
+    _demo_patients_cache: list[dict] = []
+
     @rx.var
     def providers(self) -> list[str]:
-        """Available providers."""
-        return PROVIDERS
+        """Available providers from database."""
+        if not self._providers_cache:
+            return get_providers_sync()
+        return self._providers_cache
 
     @rx.var
     def demo_patients(self) -> list[dict]:
-        """Demo patients for admin booking."""
-        return DEMO_PATIENTS
+        """Patients for admin booking from database."""
+        if not self._demo_patients_cache:
+            return get_demo_patients_sync()
+        return self._demo_patients_cache
 
     @rx.var
     def current_month_year(self) -> str:
@@ -335,7 +340,6 @@ class AppointmentState(rx.State):
     async def load_appointments(self):
         """Load appointments for current authenticated user from DB.
 
-        Falls back to seed data if no appointments found.
         Note: Requires seeded database. Run: python scripts/load_seed_data.py
         """
         # Prevent duplicate loads
@@ -368,10 +372,11 @@ class AppointmentState(rx.State):
                 logger.warning("load_appointments: No authenticated user")
                 db_appointments = []
 
-            # Fall back to seed data if no DB results
             if not db_appointments:
-                logger.info("load_appointments: No DB data, using seed data")
-                db_appointments = list(APPOINTMENTS_SEED)
+                logger.warning(
+                    "load_appointments: No appointments found in database. "
+                    "Run 'python scripts/load_seed_data.py' to seed data."
+                )
 
             async with self:
                 self.appointments = db_appointments
@@ -467,7 +472,9 @@ class AppointmentState(rx.State):
 
             if self.booking_patient and self.booking_patient != "current":
                 patient_id = self.booking_patient
-                for p in DEMO_PATIENTS:
+                # Look up patient name from DB
+                demo_patients = get_demo_patients_sync()
+                for p in demo_patients:
                     if p["id"] == self.booking_patient:
                         patient_name = p["name"]
                         break

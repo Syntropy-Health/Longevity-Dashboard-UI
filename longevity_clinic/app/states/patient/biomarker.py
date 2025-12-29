@@ -15,8 +15,11 @@ class BiomarkerState(rx.State):
 
     Manages all patient health biomarker data including:
     - Biomarker list and selection
-    - Treatments and appointments
+    - Appointments (upcoming schedule)
     - Analytics panels and report export
+
+    Note: Treatments are now managed by TreatmentPortalState for better
+    separation of concerns.
 
     All data is loaded from the database.
     Seed data with: python scripts/load_seed_data.py
@@ -24,7 +27,6 @@ class BiomarkerState(rx.State):
 
     biomarkers: list[Biomarker] = []
     selected_biomarker: Biomarker | None = None
-    my_treatments: list[dict] = []
     upcoming_appointments: list[dict] = []
     is_loading: bool = False
     _data_loaded: bool = False
@@ -45,6 +47,7 @@ class BiomarkerState(rx.State):
         """Load biomarker data from database for authenticated user.
 
         Note: Requires seeded database. Run: python scripts/load_seed_data.py
+        Note: Treatments are now loaded separately by TreatmentPortalState.
         """
         # Prevent duplicate loads
         async with self:
@@ -68,7 +71,7 @@ class BiomarkerState(rx.State):
 
             async with self:
                 self.biomarkers = data["biomarkers"]
-                self.my_treatments = data["treatments"]
+                # Note: treatments now in TreatmentPortalState
                 self.upcoming_appointments = data["appointments"]
                 self.is_loading = False
                 self._data_loaded = True

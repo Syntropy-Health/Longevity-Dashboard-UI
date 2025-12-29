@@ -14,6 +14,7 @@ from longevity_clinic.app.data.schemas.db import (
     PatientTreatment as PatientTreatmentDB,
     SymptomEntry as SymptomEntryDB,
     Treatment as TreatmentDB,
+    TreatmentCategory as TreatmentCategoryDB,
 )
 from longevity_clinic.app.data.schemas.db.domain_enums import TreatmentCategoryEnum
 from longevity_clinic.app.data.schemas.llm import (
@@ -28,38 +29,51 @@ logger = get_logger("longevity_clinic.db_utils.health")
 
 
 # ============================================================================
-# MEDICATION SUBSCRIPTIONS (via PatientTreatment with category=Medications)
+# MEDICATION SUBSCRIPTIONS (via PatientTreatment with category_id=Medications)
 # ============================================================================
 
 
-def get_medication_subscriptions_sync(
+def get_prescriptions_sync(
     user_id: int,
     status: str | None = None,
     limit: int = 100,
 ) -> list[PatientTreatment]:
     """Get medication subscriptions (prescriptions) for a user.
 
-    Now queries PatientTreatment joined with Treatment where category='Medications'.
-    Returns PatientTreatmentModel (aliased as MedicationSubscription for compat).
+    Queries PatientTreatment joined with Treatment and TreatmentCategory
+    where category name = 'Medications'.
+    Returns PatientTreatmentModel (aliased as Prescription for compat).
     """
     try:
         with rx.session() as session:
             query = (
-                select(PatientTreatmentDB, TreatmentDB)
+                select(PatientTreatmentDB, TreatmentDB, TreatmentCategoryDB)
                 .join(TreatmentDB, PatientTreatmentDB.treatment_id == TreatmentDB.id)
+                .join(
+                    TreatmentCategoryDB,
+                    TreatmentDB.category_id == TreatmentCategoryDB.id,
+                )
                 .where(PatientTreatmentDB.user_id == user_id)
-                .where(TreatmentDB.category == TreatmentCategoryEnum.MEDICATIONS.value)
+                .where(
+                    TreatmentCategoryDB.name == TreatmentCategoryEnum.MEDICATIONS.value
+                )
             )
             if status:
                 query = query.where(PatientTreatmentDB.status == status)
             query = query.order_by(PatientTreatmentDB.start_date.desc()).limit(limit)
             results = session.exec(query).all()
 
+            logger.info(
+                "get_prescriptions_sync: user_id=%s, found %d results",
+                user_id,
+                len(results),
+            )
+
             return [
                 PatientTreatment(
                     id=str(pt.id),
                     name=t.name,
-                    category=t.category,
+                    category=cat.name,  # Get category name from TreatmentCategory
                     dosage=pt.dosage or "",
                     frequency=t.frequency or "",
                     instructions=pt.instructions or "",
@@ -69,7 +83,7 @@ def get_medication_subscriptions_sync(
                     sessions_completed=pt.sessions_completed or 0,
                     sessions_total=pt.sessions_total,
                 )
-                for pt, t in results
+                for pt, t, cat in results
             ]
     except Exception as e:
         logger.error(
@@ -78,17 +92,9 @@ def get_medication_subscriptions_sync(
         return []
 
 
-# Legacy alias
-MedicationSubscription = PatientTreatment
-
-
-# NOTE: create_medication_subscription_sync removed.
-# Use PatientTreatment with Treatment(category=Medications) instead.
+# NOTE:Use PatientTreatment with Treatment(category=Medications) instead.
 # See scripts/seeding/treatments.py for adding medication treatments.
 
-
-# ============================================================================
-# Medication Entries (What patient actually took)
 # ============================================================================
 
 
@@ -191,6 +197,7 @@ def get_food_entries_sync(
                     fat=entry.fat or 0.0,
                     time=entry.consumed_at or "",
                     meal_type=entry.meal_type or "snack",
+                    logged_at=entry.logged_at.isoformat() if entry.logged_at else None,
                 )
                 for entry in entries
             ]

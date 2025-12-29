@@ -30,7 +30,18 @@ from .shared.appointment import AppointmentState
 from .shared.checkin import CheckinState
 
 # Shared states
-from .shared.dashboard import AdminDashboardState, HealthDashboardState
+from .shared.dashboard import AdminDashboardState
+
+# Decomposed dashboard states
+from .shared.dashboard import (
+    ConditionState,
+    DataSourceState,
+    FoodState,
+    MedicationState,
+    SettingsState,
+    SymptomState,
+    TreatmentPortalState,
+)
 from .shared.notification import NotificationState
 from .shared.treatment import TreatmentSearchState, TreatmentState
 from .shared.voice_transcription import (
@@ -49,12 +60,18 @@ __all__ = [
     "BiomarkerState",
     # Check-in states (unified)
     "CheckinState",
-    # Dashboard states
-    "HealthDashboardState",
+    # Dashboard states (decomposed)
+    "ConditionState",
+    "DataSourceState",
+    "FoodState",
+    "MedicationState",
     # Notification & Appointment
     "NotificationState",
     # Patient states
     "PatientState",
+    "SettingsState",
+    "SymptomState",
+    "TreatmentPortalState",
     "TreatmentProtocol",
     "TreatmentSearchState",
     "TreatmentState",

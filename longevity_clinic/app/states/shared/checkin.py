@@ -23,7 +23,11 @@ from longevity_clinic.app.functions.db_utils import (
     save_health_entries_sync,
     update_checkin_sync,
 )
-from longevity_clinic.app.states.shared.dashboard import HealthDashboardState
+from longevity_clinic.app.states.shared.dashboard import (
+    FoodState,
+    MedicationState,
+    SymptomState,
+)
 
 from ...functions import VlogsAgent
 from ...functions.admins import filter_checkins
@@ -57,8 +61,8 @@ class CheckinState(rx.State):
 
     Dashboard Integration:
     ======================
-    HealthDashboardState.load_health_data_from_db() is triggered via page on_load
-    in longevity_clinic.py to refresh dashboard tabs. Data is fetched from:
+    FoodState, MedicationState, and SymptomState load data from DB via page on_load
+    in longevity_clinic.py. Data is fetched from:
     - get_medications_sync(user_id) → MedicationEntry table
     - get_food_entries_sync(user_id) → FoodLogEntry table
     - get_symptoms_sync(user_id) → SymptomEntry table
@@ -321,8 +325,8 @@ class CheckinState(rx.State):
         - symptom_entries: Symptoms reported
 
         Dashboard Sync:
-        After save, HealthDashboardState.load_health_data_from_db() will
-        fetch updated entries from these tables for display.
+        After save, the decomposed dashboard states (FoodState, MedicationState,
+        SymptomState) fetch updated entries from these tables for display.
         """
         async with self:
             voice_state = await self.get_state(VoiceTranscriptionState)
@@ -725,15 +729,16 @@ class CheckinState(rx.State):
             if processed_count > 0:
                 logger.info("Processed %d call logs to health metrics", processed_count)
 
-            # Reload checkins
+            # Reload checkins - capture auth info within context
             async with self:
                 auth_state = await self.get_state(AuthState)
                 is_admin = auth_state.is_admin
+                user_id = auth_state.user_id
 
             checkins_from_db = await (
                 self._load_all_checkins_from_db()
                 if is_admin
-                else self._load_checkins_from_db()
+                else self._load_checkins_from_db(user_id=user_id)
             )
 
             async with self:
@@ -746,7 +751,9 @@ class CheckinState(rx.State):
 
             # Trigger dashboard refresh so user sees new health entries
             if processed_count > 0:
-                yield HealthDashboardState.load_health_data_from_db
+                yield FoodState.load_food_data
+                yield MedicationState.load_medication_data
+                yield SymptomState.load_symptom_data
 
         except Exception as e:
             logger.error("refresh_call_logs failed: %s", e)
@@ -777,13 +784,16 @@ class CheckinState(rx.State):
 
         logger.debug("Periodic refresh stopped")
 
-    async def _load_checkins_from_db(self) -> list[CheckInWithTranscript]:
-        """Load check-ins from database for authenticated patient (filtered by user_id)."""
-        # Get user_id from AuthState
-        auth_state = await self.get_state(AuthState)
-        user_id = auth_state.user_id
+    async def _load_checkins_from_db(
+        self, user_id: int | None = None
+    ) -> list[CheckInWithTranscript]:
+        """Load check-ins from database for authenticated patient (filtered by user_id).
+
+        Args:
+            user_id: User ID to filter by. If None, returns empty list.
+        """
         if not user_id:
-            logger.warning("_load_checkins_from_db: No authenticated user")
+            logger.warning("_load_checkins_from_db: No user_id provided")
             return []
 
         def _query_checkins(uid: int) -> list[CheckInWithTranscript]:
@@ -840,22 +850,22 @@ class CheckinState(rx.State):
             if self.is_processing_background:
                 return
             self.is_processing_background = True
+            # Capture auth info while in context
+            auth_state = await self.get_state(AuthState)
+            is_admin = auth_state.is_admin
+            user_id = auth_state.user_id
 
         logger.debug(
             "Checkin sync loop started (poll_interval=%ds)",
             process_config.poll_interval,
         )
 
-        # Initial load
+        # Initial load - user_id captured above
         try:
-            async with self:
-                auth_state = await self.get_state(AuthState)
-                is_admin = auth_state.is_admin
-
             checkins_from_db = await (
                 self._load_all_checkins_from_db()
                 if is_admin
-                else self._load_checkins_from_db()
+                else self._load_checkins_from_db(user_id=user_id)
             )
             async with self:
                 self.checkins = checkins_from_db
@@ -865,9 +875,12 @@ class CheckinState(rx.State):
 
         # Polling loop
         while True:
+            # Check if we should stop
+            should_stop = False
             async with self:
-                if not self.is_processing_background:
-                    break
+                should_stop = not self.is_processing_background
+            if should_stop:
+                break
 
             try:
                 agent = VlogsAgent.from_config()
@@ -875,14 +888,16 @@ class CheckinState(rx.State):
 
                 if processed_count > 0:
                     logger.info("Processed %d call logs", processed_count)
+                    # Re-capture auth info in case it changed
                     async with self:
                         auth_state = await self.get_state(AuthState)
                         is_admin = auth_state.is_admin
+                        user_id = auth_state.user_id
 
                     checkins_from_db = await (
                         self._load_all_checkins_from_db()
                         if is_admin
-                        else self._load_checkins_from_db()
+                        else self._load_checkins_from_db(user_id=user_id)
                     )
                     async with self:
                         if checkins_from_db:

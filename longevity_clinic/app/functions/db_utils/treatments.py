@@ -6,7 +6,11 @@ import reflex as rx
 from sqlmodel import select
 
 from longevity_clinic.app.config import get_logger
-from longevity_clinic.app.data.schemas.db import PatientTreatment, Treatment
+from longevity_clinic.app.data.schemas.db import (
+    PatientTreatment,
+    Treatment,
+    TreatmentCategory,
+)
 from longevity_clinic.app.data.schemas.state import TreatmentProtocol
 
 logger = get_logger("longevity_clinic.db_utils.treatments")
@@ -35,25 +39,41 @@ def get_treatment_by_id_sync(treatment_id: str) -> Treatment | None:
 
 
 def get_treatments_as_protocols_sync() -> list[TreatmentProtocol]:
-    """Get all treatments converted to TreatmentProtocol TypedDict format."""
-    treatments = get_all_treatments_sync()
-    return [
-        TreatmentProtocol(
-            id=t.treatment_id,
-            name=t.name,
-            category=t.category,
-            description=t.description,
-            duration=t.duration,
-            frequency=t.frequency,
-            cost=t.cost,
-            status=t.status,
-        )
-        for t in treatments
-    ]
+    """Get all treatments converted to TreatmentProtocol TypedDict format.
+
+    Joins with TreatmentCategory to get category name.
+    """
+    try:
+        with rx.session() as session:
+            results = session.exec(
+                select(Treatment, TreatmentCategory).outerjoin(
+                    TreatmentCategory, Treatment.category_id == TreatmentCategory.id
+                )
+            ).all()
+            return [
+                TreatmentProtocol(
+                    id=t.treatment_id,
+                    name=t.name,
+                    category=cat.name if cat else "General",
+                    description=t.description,
+                    duration=t.duration,
+                    frequency=t.frequency,
+                    cost=t.cost,
+                    status=t.status,
+                )
+                for t, cat in results
+            ]
+    except Exception as e:
+        logger.error("Failed to get treatments as protocols: %s", e)
+        return []
 
 
-def get_patient_treatments_sync(user_id: int) -> list[dict]:
+def get_patient_treatments_sync(user_id: int, limit: int = 100) -> list[dict]:
     """Get all treatment assignments for a patient with treatment details.
+
+    Args:
+        user_id: The user ID to fetch treatments for
+        limit: Maximum number of treatments to return
 
     Returns:
         List of dicts with both PatientTreatment and Treatment fields
@@ -61,16 +81,20 @@ def get_patient_treatments_sync(user_id: int) -> list[dict]:
     try:
         with rx.session() as session:
             results = session.exec(
-                select(PatientTreatment, Treatment)
+                select(PatientTreatment, Treatment, TreatmentCategory)
                 .join(Treatment, PatientTreatment.treatment_id == Treatment.id)
+                .outerjoin(
+                    TreatmentCategory, Treatment.category_id == TreatmentCategory.id
+                )
                 .where(PatientTreatment.user_id == user_id)
+                .limit(limit)
             ).all()
             return [
                 {
                     "id": pt.id,
                     "treatment_id": t.treatment_id,
                     "treatment_name": t.name,
-                    "treatment_category": t.category,
+                    "treatment_category": cat.name if cat else "General",
                     "treatment_description": t.description,
                     "start_date": pt.start_date,
                     "end_date": pt.end_date,
@@ -83,7 +107,7 @@ def get_patient_treatments_sync(user_id: int) -> list[dict]:
                         else 0
                     ),
                 }
-                for pt, t in results
+                for pt, t, cat in results
             ]
     except Exception as e:
         logger.error("Failed to get patient treatments for user %s: %s", user_id, e)
@@ -93,7 +117,7 @@ def get_patient_treatments_sync(user_id: int) -> list[dict]:
 def create_treatment_sync(
     treatment_id: str,
     name: str,
-    category: str = "General",
+    category_id: int | None = None,
     description: str = "",
     duration: str = "",
     frequency: str = "",
@@ -106,7 +130,7 @@ def create_treatment_sync(
             treatment = Treatment(
                 treatment_id=treatment_id,
                 name=name,
-                category=category,
+                category_id=category_id,
                 description=description,
                 duration=duration,
                 frequency=frequency,
@@ -125,7 +149,7 @@ def create_treatment_sync(
 def update_treatment_sync(
     treatment_id: str,
     name: str | None = None,
-    category: str | None = None,
+    category_id: int | None = None,
     description: str | None = None,
     duration: str | None = None,
     frequency: str | None = None,
@@ -143,8 +167,8 @@ def update_treatment_sync(
 
             if name is not None:
                 treatment.name = name
-            if category is not None:
-                treatment.category = category
+            if category_id is not None:
+                treatment.category_id = category_id
             if description is not None:
                 treatment.description = description
             if duration is not None:

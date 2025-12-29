@@ -5,9 +5,15 @@ This package contains shared state classes used across admin and patient views.
 
 from .appointment import AppointmentState
 from .checkin import CheckinState
+
+# Full dashboard states
 from .dashboard import (
-    AdminDashboardState,
-    HealthDashboardState,
+    ConditionState,
+    DataSourceState,
+    FoodState,
+    MedicationState,
+    SettingsState,
+    SymptomState,
 )
 from .notification import NotificationState
 from .treatment import TreatmentSearchState, TreatmentState
@@ -18,11 +24,15 @@ from .voice_transcription import (
 )
 
 __all__ = [
-    "AdminDashboardState",
     "AppointmentState",
     "CheckinState",
-    "HealthDashboardState",
+    "ConditionState",
+    "DataSourceState",
+    "FoodState",
+    "MedicationState",
     "NotificationState",
+    "SettingsState",
+    "SymptomState",
     "TreatmentSearchState",
     "TreatmentState",
     "VoiceTranscriptionState",

@@ -7,7 +7,6 @@ from ....components.paginated_view import paginated_list
 from ....components.tabs import (
     medication_notification_card,
     symptom_card,
-    symptom_log_card,
     symptom_log_item,
     symptom_trend_item,
 )
@@ -44,22 +43,6 @@ def symptoms_tab() -> rx.Component:
                 ),
                 class_name=f"{GlassStyles.PANEL} p-5",
             ),
-            # Pending Medications Card
-            rx.el.div(
-                rx.el.div(
-                    rx.icon("pill", class_name="w-6 h-6 text-purple-400"),
-                    class_name="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-3 border border-purple-500/20",
-                ),
-                rx.el.p(
-                    "Medications",
-                    class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
-                ),
-                rx.el.span(
-                    NotificationState.medication_notifications.length(),
-                    class_name="text-3xl font-bold text-white",
-                ),
-                class_name=f"{GlassStyles.PANEL} p-5",
-            ),
             # Recent Logs Card
             rx.el.div(
                 rx.el.div(
@@ -92,7 +75,7 @@ def symptoms_tab() -> rx.Component:
                 ),
                 class_name=f"{GlassStyles.PANEL} p-5",
             ),
-            class_name="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8",
+            class_name="grid grid-cols-3 gap-4 mb-8",
         ),
         # Sub-filters (simplified: removed reminders as separate view)
         rx.el.div(

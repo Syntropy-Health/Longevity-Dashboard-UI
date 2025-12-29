@@ -124,9 +124,8 @@ def drop_all_tables(engine, dry_run: bool = True):
 
 def run_migrations():
     """Run all migrations from scratch."""
-    from alembic.config import Config
-
     from alembic import command
+    from alembic.config import Config
 
     alembic_ini = project_root / "alembic.ini"
     config = Config(str(alembic_ini))

@@ -45,19 +45,6 @@ from .checkins import (
     update_checkin_sync,
 )
 
-# Health entries
-from .health import (
-    create_food_entry_sync,
-    create_medication_entry_sync,
-    create_symptom_sync,
-    get_food_entries_sync,
-    get_medication_entries_sync,
-    get_prescriptions_sync,
-    get_medications_sync,  # Legacy alias
-    get_symptom_logs_sync,
-    get_symptoms_sync,
-)
-
 # Conditions, trends, sources, medication notifications
 from .conditions import (
     create_condition_sync,
@@ -71,6 +58,19 @@ from .conditions import (
     toggle_data_source_connection_sync,
     toggle_medication_completed_sync,
     update_condition_status_sync,
+)
+
+# Health entries
+from .health import (
+    create_food_entry_sync,
+    create_medication_entry_sync,
+    create_symptom_sync,
+    get_food_entries_sync,
+    get_medication_entries_sync,
+    get_medications_sync,  # Legacy alias
+    get_prescriptions_sync,
+    get_symptom_logs_sync,
+    get_symptoms_sync,
 )
 
 # Notifications
@@ -104,7 +104,6 @@ from .users import (
     get_user_by_id_sync,
     get_user_by_phone_sync,
 )
-
 
 # =============================================================================
 # Utility functions (no database table)
@@ -152,10 +151,10 @@ __all__ = [
     "get_checkins_sync",
     "get_conditions_sync",
     "get_data_sources_sync",
+    "get_demo_patients_sync",
     "get_food_entries_sync",
     "get_medication_entries_sync",
     "get_medication_notifications_sync",
-    "get_prescriptions_sync",
     "get_medications_sync",  # Legacy alias for get_medication_entries_sync
     "get_notifications_for_role_sync",
     "get_notifications_for_user_sync",
@@ -163,6 +162,8 @@ __all__ = [
     "get_patient_name_by_phone",
     "get_patient_treatments_sync",
     "get_phone_to_patient_map",
+    "get_prescriptions_sync",
+    "get_providers_sync",
     "get_recently_active_patients_sync",
     "get_reminders_sync",
     "get_symptom_logs_sync",

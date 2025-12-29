@@ -127,7 +127,7 @@ def get_sqlite_schema() -> list[str]:
                     col_def += f" DEFAULT {default}"
                 elif isinstance(default, bool):
                     col_def += f" DEFAULT {str(default).upper()}"
-                elif isinstance(default, (int, float)):
+                elif isinstance(default, int | float):
                     col_def += f" DEFAULT {default}"
                 else:
                     col_def += f" DEFAULT '{default}'"

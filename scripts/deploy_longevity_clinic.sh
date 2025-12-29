@@ -55,33 +55,59 @@ warn() { echo "[!] $*"; }
 
 load_env_files() {
     local envs_dir="$PROJECT_ROOT/envs"
-    
+
     [ -f "$envs_dir/.env.base" ] && { set -a; source "$envs_dir/.env.base"; set +a; log "Loaded .env.base"; }
     [ -f "$envs_dir/.env.$APP_ENV" ] && { set -a; source "$envs_dir/.env.$APP_ENV"; set +a; log "Loaded .env.$APP_ENV"; }
     [ -f "$envs_dir/.env.secrets" ] && { set -a; source "$envs_dir/.env.secrets"; set +a; log "Loaded .env.secrets"; }
+}
+
+set_railway_env_vars() {
+    local service_name=$1
+
+    log "Setting environment variables for $service_name..."
+
+    # Set required env vars in Railway service
+    if [ -n "$REFLEX_DB_URL" ]; then
+        railway variables set REFLEX_DB_URL="$REFLEX_DB_URL" \
+            --service "$service_name" --environment "$RAILWAY_ENVIRONMENT" 2>/dev/null || warn "Could not set REFLEX_DB_URL"
+    fi
+    if [ -n "$OPENAI_API_KEY" ]; then
+        railway variables set OPENAI_API_KEY="$OPENAI_API_KEY" \
+            --service "$service_name" --environment "$RAILWAY_ENVIRONMENT" 2>/dev/null || warn "Could not set OPENAI_API_KEY"
+    fi
+    if [ -n "$CALL_API_TOKEN" ]; then
+        railway variables set CALL_API_TOKEN="$CALL_API_TOKEN" \
+            --service "$service_name" --environment "$RAILWAY_ENVIRONMENT" 2>/dev/null || warn "Could not set CALL_API_TOKEN"
+    fi
+    # Set APP_ENV
+    railway variables set APP_ENV="$APP_ENV" \
+        --service "$service_name" --environment "$RAILWAY_ENVIRONMENT" 2>/dev/null || warn "Could not set APP_ENV"
 }
 
 deploy_service() {
     local service_id=$1
     local service_name=$2
     local dockerfile=$3
-    
+
     log "Deploying $service_name..."
-    
+
+    # Set environment variables in Railway before deploying
+    set_railway_env_vars "$service_name"
+
     # Copy Dockerfile to project root
     cp "$dockerfile" "$PROJECT_ROOT/Dockerfile" || error "Failed to copy Dockerfile"
-    
+
     cd "$PROJECT_ROOT"
-    
+
     # Set Railway project ID for authentication context
     export RAILWAY_PROJECT_ID="$RAILWAY_PROJECT_ID"
-    
+
     # Deploy using railway up with explicit service and environment flags
     railway up -d --service "$service_name" --environment "$RAILWAY_ENVIRONMENT" 2>&1 || error "Failed to deploy $service_name"
-    
+
     # Cleanup
     rm -f "$PROJECT_ROOT/Dockerfile"
-    
+
     success "$service_name deployed"
 }
 
@@ -129,7 +155,7 @@ load_env_files
 # Deploy backend
 deploy_service "$BACKEND_SERVICE_ID" "$BACKEND_SERVICE_NAME" "$DOCKERFILE_BACKEND"
 
-# Deploy frontend  
+# Deploy frontend
 deploy_service "$FRONTEND_SERVICE_ID" "$FRONTEND_SERVICE_NAME" "$DOCKERFILE_FRONTEND"
 
 echo ""

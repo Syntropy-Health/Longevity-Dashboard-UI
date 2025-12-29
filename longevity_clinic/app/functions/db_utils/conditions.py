@@ -316,8 +316,12 @@ def create_medication_notification_sync(
     time: str,
     message: str = "",
     recurring: bool = False,
-) -> "NotificationDB | None":
-    """Create a medication notification for a user."""
+):
+    """Create a medication notification for a user.
+
+    Returns:
+        NotificationDB instance or None on failure
+    """
     from uuid import uuid4
 
     from longevity_clinic.app.data.schemas.db import Notification as NotificationDB
@@ -368,19 +372,19 @@ def toggle_medication_completed_sync(notification_id: int) -> bool:
 
 
 __all__ = [
+    "create_condition_sync",
+    "create_data_source_sync",
+    "create_medication_notification_sync",
+    "create_symptom_trend_sync",
     # Conditions
     "get_conditions_sync",
-    "create_condition_sync",
-    "update_condition_status_sync",
-    # Symptom trends
-    "get_symptom_trends_sync",
-    "create_symptom_trend_sync",
     # Data sources
     "get_data_sources_sync",
-    "create_data_source_sync",
-    "toggle_data_source_connection_sync",
     # Medication notifications (formerly reminders)
     "get_medication_notifications_sync",
-    "create_medication_notification_sync",
+    # Symptom trends
+    "get_symptom_trends_sync",
+    "toggle_data_source_connection_sync",
     "toggle_medication_completed_sync",
+    "update_condition_status_sync",
 ]

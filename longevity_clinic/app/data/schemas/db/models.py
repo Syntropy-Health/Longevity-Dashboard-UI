@@ -623,7 +623,6 @@ __all__ = [
     "PatientTreatment",
     "PatientVisit",
     "ProviderMetrics",
-    "Reminder",
     "SymptomEntry",
     "SymptomTrend",
     "Treatment",

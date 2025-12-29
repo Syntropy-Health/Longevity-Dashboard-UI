@@ -126,6 +126,6 @@ def get_prescriptions_for_user(user_id: int) -> list[dict]:
 
 
 __all__ = [
-    "prescriptions_SEED",
     "get_prescriptions_for_user",
+    "prescriptions_SEED",
 ]

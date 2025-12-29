@@ -5,17 +5,14 @@ Revises: 41e851475f81
 Create Date: 2025-12-29 02:13:43.112962
 
 """
-from typing import Sequence, Union
 
-from alembic import op
-import sqlalchemy as sa
-
+from collections.abc import Sequence
 
 # revision identifiers, used by Alembic.
-revision: str = 'e0f9eb61cc21'
-down_revision: Union[str, Sequence[str], None] = '41e851475f81'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "e0f9eb61cc21"
+down_revision: str | Sequence[str] | None = "41e851475f81"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

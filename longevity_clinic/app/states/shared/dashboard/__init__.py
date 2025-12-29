@@ -27,6 +27,8 @@ Usage:
 """
 
 # Full dashboard states (decomposed)
+# Admin state (from admin module)
+from ...admin import AdminDashboardState
 from .condition import ConditionState
 from .data_source import DataSourceState
 from .food import FoodState, calculate_nutrition
@@ -35,10 +37,9 @@ from .settings import SettingsState
 from .symptom import SymptomState
 from .treatment import TreatmentPortalState
 
-# Admin state (from admin module)
-from ...admin import AdminDashboardState
-
 __all__ = [
+    # Admin
+    "AdminDashboardState",
     # Full dashboard (decomposed)
     "ConditionState",
     "DataSourceState",
@@ -48,6 +49,4 @@ __all__ = [
     "SymptomState",
     "TreatmentPortalState",
     "calculate_nutrition",
-    # Admin
-    "AdminDashboardState",
 ]

@@ -92,21 +92,24 @@ class AuthState(rx.State):
                     )
                 ).first()
 
-                if db_user and db_user.password_hash:
-                    if verify_password(password, db_user.password_hash):
-                        self.user = {
-                            "id": str(db_user.id),
-                            "username": db_user.username or db_user.external_id.lower(),
-                            "email": db_user.email,
-                            "role": db_user.role,
-                            "full_name": db_user.name,
-                            "phone": db_user.phone or "",
-                        }
-                        self.is_loading = False
-                        # Redirect based on role
-                        if db_user.role in ["admin", "staff", "provider"]:
-                            return rx.redirect("/admin/dashboard")
-                        return rx.redirect("/patient/portal")
+                if (
+                    db_user
+                    and db_user.password_hash
+                    and verify_password(password, db_user.password_hash)
+                ):
+                    self.user = {
+                        "id": str(db_user.id),
+                        "username": db_user.username or db_user.external_id.lower(),
+                        "email": db_user.email,
+                        "role": db_user.role,
+                        "full_name": db_user.name,
+                        "phone": db_user.phone or "",
+                    }
+                    self.is_loading = False
+                    # Redirect based on role
+                    if db_user.role in ["admin", "staff", "provider"]:
+                        return rx.redirect("/admin/dashboard")
+                    return rx.redirect("/patient/portal")
 
             # No valid credentials found
             self.login_error = "Invalid username or password."

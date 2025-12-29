@@ -104,7 +104,7 @@ def collapsible_container(
     """
     base_class = GlassStyles.COLLAPSIBLE_CONTAINER
     final_class = f"{base_class} {class_name}" if class_name else base_class
-    
+
     return rx.accordion.root(
         *children,
         type="multiple" if allow_multiple else "single",

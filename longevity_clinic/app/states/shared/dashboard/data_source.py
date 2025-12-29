@@ -4,7 +4,6 @@ Handles data sources (wearables, CGMs, apps, EHRs) and related pagination.
 """
 
 import asyncio
-from typing import Any
 
 import reflex as rx
 

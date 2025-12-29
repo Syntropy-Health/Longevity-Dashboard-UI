@@ -53,7 +53,7 @@ def calculate_nutrition(food_entries: list[FoodEntry]) -> dict[str, Any]:
 
 def parse_logged_at(entry: FoodEntry) -> datetime | None:
     """Parse the logged_at timestamp from a food entry.
-    
+
     The entry may have 'logged_at' as a datetime or ISO string.
     Returns None if parsing fails.
     """
@@ -128,10 +128,10 @@ class FoodState(rx.State):
             tz = ZoneInfo(self._user_timezone)
         except Exception:
             tz = ZoneInfo(current_config.default_timezone)
-        
+
         now = datetime.now(tz)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        
+
         result = []
         for entry in self.food_entries:
             logged_at = parse_logged_at(entry)
@@ -139,16 +139,16 @@ class FoodState(rx.State):
                 # If no timestamp, assume it's from today (for manual entries)
                 result.append(entry)
                 continue
-            
+
             # Make timezone-aware if naive
             if logged_at.tzinfo is None:
                 logged_at = logged_at.replace(tzinfo=ZoneInfo("UTC"))
-            
+
             # Convert to user's timezone and compare dates
             logged_local = logged_at.astimezone(tz)
             if logged_local >= today_start:
                 result.append(entry)
-        
+
         return result
 
     @rx.var
@@ -158,26 +158,26 @@ class FoodState(rx.State):
             tz = ZoneInfo(self._user_timezone)
         except Exception:
             tz = ZoneInfo(current_config.default_timezone)
-        
+
         now = datetime.now(tz)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        
+
         result = []
         for entry in self.food_entries:
             logged_at = parse_logged_at(entry)
             if logged_at is None:
                 # Skip entries without timestamp for past meals
                 continue
-            
+
             # Make timezone-aware if naive
             if logged_at.tzinfo is None:
                 logged_at = logged_at.replace(tzinfo=ZoneInfo("UTC"))
-            
+
             # Convert to user's timezone and compare dates
             logged_local = logged_at.astimezone(tz)
             if logged_local < today_start:
                 result.append(entry)
-        
+
         return result
 
     @rx.var
@@ -341,16 +341,18 @@ class FoodState(rx.State):
     # Data Loading
     # =========================================================================
 
-    def _compute_todays_nutrition(self, entries: list[FoodEntry], timezone: str) -> dict[str, Any]:
+    def _compute_todays_nutrition(
+        self, entries: list[FoodEntry], timezone: str
+    ) -> dict[str, Any]:
         """Compute nutrition from today's meals only."""
         try:
             tz = ZoneInfo(timezone)
         except Exception:
             tz = ZoneInfo(current_config.default_timezone)
-        
+
         now = datetime.now(tz)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        
+
         todays_entries = []
         for entry in entries:
             logged_at = parse_logged_at(entry)
@@ -358,14 +360,14 @@ class FoodState(rx.State):
                 # Assume entries without timestamp are from today
                 todays_entries.append(entry)
                 continue
-            
+
             if logged_at.tzinfo is None:
                 logged_at = logged_at.replace(tzinfo=ZoneInfo("UTC"))
-            
+
             logged_local = logged_at.astimezone(tz)
             if logged_local >= today_start:
                 todays_entries.append(entry)
-        
+
         return calculate_nutrition(todays_entries)
 
     @rx.event(background=True)
@@ -512,7 +514,7 @@ class FoodState(rx.State):
 
         # Set logged_at to current time in ISO format
         now = datetime.now(ZoneInfo("UTC"))
-        
+
         new_entry = FoodEntry(
             id=str(uuid.uuid4())[:8],
             name=self.new_food_name,

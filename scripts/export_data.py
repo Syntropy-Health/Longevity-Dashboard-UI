@@ -38,7 +38,7 @@ def format_value(value: Any) -> str:
     if isinstance(value, bool):
         return "TRUE" if value else "FALSE"
 
-    if isinstance(value, (int, float, Decimal)):
+    if isinstance(value, int | float | Decimal):
         return str(value)
 
     if isinstance(value, datetime):
@@ -47,7 +47,7 @@ def format_value(value: Any) -> str:
     if isinstance(value, date):
         return f"'{value.isoformat()}'"
 
-    if isinstance(value, (dict, list)):
+    if isinstance(value, dict | list):
         # Convert to JSON string
         json_str = json.dumps(value).replace("'", "''")
         return f"'{json_str}'"

@@ -126,9 +126,7 @@ def settings_tab() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.el.div(
-                            rx.el.p(
-                                "Your Timezone", class_name="text-sm text-white"
-                            ),
+                            rx.el.p("Your Timezone", class_name="text-sm text-white"),
                             rx.el.p(
                                 "Used for displaying meal times and daily tracking",
                                 class_name="text-xs text-slate-400",

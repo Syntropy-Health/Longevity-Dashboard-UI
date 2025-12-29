@@ -1,0 +1,34 @@
+# Pre-commit hooks for Longevity Clinic
+# Install: pre-commit install && pre-commit install --hook-type pre-push
+# Manual run: pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      # Run ruff linter with auto-fix
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      # Run ruff formatter
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+
+  # Local hooks for project-specific automation
+  - repo: local
+    hooks:
+      # Sync .env.test secrets to GitHub before push (always runs)
+      - id: sync-env-secrets
+        name: Sync env secrets to GitHub
+        entry: bash scripts/sync_env_secrets.sh
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

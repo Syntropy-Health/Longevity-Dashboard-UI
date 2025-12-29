@@ -30,10 +30,9 @@ from .shared.appointment import AppointmentState
 from .shared.checkin import CheckinState
 
 # Shared states
-from .shared.dashboard import AdminDashboardState
-
 # Decomposed dashboard states
 from .shared.dashboard import (
+    AdminDashboardState,
     ConditionState,
     DataSourceState,
     FoodState,

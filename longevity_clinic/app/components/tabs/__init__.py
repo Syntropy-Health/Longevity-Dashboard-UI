@@ -52,12 +52,12 @@ __all__ = [
     # Biomarker components
     "biomarker_card",
     "biomarker_detail_panel",
-    # Generic card
-    "health_card",
     # Health cards
     "condition_card",
     "data_source_card",
     "food_entry_card",
+    # Generic card
+    "health_card",
     # Shared
     "import_drop_zone",
     # Medication cards

@@ -17,8 +17,6 @@ from longevity_clinic.app.config import get_logger
 from longevity_clinic.app.data.schemas.llm import (
     Condition,
     DataSource,
-    SymptomEntryModel as SymptomEntry,
-    SymptomTrend,
 )
 from longevity_clinic.app.functions.db_utils import (
     get_conditions_sync,

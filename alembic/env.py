@@ -82,16 +82,13 @@ target_metadata = SQLModel.metadata
 
 def include_object(obj, name, type_, reflected, compare_to):
     """Filter objects for autogenerate comparison.
-    
+
     Excludes foreign key constraints from comparison since:
     - SQLite doesn't enforce FKs by default
     - Alembic has issues with unnamed FK constraints
     - The relationships work correctly without explicit FK DDL
     """
-    # Skip foreign key constraints entirely
-    if type_ == "foreign_key_constraint":
-        return False
-    return True
+    return type_ != "foreign_key_constraint"
 
 
 def get_database_url() -> str:

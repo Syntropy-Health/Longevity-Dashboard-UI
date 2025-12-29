@@ -229,9 +229,7 @@ def nutrition_summary_cards() -> rx.Component:
                     class_name="text-xs text-slate-400 uppercase tracking-wider",
                 ),
                 rx.el.p(
-                    rx.text(
-                        FoodState.nutrition_summary["total_protein"], "g"
-                    ),
+                    rx.text(FoodState.nutrition_summary["total_protein"], "g"),
                     class_name="text-2xl font-bold text-white",
                 ),
                 class_name=f"{GlassStyles.PANEL} p-4",

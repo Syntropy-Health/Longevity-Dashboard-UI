@@ -9,27 +9,25 @@ defined in the models but not properly created in earlier migrations.
 Uses batch mode for SQLite compatibility.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision: str = "f1a2b3c4d5e6"
-down_revision: Union[str, Sequence[str], None] = "7d72310139c0"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "7d72310139c0"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Add missing FK constraints using batch mode."""
     from alembic import context
-    
+
     # Detect database type
     bind = context.get_bind()
     is_sqlite = bind.dialect.name == "sqlite"
-    
+
     # Appointments table: add FKs for patient_user_id, provider_user_id, treatment_id
     # SQLite and PostgreSQL have different FK naming conventions
     if is_sqlite:
@@ -37,9 +35,7 @@ def upgrade() -> None:
             "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
         }
         with op.batch_alter_table(
-            "appointments", 
-            schema=None,
-            naming_convention=naming_convention
+            "appointments", schema=None, naming_convention=naming_convention
         ) as batch_op:
             # Drop old unnamed FK (user_id → users) - naming convention resolves the name
             batch_op.drop_constraint(

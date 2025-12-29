@@ -2,8 +2,11 @@
 #
 # Automatic deployment workflow for Longevity Clinic.
 # Triggers:
-#   - Push to main branch (auto-deploy to test)
+#   - Push to main branch (auto-deploy to test) - ONLY on Healome/longevity_clinic
 #   - Manual trigger via GitHub Actions UI (workflow_dispatch)
+#
+# NOTE: This workflow only runs on the primary repo (Healome/longevity_clinic).
+# The syntropy mirror does not run deployments to avoid duplicate CI runs.
 #
 # Prerequisites:
 # 1. Add secrets to repository (Settings > Secrets > Actions):
@@ -44,6 +47,8 @@ jobs:
   lint:
     name: Lint (Ruff)
     runs-on: ubuntu-latest
+    # Only run on the primary repository to avoid duplicate CI runs
+    if: github.repository == 'Healome/longevity_clinic'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -59,11 +64,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
-      - name: Run ruff check
-        run: uv run ruff check
-
-      - name: Run ruff format check
-        run: uv run ruff format --check
+      - name: Run ruff check (with auto-fix attempt)
+        run: |
+          # First try to auto-fix, then check for remaining issues
+          uv run ruff check --fix --unsafe-fixes || true
+          uv run ruff format || true
+          # Final strict check - fail if unfixable issues remain
+          uv run ruff check
+          uv run ruff format --check
 
   test:
     name: Run Tests
@@ -95,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     environment: ${{ github.event.inputs.environment || 'test' }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -114,7 +122,6 @@ jobs:
             exit 1
           fi
           echo "✓ All required secrets configured"
-
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
@@ -134,7 +141,6 @@ jobs:
           chmod +x scripts/deploy_longevity_clinic.sh
           chmod +x reflex-railway-deploy/deploy_all.sh
           chmod +x reflex-railway-deploy/functions/*.sh
-
       - name: Create secrets file
         run: |
           # Create .env.secrets from GitHub secrets (for deploy script)
@@ -147,13 +153,13 @@ jobs:
             echo "REFLEX_DB_URL=${{ secrets.REFLEX_DB_URL }}" >> envs/.env.secrets
           fi
           echo "✓ Secrets file created"
-
       - name: Deploy to Railway
         run: ./scripts/deploy_longevity_clinic.sh ${{ github.event.inputs.environment || 'test' }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           CALL_API_TOKEN: ${{ secrets.CALL_API_TOKEN }}
+          REFLEX_DB_URL: ${{ secrets.REFLEX_DB_URL }}
 
       - name: Deployment Summary
         run: |

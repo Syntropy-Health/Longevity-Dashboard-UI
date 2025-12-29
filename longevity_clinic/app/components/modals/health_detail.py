@@ -13,7 +13,7 @@ glassmorphism styles and consistent layout.
 
 import reflex as rx
 
-from ...styles.constants import GlassStyles, TAB_CARD_THEMES
+from ...styles.constants import TAB_CARD_THEMES, GlassStyles
 
 
 def _detail_row(

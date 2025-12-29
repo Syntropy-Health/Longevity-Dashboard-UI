@@ -4,12 +4,13 @@ Reusable card components for displaying health data entities.
 Uses TAB_CARD_THEMES for standardized theming across cards.
 """
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import reflex as rx
 
 from ...states import ConditionState, DataSourceState, MedicationState, SymptomState
-from ...styles.constants import GlassStyles, TAB_CARD_THEMES
+from ...styles.constants import TAB_CARD_THEMES, GlassStyles
 from ..indicators import trend_text
 
 

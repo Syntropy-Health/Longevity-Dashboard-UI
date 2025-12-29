@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from longevity_clinic.app.data.schemas.db import (
     PatientTreatment,
     Treatment,
+    TreatmentCategory,
     TreatmentProtocolMetric,
 )
 from longevity_clinic.app.data.seed import (
@@ -18,6 +19,12 @@ from longevity_clinic.app.data.seed import (
 )
 
 from .base import SeedResult, print_section
+
+
+def _get_category_id_map(session: Session) -> dict[str, int]:
+    """Build a mapping of category name -> category_id from treatment_categories table."""
+    categories = session.exec(select(TreatmentCategory)).all()
+    return {cat.name: cat.id for cat in categories}
 
 
 def load_treatments(session: Session) -> SeedResult:
@@ -32,6 +39,9 @@ def load_treatments(session: Session) -> SeedResult:
     print_section("Loading treatments")
     result = SeedResult(name="treatments")
 
+    # Build category name -> id mapping
+    category_id_map = _get_category_id_map(session)
+
     for treatment_data in TREATMENT_CATALOG_SEED:
         treatment_id = treatment_data["treatment_id"]
 
@@ -45,10 +55,14 @@ def load_treatments(session: Session) -> SeedResult:
             result.skipped += 1
             continue
 
+        # Look up category_id from category name
+        category_name = treatment_data.get("category", "General")
+        category_id = category_id_map.get(category_name)
+
         treatment = Treatment(
             treatment_id=treatment_id,
             name=treatment_data["name"],
-            category=treatment_data["category"],
+            category_id=category_id,  # Use FK instead of string
             description=treatment_data["description"],
             duration=treatment_data["duration"],
             frequency=treatment_data["frequency"],

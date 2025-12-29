@@ -128,6 +128,6 @@ def load_health_entries(session: Session, user_id_map: dict[str, int]) -> SeedRe
     return result
 
 
-# NOTE: load_medication_subscriptions() removed.
+# NOTE: load_prescriptions() removed.
 # Medications are now part of Treatment catalog (category=Medications)
 # and loaded via load_patient_treatment_assignments() in scripts/seeding/treatments.py

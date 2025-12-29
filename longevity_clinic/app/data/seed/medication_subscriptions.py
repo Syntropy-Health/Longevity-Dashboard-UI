@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from ..schemas.llm import PatientTreatmentModel as MedicationSubscription
+from ..schemas.llm import PatientTreatmentModel as Prescription
 
 # =============================================================================
 # Medication Subscription Seed Data for Sarah Chen (Demo Patient)
@@ -21,7 +21,7 @@ _ONE_YEAR_AGO = _NOW - timedelta(days=365)
 _TWO_YEARS_AGO = _NOW - timedelta(days=730)
 
 
-MEDICATION_SUBSCRIPTIONS_SEED: list[MedicationSubscription] = [
+prescriptions_SEED: list[Prescription] = [
     {
         "id": "MSUB001",
         "name": "Metformin",
@@ -100,14 +100,14 @@ MEDICATION_SUBSCRIPTIONS_SEED: list[MedicationSubscription] = [
 # =============================================================================
 
 
-def get_medication_subscriptions_for_user(user_id: int) -> list[dict]:
+def get_prescriptions_for_user(user_id: int) -> list[dict]:
     """Get medication subscription seed data formatted for database insertion.
 
     Args:
         user_id: The database user ID to associate with subscriptions
 
     Returns:
-        List of dicts ready for MedicationSubscription.model_validate()
+        List of dicts ready for Prescription.model_validate()
     """
     return [
         {
@@ -121,11 +121,11 @@ def get_medication_subscriptions_for_user(user_id: int) -> list[dict]:
             "adherence_rate": sub["adherence_rate"],
             "source": "seed",
         }
-        for sub in MEDICATION_SUBSCRIPTIONS_SEED
+        for sub in prescriptions_SEED
     ]
 
 
 __all__ = [
-    "MEDICATION_SUBSCRIPTIONS_SEED",
-    "get_medication_subscriptions_for_user",
+    "prescriptions_SEED",
+    "get_prescriptions_for_user",
 ]

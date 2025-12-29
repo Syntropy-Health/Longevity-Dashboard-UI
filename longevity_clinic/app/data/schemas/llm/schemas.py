@@ -62,6 +62,10 @@ class FoodEntryModel(BaseModel):
         default=MealTypeEnum.SNACK,
         description="Meal category. Infer from time of day or context if not stated directly.",
     )
+    logged_at: str | None = Field(
+        default=None,
+        description="ISO timestamp when the entry was logged (set by database).",
+    )
 
 
 class MedicationEntryModel(BaseModel):
@@ -70,6 +74,10 @@ class MedicationEntryModel(BaseModel):
     Create ONE entry per medication/supplement mentioned.
     """
 
+    id: str = Field(
+        default="",
+        description="Unique identifier (set by database)",
+    )
     name: str = Field(
         default="",
         description="Medication or supplement name exactly as mentioned (e.g., 'lisinopril', 'vitamin D').",
@@ -153,6 +161,7 @@ class Condition(BaseModel):
     Used for extracting medical conditions from transcripts.
     """
 
+    id: str = Field(default="", description="Unique identifier (set by database)")
     name: str = Field(default="", description="Condition name")
     icd_code: str = Field(default="", description="ICD diagnosis code")
     diagnosed_date: str = Field(default="", description="Date diagnosed")

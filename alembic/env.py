@@ -80,6 +80,20 @@ if config.config_file_name is not None:
 target_metadata = SQLModel.metadata
 
 
+def include_object(obj, name, type_, reflected, compare_to):
+    """Filter objects for autogenerate comparison.
+    
+    Excludes foreign key constraints from comparison since:
+    - SQLite doesn't enforce FKs by default
+    - Alembic has issues with unnamed FK constraints
+    - The relationships work correctly without explicit FK DDL
+    """
+    # Skip foreign key constraints entirely
+    if type_ == "foreign_key_constraint":
+        return False
+    return True
+
+
 def get_database_url() -> str:
     """Get database URL from environment or alembic.ini.
 
@@ -125,6 +139,8 @@ def run_migrations_offline() -> None:
         compare_type=not is_sqlite,
         # Don't compare server defaults - causes false positives with datetime
         compare_server_default=False,
+        # Exclude FK constraints from autogenerate (SQLite limitation)
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -161,6 +177,8 @@ def run_migrations_online() -> None:
             compare_type=not is_sqlite,
             # Don't compare server defaults - causes false positives with datetime
             compare_server_default=False,
+            # Exclude FK constraints from autogenerate (SQLite limitation)
+            include_object=include_object,
         )
 
         with context.begin_transaction():

@@ -50,7 +50,7 @@ from .notifications import (
     PATIENT_NOTIFICATIONS_SEED,
 )
 
-# NOTE: medication_subscriptions module removed.
+# NOTE: prescriptions module removed.
 # Medications now in Treatment catalog (category=Medications)
 # and seeded via PATIENT_TREATMENT_ASSIGNMENTS_SEED in treatments.py
 from .nutrition import (

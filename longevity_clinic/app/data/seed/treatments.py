@@ -387,7 +387,7 @@ PATIENT_TREATMENT_ASSIGNMENTS_SEED: list[dict] = [
     },
     # =========================================================================
     # Sarah Chen (P001) - Medication Prescriptions (category=Medications)
-    # These replace the old MedicationSubscription model
+    # These replace the old Prescription model
     # =========================================================================
     {
         "patient_external_id": "P001",

@@ -52,6 +52,8 @@ from .models import (
     CallTranscript,
     CheckIn,
     ClinicDailyMetrics,
+    Condition,
+    DataSource,
     FoodLogEntry,
     MedicationEntry,
     Notification,
@@ -59,6 +61,7 @@ from .models import (
     PatientVisit,
     ProviderMetrics,
     SymptomEntry,
+    SymptomTrend,
     Treatment,
     TreatmentProtocolMetric,
     User,
@@ -93,6 +96,8 @@ __all__ = [
     "CheckIn",
     "CheckInType",
     "ClinicDailyMetrics",
+    "Condition",
+    "DataSource",
     "FoodLogEntry",
     # Domain enums (StrEnum) - Health Keywords
     "HealthKeywordEnum",
@@ -104,6 +109,7 @@ __all__ = [
     "PatientVisit",
     "ProviderMetrics",
     "SymptomEntry",
+    "SymptomTrend",
     "Treatment",
     "TreatmentCategory",
     # Domain enums (StrEnum) - Treatment

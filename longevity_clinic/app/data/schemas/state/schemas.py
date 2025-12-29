@@ -50,7 +50,7 @@ class NutritionSummary(TypedDict):
 
 
 class Reminder(TypedDict):
-    """Health reminder type."""
+    """Health reminder for patient dashboard."""
 
     id: str
     title: str
@@ -290,17 +290,25 @@ class PortalTreatment(TypedDict):
 # =============================================================================
 
 
-class Notification(TypedDict):
-    """Structure for a notification."""
+class Notification(TypedDict, total=False):
+    """Structure for a notification (also used for medication reminders).
+
+    When type='medication', the notification represents a medication reminder
+    with additional fields: time, completed, recurring.
+    """
 
     id: str
     title: str
     message: str
-    type: str  # info, warning, success, error, appointment, treatment, lab
+    type: str  # info, warning, success, error, appointment, treatment, lab, medication
     is_read: bool
     created_at: str
     recipient_role: str  # admin, patient, all
     patient_id: str | None
+    # Medication reminder fields
+    time: str  # Display time for medication reminders
+    completed: bool  # Whether medication was taken
+    recurring: bool  # Daily/weekly recurring
 
 
 # =============================================================================

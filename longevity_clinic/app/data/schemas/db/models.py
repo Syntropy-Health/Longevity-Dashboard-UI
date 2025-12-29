@@ -26,7 +26,9 @@ class User(rx.Model, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     external_id: str = Field(index=True, unique=True)  # e.g., "P001"
-    username: str | None = Field(default=None, index=True, unique=True)  # Login username
+    username: str | None = Field(
+        default=None, index=True, unique=True
+    )  # Login username
     password_hash: str | None = Field(default=None)  # bcrypt hashed password
     name: str
     email: str = Field(index=True, unique=True)
@@ -131,7 +133,11 @@ class CheckIn(rx.Model, table=True):
 
 
 class Notification(rx.Model, table=True):
-    """System notification for users."""
+    """System notification for users.
+
+    Unified model for notifications AND medication reminders.
+    notification_type='medication' indicates a medication reminder.
+    """
 
     __tablename__ = "notifications"
 
@@ -144,10 +150,18 @@ class Notification(rx.Model, table=True):
     message: str
     notification_type: str = Field(
         default="info"
-    )  # "info" | "lab" | "treatment" | "appointment" | "warning" | "success"
+    )  # "info" | "lab" | "treatment" | "appointment" | "warning" | "success" | "medication"
 
     is_read: bool = Field(default=False)
     patient_id: str | None = None  # Reference to patient external_id
+
+    # Medication reminder fields (when notification_type='medication')
+    time: str | None = None  # Display time like "8:00 AM"
+    completed: bool = Field(default=False)
+    due_at: datetime | None = None
+    recurring: bool = Field(default=False)
+    recurrence_pattern: str | None = None  # daily | weekly | monthly
+    completed_at: datetime | None = None
 
     created_at: datetime = Field(default_factory=utc_now)
 
@@ -278,6 +292,101 @@ class SymptomEntry(rx.Model, table=True):
     # Source tracking
     source: str = Field(default="manual")  # call | voice | manual | seed
     reported_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+# =============================================================================
+# Health Condition Model
+# =============================================================================
+
+
+class Condition(rx.Model, table=True):
+    """Health condition/diagnosis for a patient.
+
+    Tracks medical conditions like diabetes, hypertension, etc.
+    """
+
+    __tablename__ = "conditions"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int | None = Field(default=None, foreign_key="users.id", index=True)
+
+    # Condition details
+    name: str = Field(index=True)
+    icd_code: str = Field(default="")  # ICD-10 diagnosis code
+    diagnosed_date: str = Field(default="")  # When diagnosed
+    status: str = Field(default="active")  # active | managed | resolved
+    severity: str = Field(default="mild")  # mild | moderate | severe
+
+    # Treatment info
+    treatments: str = Field(default="")  # Current treatments for this condition
+    notes: str | None = None
+
+    # Source tracking
+    source: str = Field(default="manual")  # manual | seed | ehr
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+# =============================================================================
+# Symptom Trend Model
+# =============================================================================
+
+
+class SymptomTrend(rx.Model, table=True):
+    """Symptom trend tracking over time.
+
+    Aggregates symptom severity changes for trend analysis.
+    """
+
+    __tablename__ = "symptom_trends"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int | None = Field(default=None, foreign_key="users.id", index=True)
+
+    # Trend data
+    symptom_name: str = Field(index=True)
+    current_severity: int = Field(default=0)  # 0-10 scale
+    previous_severity: int = Field(default=0)  # 0-10 scale
+    trend: str = Field(default="stable")  # improving | worsening | stable
+    change_percent: float = Field(default=0.0)
+    period: str = Field(default="Last 7 days")  # Time period for comparison
+
+    # Timestamps
+    calculated_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+# =============================================================================
+# Data Source Model (connected devices/apps)
+# =============================================================================
+
+
+class DataSource(rx.Model, table=True):
+    """Connected device or app data source.
+
+    Tracks wearables, scales, CGMs, apps, and EHR integrations.
+    """
+
+    __tablename__ = "data_sources"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int | None = Field(default=None, foreign_key="users.id", index=True)
+
+    # Source details
+    name: str = Field(index=True)  # e.g., "Apple Watch Series 9"
+    source_type: str = Field(default="wearable")  # wearable | scale | cgm | app | ehr
+    status: str = Field(default="disconnected")  # connected | disconnected | error
+    icon: str = Field(default="")  # Icon name for UI
+    image: str = Field(default="")  # Image path for UI
+
+    # Connection info
+    connected: bool = Field(default=False)
+    last_sync: str = Field(default="Never")  # Last sync time string
+    external_id: str | None = None  # ID in external system
+
+    # Timestamps
+    connected_at: datetime | None = None
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -506,13 +615,17 @@ __all__ = [
     "CallTranscript",
     "CheckIn",
     "ClinicDailyMetrics",
+    "Condition",
+    "DataSource",
     "FoodLogEntry",
     "MedicationEntry",
     "Notification",
     "PatientTreatment",
     "PatientVisit",
     "ProviderMetrics",
+    "Reminder",
     "SymptomEntry",
+    "SymptomTrend",
     "Treatment",
     "TreatmentProtocolMetric",
     "User",

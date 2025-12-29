@@ -34,6 +34,11 @@ from .clinic_metrics import (
     load_patient_visits,
     load_provider_metrics,
 )
+from .conditions import (
+    load_conditions,
+    load_data_sources,
+    load_symptom_trends,
+)
 from .enums import (
     load_all_enums,
     load_biomarker_categories,
@@ -98,6 +103,11 @@ def load_all_seed_data(reset: bool = False) -> dict[str, SeedResult]:
         # NOTE: Medication subscriptions now loaded via patient_treatments
         # (category=Medications) - see load_patient_treatment_assignments()
 
+        # Conditions, symptom trends, and data sources for primary user
+        results["conditions"] = load_conditions(session, user_id_map)
+        results["symptom_trends"] = load_symptom_trends(session, user_id_map)
+        results["data_sources"] = load_data_sources(session, user_id_map)
+
         # Biomarkers
         results["biomarker_definitions"] = load_biomarker_definitions(session)
         biomarker_id_map = results["biomarker_definitions"].id_map
@@ -133,12 +143,15 @@ __all__ = [
     "load_call_logs",
     "load_checkin_types",
     "load_checkins",
+    "load_conditions",
     "load_daily_metrics",
+    "load_data_sources",
     "load_health_entries",
     "load_notifications",
     "load_patient_treatment_assignments",
     "load_patient_visits",
     "load_provider_metrics",
+    "load_symptom_trends",
     "load_treatment_categories",
     "load_treatment_protocol_metrics",
     "load_treatment_statuses",

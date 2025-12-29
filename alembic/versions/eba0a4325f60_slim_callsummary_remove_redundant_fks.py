@@ -102,7 +102,7 @@ def downgrade() -> None:
             sa.Column(
                 "has_symptoms",
                 sa.BOOLEAN(),
-                server_default=sa.text("0"),
+                server_default=sa.text("FALSE"),
                 nullable=False,
             )
         )
@@ -116,7 +116,7 @@ def downgrade() -> None:
             sa.Column(
                 "has_medications",
                 sa.BOOLEAN(),
-                server_default=sa.text("0"),
+                server_default=sa.text("FALSE"),
                 nullable=False,
             )
         )
@@ -134,7 +134,7 @@ def downgrade() -> None:
             sa.Column(
                 "has_nutrition",
                 sa.BOOLEAN(),
-                server_default=sa.text("0"),
+                server_default=sa.text("FALSE"),
                 nullable=False,
             )
         )

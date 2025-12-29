@@ -1,11 +1,10 @@
 """Dashboard data fetching functions.
 
-Functions for fetching static dashboard-related data including
-conditions, data sources, and reminders.
+Functions for fetching dashboard-related data including
+conditions, data sources, symptoms, and reminders.
 
-NOTE: Medications, food entries, and symptoms are now sourced from
-the database via CDC pipeline (call log extraction). These functions
-provide only static/default data for things not yet in the DB.
+All data is loaded from the database.
+Run `python scripts/load_seed_data.py` to seed data.
 """
 
 from __future__ import annotations
@@ -21,12 +20,12 @@ from longevity_clinic.app.data.schemas.llm import (
     SymptomEntryModel as SymptomEntry,
     SymptomTrend,
 )
-from longevity_clinic.app.data.seed import (
-    CONDITIONS_SEED,
-    DATA_SOURCES_SEED,
-    REMINDERS_SEED,
-    SYMPTOM_LOGS_SEED,
-    SYMPTOM_TRENDS_SEED,
+from longevity_clinic.app.functions.db_utils import (
+    get_conditions_sync,
+    get_data_sources_sync,
+    get_medication_notifications_sync,
+    get_symptom_logs_sync,
+    get_symptom_trends_sync,
 )
 
 logger = get_logger("longevity_clinic.dashboard_functions")
@@ -38,59 +37,57 @@ logger = get_logger("longevity_clinic.dashboard_functions")
 
 
 async def fetch_conditions(
-    patient_id: str | None = None,
+    user_id: int | None = None,
 ) -> list[Condition]:
-    """Fetch medical conditions for a patient.
+    """Fetch medical conditions for a patient from database.
 
     Args:
-        patient_id: Patient ID (None = current patient)
+        user_id: Database user ID (None for empty list)
 
     Returns:
-        List of Condition objects (static demo data for now)
+        List of Condition objects from database
     """
-    logger.info(
-        "Fetching conditions for patient_id=%s (returning %d static conditions)",
-        patient_id or "(current_user)",
-        len(CONDITIONS_SEED),
-    )
+    if not user_id:
+        logger.warning("fetch_conditions: No user_id provided")
+        return []
 
-    # Return static conditions - these don't come from call logs yet
-    return [
-        Condition(**cond) if isinstance(cond, dict) else cond
-        for cond in CONDITIONS_SEED
-    ]
+    conditions = get_conditions_sync(user_id)
+    logger.info(
+        "fetch_conditions: Loaded %d conditions for user_id=%s",
+        len(conditions),
+        user_id,
+    )
+    return conditions
 
 
 async def fetch_symptoms(
-    patient_id: str | None = None,
+    user_id: int | None = None,
     days: int = 30,
 ) -> dict[str, Any]:
-    """Fetch symptom data for a patient.
+    """Fetch symptom data for a patient from database.
 
     Args:
-        patient_id: Patient ID (None = current patient)
-        days: Number of days of history
+        user_id: Database user ID (None for empty data)
+        days: Number of days of history (unused, returns all)
 
     Returns:
         Dict with 'symptom_logs' and 'symptom_trends' keys.
-        NOTE: Actual symptoms come from DB via CDC pipeline.
     """
-    symptom_logs = [
-        SymptomEntry(**sl) if isinstance(sl, dict) else sl for sl in SYMPTOM_LOGS_SEED
-    ]
-    symptom_trends = [
-        SymptomTrend(**st) if isinstance(st, dict) else st for st in SYMPTOM_TRENDS_SEED
-    ]
+    if not user_id:
+        logger.warning("fetch_symptoms: No user_id provided")
+        return {"symptom_logs": [], "symptom_trends": []}
+
+    symptom_logs = get_symptom_logs_sync(user_id)
+    symptom_trends = get_symptom_trends_sync(user_id)
 
     logger.info(
-        "Fetching symptom data for patient_id=%s (days=%d): %d logs, %d trends",
-        patient_id or "(current_user)",
-        days,
+        "fetch_symptoms: Loaded %d logs, %d trends for user_id=%s (days=%d)",
         len(symptom_logs),
         len(symptom_trends),
+        user_id,
+        days,
     )
 
-    # Return static symptom logs and trends (symptoms come from DB)
     return {
         "symptom_logs": symptom_logs,
         "symptom_trends": symptom_trends,
@@ -98,27 +95,26 @@ async def fetch_symptoms(
 
 
 async def fetch_data_sources(
-    patient_id: str | None = None,
+    user_id: int | None = None,
 ) -> list[DataSource]:
-    """Fetch connected data sources for a patient.
+    """Fetch connected data sources for a patient from database.
 
     Args:
-        patient_id: Patient ID (None = current patient)
+        user_id: Database user ID (None for empty list)
 
     Returns:
-        List of DataSource objects (static demo data for now)
+        List of DataSource objects from database
     """
-    data_sources = [
-        DataSource(**ds) if isinstance(ds, dict) else ds for ds in DATA_SOURCES_SEED
-    ]
+    if not user_id:
+        logger.warning("fetch_data_sources: No user_id provided")
+        return []
 
+    data_sources = get_data_sources_sync(user_id)
     logger.info(
-        "Fetching data sources for patient_id=%s: %d sources",
-        patient_id or "(current_user)",
+        "fetch_data_sources: Loaded %d sources for user_id=%s",
         len(data_sources),
+        user_id,
     )
-
-    # Return static data sources
     return data_sources
 
 
@@ -145,58 +141,61 @@ def calculate_medication_adherence(
 
 
 async def fetch_reminders(
-    patient_id: str | None = None,
+    user_id: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Fetch reminders for a patient.
+    """Fetch reminders (medication notifications) for a patient from database.
 
     Args:
-        patient_id: Patient ID (None = current patient)
+        user_id: Database user ID (None for empty list)
 
     Returns:
-        List of reminder records (static demo data for now)
+        List of reminder/notification records from database
     """
-    reminders = REMINDERS_SEED
+    if not user_id:
+        logger.warning("fetch_reminders: No user_id provided")
+        return []
 
+    reminders = get_medication_notifications_sync(user_id)
     logger.info(
-        "Fetching reminders for patient_id=%s: %d reminders",
-        patient_id or "(current_user)",
+        "fetch_reminders: Loaded %d reminders for user_id=%s",
         len(reminders),
+        user_id,
     )
-
-    # Return static reminders
     return reminders
 
 
 async def load_all_dashboard_data(
-    patient_id: str | None = None,
+    user_id: int | None = None,
 ) -> dict[str, Any]:
-    """Load static dashboard data for a patient.
-
-    NOTE: Medications, food entries, and symptoms are now loaded from
-    the database (via CDC pipeline). This function only provides:
-    - conditions (static)
-    - symptom_logs (static)
-    - symptom_trends (static)
-    - reminders (static)
-    - data_sources (static)
+    """Load dashboard data for a patient from database.
 
     Args:
-        patient_id: Patient ID (None = current patient)
+        user_id: Database user ID (None for empty data)
 
     Returns:
         Dict with keys: 'conditions', 'symptom_logs', 'symptom_trends',
         'reminders', 'data_sources'
     """
     logger.info(
-        "Loading static dashboard data for patient: %s",
-        patient_id or "current",
+        "Loading dashboard data for user_id: %s",
+        user_id or "(none)",
     )
 
-    # Fetch only static data (medications, food, symptoms come from DB)
-    conditions = await fetch_conditions(patient_id)
-    symptoms_data = await fetch_symptoms(patient_id)
-    reminders = await fetch_reminders(patient_id)
-    data_sources = await fetch_data_sources(patient_id)
+    if not user_id:
+        logger.warning("load_all_dashboard_data: No user_id provided")
+        return {
+            "conditions": [],
+            "symptom_logs": [],
+            "symptom_trends": [],
+            "reminders": [],
+            "data_sources": [],
+        }
+
+    # Fetch all data from database
+    conditions = await fetch_conditions(user_id)
+    symptoms_data = await fetch_symptoms(user_id)
+    reminders = await fetch_reminders(user_id)
+    data_sources = await fetch_data_sources(user_id)
 
     return {
         "conditions": conditions,

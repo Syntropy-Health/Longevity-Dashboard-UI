@@ -23,25 +23,6 @@ logger = get_logger("longevity_clinic.biomarkers")
 
 
 # =============================================================================
-# Seed data getters for treatments and appointments (chart/display data)
-# =============================================================================
-
-
-def _get_portal_treatments_seed() -> list[dict[str, Any]]:
-    """Get portal treatments seed data for patient display."""
-    from longevity_clinic.app.data.seed import PORTAL_TREATMENTS_SEED
-
-    return PORTAL_TREATMENTS_SEED
-
-
-def _get_portal_appointments_seed() -> list[dict[str, Any]]:
-    """Get portal appointments seed data for patient display."""
-    from longevity_clinic.app.data.seed import PORTAL_APPOINTMENTS_SEED
-
-    return PORTAL_APPOINTMENTS_SEED
-
-
-# =============================================================================
 # Biomarker Fetching Functions
 # =============================================================================
 
@@ -116,58 +97,59 @@ async def fetch_biomarker_history(
 async def fetch_treatments(
     patient_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Fetch treatments assigned to a patient.
+    """Fetch treatments assigned to a patient from database.
 
     Args:
         patient_id: Patient external ID (e.g., 'P001') or None for default
 
     Returns:
-        List of treatment records from database, falling back to seed data
+        List of treatment records from database (empty if no data)
     """
     logger.info(
         "Fetching treatments for patient: %s",
         patient_id or "current",
     )
 
-    # Try DB lookup first
     external_id = patient_id or "P001"
     user = get_user_by_external_id_sync(external_id)
-    if user:
-        treatments = get_patient_treatments_sync(user.id)
-        if treatments:
-            logger.info(
-                "fetch_treatments: Loaded %d treatments from DB", len(treatments)
-            )
-            return [
-                {
-                    "id": t["treatment_id"],
-                    "name": t["treatment_name"],
-                    "start_date": (
-                        t["start_date"].isoformat() if t["start_date"] else ""
-                    ),
-                    "status": t["status"],
-                    "progress": t["progress"],
-                }
-                for t in treatments
-            ]
+    if not user:
+        logger.warning("fetch_treatments: User %s not found", external_id)
+        return []
 
-    # Fall back to seed data
-    logger.debug("fetch_treatments: No DB data, using seed")
-    return _get_portal_treatments_seed()
+    treatments = get_patient_treatments_sync(user.id)
+    if treatments:
+        logger.info("fetch_treatments: Loaded %d treatments from DB", len(treatments))
+        return [
+            {
+                "id": t["treatment_id"],
+                "name": t["treatment_name"],
+                "start_date": (t["start_date"].isoformat() if t["start_date"] else ""),
+                "status": t["status"],
+                "progress": t["progress"],
+            }
+            for t in treatments
+        ]
+
+    logger.warning(
+        "No treatment data found in database for user %s. "
+        "Run 'python scripts/load_seed_data.py' to seed data.",
+        external_id,
+    )
+    return []
 
 
 async def fetch_appointments(
     patient_id: str | None = None,
     upcoming_only: bool = True,
 ) -> list[dict[str, Any]]:
-    """Fetch appointments for a patient.
+    """Fetch appointments for a patient from database.
 
     Args:
         patient_id: Patient external ID (e.g., 'P001') or None for default
         upcoming_only: If True, only return future appointments
 
     Returns:
-        List of appointment records from database, falling back to seed data
+        List of appointment records from database (empty if no data)
     """
     logger.info(
         "Fetching appointments for patient: %s (upcoming=%s)",
@@ -175,27 +157,28 @@ async def fetch_appointments(
         upcoming_only,
     )
 
-    # Try DB lookup first
     external_id = patient_id or "P001"
     appointments = get_appointments_for_patient_sync(external_id)
 
-    if appointments:
-        if upcoming_only:
-            today = datetime.now().date()
-            appointments = [
-                a
-                for a in appointments
-                if (isinstance(a.get("date"), str) and a["date"] >= today.isoformat())
-                or (isinstance(a.get("date"), datetime) and a["date"].date() >= today)
-            ]
-        logger.info(
-            "fetch_appointments: Loaded %d appointments from DB", len(appointments)
+    if not appointments:
+        logger.warning(
+            "No appointment data found in database for patient %s. "
+            "Run 'python scripts/load_seed_data.py' to seed data.",
+            external_id,
         )
-        return appointments
+        return []
 
-    # Fall back to seed data
-    logger.debug("fetch_appointments: No DB data, using seed")
-    return _get_portal_appointments_seed()
+    if upcoming_only:
+        today = datetime.now().date()
+        appointments = [
+            a
+            for a in appointments
+            if (isinstance(a.get("date"), str) and a["date"] >= today.isoformat())
+            or (isinstance(a.get("date"), datetime) and a["date"].date() >= today)
+        ]
+
+    logger.info("fetch_appointments: Loaded %d appointments from DB", len(appointments))
+    return appointments
 
 
 async def load_all_biomarker_data(

@@ -9,7 +9,8 @@ from ....components.shared import (
     loading_spinner,
     search_input,
 )
-from ....states import BiomarkerState, HealthDashboardState, PatientState
+from ....states import BiomarkerState, PatientState
+from ....states.admin import AdminPatientHealthState
 from ....styles import GlassStyles
 
 # =============================================================================
@@ -73,7 +74,7 @@ def _patient_item_for_health(patient: dict) -> rx.Component:
         patient,
         PatientState.select_patient_by_id,
         [
-            HealthDashboardState.load_patient_health_data(patient["id"]),
+            AdminPatientHealthState.load_patient_health_data(patient["id"]),
             BiomarkerState.load_biomarkers,
         ],
     )
@@ -166,7 +167,7 @@ def selected_patient_header() -> rx.Component:
             "Clear Selection",
             on_click=[
                 PatientState.clear_selected_patient,
-                HealthDashboardState.clear_patient_health_data,
+                AdminPatientHealthState.clear_patient_health_data,
             ],
             class_name="px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg flex items-center gap-2 transition-all",
         ),
@@ -181,11 +182,11 @@ def selected_patient_header() -> rx.Component:
 
 def _tab_button(label: str, tab_id: str, icon: str) -> rx.Component:
     """Tab button for switching between Health and Analytics views."""
-    is_active = HealthDashboardState.active_tab == tab_id
+    is_active = AdminPatientHealthState.active_tab == tab_id
     return rx.el.button(
         rx.icon(icon, class_name="w-4 h-4 mr-2"),
         label,
-        on_click=HealthDashboardState.set_active_tab(tab_id),
+        on_click=AdminPatientHealthState.set_active_tab(tab_id),
         class_name=rx.cond(
             is_active,
             "flex items-center px-4 py-2 text-sm font-medium text-teal-300 bg-teal-500/10 border border-teal-500/30 rounded-lg",
@@ -206,7 +207,7 @@ def _tabs_navigation() -> rx.Component:
 def _health_overview_content() -> rx.Component:
     """Health overview content - medications, nutrition, conditions."""
     return rx.cond(
-        HealthDashboardState.is_loading,
+        AdminPatientHealthState.is_loading,
         loading_spinner("Loading patient data..."),
         health_metrics_dashboard(),
     )
@@ -267,7 +268,7 @@ def _patient_content() -> rx.Component:
         selected_patient_header(),
         _tabs_navigation(),
         rx.match(
-            HealthDashboardState.active_tab,
+            AdminPatientHealthState.active_tab,
             ("overview", _health_overview_content()),
             ("analytics", _analytics_content()),
             _health_overview_content(),

@@ -35,7 +35,7 @@ flowchart TB
     end
 
     subgraph "Dashboard Display"
-        K[HealthDashboardState]
+        K[Decomposed Dashboard States]
         L[medications_tab]
         M[food_tracker_tab]
         N[symptoms_tab]
@@ -253,7 +253,7 @@ class AppConfig:
 
 Both data sources ultimately populate the same database tables. The dashboard fetches from these tables:
 
-### HealthDashboardState Loading
+### Decomposed Dashboard States Loading
 
 ```python
 @rx.event(background=True)
@@ -299,7 +299,7 @@ async def load_dashboard_data(self):
                                │
                                ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                 DASHBOARD (HealthDashboardState)                 │
+│                 DASHBOARD (Decomposed Dashboard States)                 │
 │  - get_medications_sync() → self.medications                     │
 │  - get_food_entries_sync() → self.food_entries                   │
 │  - get_symptoms_sync() → self.symptoms                           │
@@ -320,7 +320,7 @@ async def load_dashboard_data(self):
 | `is_processing_background` | `bool` | Background loop active |
 | `last_sync_time` | `str` | Timestamp of last sync |
 
-### HealthDashboardState
+### Decomposed Dashboard States
 
 | Variable | Type | Source Table |
 |----------|------|--------------|

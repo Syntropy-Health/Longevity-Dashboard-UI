@@ -29,7 +29,7 @@ flowchart TD
     end
 
     subgraph State
-        DS[HealthDashboardState]
+        DS[Dashboard States (FoodState, MedicationState, etc.)]
         CKS[CheckinState]
     end
 
@@ -134,7 +134,7 @@ async def refresh_call_logs(self):
         self.checkins = await load_checkins_from_db()
 ```
 
-**HealthDashboardState.load_dashboard_data():**
+**Dashboard States (FoodState, MedicationState, etc.).load_dashboard_data():**
 ```python
 @rx.event(background=True)
 async def load_dashboard_data(self):
@@ -169,7 +169,7 @@ await CheckinState.refresh_call_logs()  # Patient check-ins page
 
 **Load Dashboard Data:**
 ```python
-await HealthDashboardState.load_health_data_from_db()
+await Dashboard States (FoodState, MedicationState, etc.).load_health_data_from_db()
 ```
 
 **Direct Agent:**

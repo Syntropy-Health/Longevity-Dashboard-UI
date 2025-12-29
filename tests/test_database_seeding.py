@@ -80,9 +80,9 @@ class TestUserSeeding:
 
         # At least some patients should exist with matching phones
         # (DB may have different phone numbers from production)
-        assert found_count > 0 or len(PHONE_TO_PATIENT_SEED) == 0, (
-            "No users found with seed phone numbers - DB may have production data"
-        )
+        assert (
+            found_count > 0 or len(PHONE_TO_PATIENT_SEED) == 0
+        ), "No users found with seed phone numbers - DB may have production data"
 
     def test_admin_user_exists(self, db_session):
         """Verify admin user exists."""
@@ -104,9 +104,9 @@ class TestCheckinSeeding:
         seed_count = len(CHECKIN_SEED_DATA)
 
         # Database should have at least as many as seed data
-        assert len(db_count) >= seed_count, (
-            f"Expected at least {seed_count} check-ins, found {len(db_count)}"
-        )
+        assert (
+            len(db_count) >= seed_count
+        ), f"Expected at least {seed_count} check-ins, found {len(db_count)}"
 
     def test_checkin_fields_match(self, db_session):
         """Verify check-in field values match seed data."""
@@ -132,9 +132,9 @@ class TestNotificationSeeding:
         db_count = len(db_session.exec(select(Notification)).all())
         seed_count = len(ADMIN_NOTIFICATIONS_SEED) + len(PATIENT_NOTIFICATIONS_SEED)
 
-        assert db_count >= seed_count, (
-            f"Expected at least {seed_count} notifications, found {db_count}"
-        )
+        assert (
+            db_count >= seed_count
+        ), f"Expected at least {seed_count} notifications, found {db_count}"
 
     def test_admin_notifications_exist(self, db_session):
         """Verify admin notifications from seed data exist."""
@@ -162,12 +162,18 @@ class TestTreatmentSeeding:
         db_count = len(db_session.exec(select(Treatment)).all())
         seed_count = len(TREATMENT_CATALOG_SEED)
 
-        assert db_count >= seed_count, (
-            f"Expected at least {seed_count} treatments, found {db_count}"
-        )
+        assert (
+            db_count >= seed_count
+        ), f"Expected at least {seed_count} treatments, found {db_count}"
 
     def test_treatment_fields_match(self, db_session):
         """Verify treatment field values match seed data."""
+        from longevity_clinic.app.data.schemas.db import TreatmentCategory
+
+        # Build category name -> id mapping
+        categories = db_session.exec(select(TreatmentCategory)).all()
+        category_id_map = {cat.name: cat.id for cat in categories}
+
         for seed_treatment in TREATMENT_CATALOG_SEED:
             treatment_id = seed_treatment["treatment_id"]
 
@@ -177,7 +183,8 @@ class TestTreatmentSeeding:
 
             if db_treatment:
                 assert db_treatment.name == seed_treatment["name"]
-                assert db_treatment.category == seed_treatment["category"]
+                expected_category_id = category_id_map.get(seed_treatment["category"])
+                assert db_treatment.category_id == expected_category_id
 
 
 class TestBiomarkerSeeding:
@@ -188,9 +195,9 @@ class TestBiomarkerSeeding:
         db_count = len(db_session.exec(select(BiomarkerDefinition)).all())
         seed_count = len(PORTAL_BIOMARKERS_SEED)
 
-        assert db_count >= seed_count, (
-            f"Expected at least {seed_count} biomarker definitions, found {db_count}"
-        )
+        assert (
+            db_count >= seed_count
+        ), f"Expected at least {seed_count} biomarker definitions, found {db_count}"
 
     def test_biomarker_definition_fields(self, db_session):
         """Verify biomarker definition fields match seed data."""
@@ -230,27 +237,27 @@ class TestHealthEntriesSeeding:
         db_count = len(db_session.exec(select(MedicationEntry)).all())
         seed_count = len(MEDICATIONS_SEED)
 
-        assert db_count >= seed_count, (
-            f"Expected at least {seed_count} medications, found {db_count}"
-        )
+        assert (
+            db_count >= seed_count
+        ), f"Expected at least {seed_count} medications, found {db_count}"
 
     def test_food_entries_count(self, db_session):
         """Verify expected number of food entries exist."""
         db_count = len(db_session.exec(select(FoodLogEntry)).all())
         seed_count = len(FOOD_ENTRIES_SEED)
 
-        assert db_count >= seed_count, (
-            f"Expected at least {seed_count} food entries, found {db_count}"
-        )
+        assert (
+            db_count >= seed_count
+        ), f"Expected at least {seed_count} food entries, found {db_count}"
 
     def test_symptoms_count(self, db_session):
         """Verify expected number of symptoms exist."""
         db_count = len(db_session.exec(select(SymptomEntry)).all())
         seed_count = len(SYMPTOMS_SEED)
 
-        assert db_count >= seed_count, (
-            f"Expected at least {seed_count} symptoms, found {db_count}"
-        )
+        assert (
+            db_count >= seed_count
+        ), f"Expected at least {seed_count} symptoms, found {db_count}"
 
 
 class TestSeedDataIntegrity:
@@ -309,15 +316,15 @@ class TestSeedDataConsistency:
         for user in users:
             if user.phone:
                 # Check phone is in expected format
-                assert user.phone.startswith("+"), (
-                    f"Phone {user.phone} for {user.name} should start with +"
-                )
+                assert user.phone.startswith(
+                    "+"
+                ), f"Phone {user.phone} for {user.name} should start with +"
 
     def test_external_ids_are_unique(self, db_session):
         """Verify external IDs are unique."""
         users = db_session.exec(select(User)).all()
         external_ids = [u.external_id for u in users if u.external_id]
 
-        assert len(external_ids) == len(set(external_ids)), (
-            "External IDs should be unique"
-        )
+        assert len(external_ids) == len(
+            set(external_ids)
+        ), "External IDs should be unique"

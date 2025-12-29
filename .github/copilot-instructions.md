@@ -17,7 +17,8 @@ All application state uses **Reflex State classes** in `longevity_clinic/app/sta
 **State organization** (by domain):
 - `states/auth/` - Authentication, sessions (`AuthState`)
 - `states/patient/` - Biomarkers, analytics (`BiomarkerState`, `PatientAnalyticsState`)
-- `states/shared/` - Cross-role state (`HealthDashboardState`, `AdminDashboardState`)
+- `states/shared/dashboard/` - Health data states (decomposed): `FoodState`, `MedicationState`, `ConditionState`, `SymptomState`, `DataSourceState`, `SettingsState`
+- `states/admin/` - Admin-specific: `AdminPatientHealthState` (viewing patient data)
 - `states/treatments/` - Protocol search/management
 - `states/checkins/` - Unified check-in for both roles (`CheckinState`)
 - `states/functions/` - **Extracted business logic** (stateless functions, testable)
@@ -69,8 +70,14 @@ Components in `longevity_clinic/app/components/`:
 - `GlassStyles.BUTTON_PRIMARY_LIGHT` - Primary CTA (teal gradient)
 - `GlassStyles.INPUT_LIGHT` - Form inputs with focus states
 - `GlassStyles.HEADING_LIGHT` - Gradient text headings
+- `GlassStyles.BIOMARKER_CARD` - Dark mode biomarker metric cards
+- `GlassStyles.TREATMENT_CARD` - Light mode treatment protocol cards
+- `GlassStyles.COLLAPSIBLE_*` - Accordion/collapsible section styles
 
 **Legacy styles** in `config.py` (`current_config.glass_*`) - prefer `GlassStyles` for new code.
+
+**Important**: When creating cards with text, use adequate padding (`p-6` or `pb-7`) to prevent 
+letter descender cutoff (g, p, y, q). See `TREATMENT_CARD_CONTENT` for reference.
 
 ## Key Commands
 

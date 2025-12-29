@@ -26,7 +26,12 @@ from .app.states import (
     AppointmentState,
     BiomarkerState,
     CheckinState,
-    HealthDashboardState,
+    ConditionState,
+    DataSourceState,
+    FoodState,
+    MedicationState,
+    NotificationState,
+    SymptomState,
     TreatmentSearchState,
     TreatmentState,
 )
@@ -64,13 +69,18 @@ app.add_page(
     on_load=[TreatmentState.load_protocols],
 )
 
-# Patient
+# Patient - Load decomposed dashboard states
 app.add_page(
     patient_portal,
     route="/patient/portal",
     on_load=[
         BiomarkerState.load_biomarkers,
-        HealthDashboardState.load_dashboard_data,
+        FoodState.load_food_data,
+        MedicationState.load_medication_data,
+        ConditionState.load_condition_data,
+        SymptomState.load_symptom_data,
+        DataSourceState.load_data_source_data,
+        NotificationState.load_medication_notifications,
         AppointmentState.load_appointments,
     ],
 )
@@ -79,8 +89,12 @@ app.add_page(
     route="/patient/checkins",
     on_load=[
         BiomarkerState.load_biomarkers,
-        HealthDashboardState.load_dashboard_data,
-        HealthDashboardState.load_health_data_from_db,
+        FoodState.load_food_data,
+        MedicationState.load_medication_data,
+        ConditionState.load_condition_data,
+        SymptomState.load_symptom_data,
+        DataSourceState.load_data_source_data,
+        NotificationState.load_medication_notifications,
         CheckinState.start_periodic_call_logs_refresh,
     ],
 )

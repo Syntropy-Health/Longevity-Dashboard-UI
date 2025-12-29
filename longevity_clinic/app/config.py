@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Any, Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -92,7 +93,7 @@ class DemoUserConfig(BaseModel):
 
     # User IDs for seeding and auth
     patient_id: int = 1
-    admin_id: int = 2
+    admin_id: int = 9  # Dr. Admin user in database
 
     @computed_field
     @property
@@ -200,6 +201,21 @@ class AppConfig(BaseModel):
 
     # Checkins pagination
     checkins_per_page: int = 10
+
+    # Timezone configuration (user can override in settings)
+    # Uses IANA timezone names: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+    default_timezone: str = "America/Los_Angeles"  # Pacific Time
+
+    # Preemptive data loading config
+    # Number of pages to preload for smoother pagination UX
+    preload_pages: int = 3
+
+    # Default page sizes per data type (used with preload_pages for dynamic limits)
+    food_page_size: int = 6
+    medication_page_size: int = 5
+    condition_page_size: int = 5
+    symptom_page_size: int = 5
+    data_source_page_size: int = 6
 
     # Glass UI Styles (modularized)
     glass: GlassStyleConfig = GlassStyleConfig()

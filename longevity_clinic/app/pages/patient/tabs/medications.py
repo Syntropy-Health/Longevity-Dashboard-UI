@@ -2,14 +2,18 @@
 
 Dual-panel view:
 - Left: Medication Entries (what patient has taken)
-- Right: Medication Subscriptions (prescriptions with adherence tracking)
+- Right: Medication prescriptions (prescriptions with adherence tracking)
 """
 
 import reflex as rx
 
+from ....components.modals import (
+    medication_entry_detail_modal,
+    prescription_detail_modal,
+)
 from ....components.paginated_view import paginated_list
 from ....components.tabs import medication_entry_card, medication_subscription_card
-from ....states import HealthDashboardState
+from ....states import MedicationState
 from ....styles.constants import GlassStyles
 
 
@@ -27,7 +31,7 @@ def _summary_stats() -> rx.Component:
                 class_name="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5",
             ),
             rx.el.span(
-                f"{HealthDashboardState.total_medication_adherence:.0f}%",
+                f"{MedicationState.total_medication_adherence:.0f}%",
                 class_name="text-2xl font-bold text-teal-400",
             ),
             class_name=f"{GlassStyles.PANEL} p-4",
@@ -43,7 +47,7 @@ def _summary_stats() -> rx.Component:
                 class_name="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5",
             ),
             rx.el.span(
-                HealthDashboardState.active_subscriptions_count,
+                MedicationState.active_prescriptions_count,
                 class_name="text-2xl font-bold text-white",
             ),
             class_name=f"{GlassStyles.PANEL} p-4",
@@ -59,7 +63,7 @@ def _summary_stats() -> rx.Component:
                 class_name="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5",
             ),
             rx.el.span(
-                HealthDashboardState.medication_entries_count,
+                MedicationState.medication_entries_count,
                 class_name="text-2xl font-bold text-white",
             ),
             class_name=f"{GlassStyles.PANEL} p-4",
@@ -86,14 +90,14 @@ def _medication_entries_panel() -> rx.Component:
             class_name="flex flex-col mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.medication_entries_paginated,
+            items=MedicationState.medication_entries_paginated,
             item_renderer=medication_entry_card,
-            has_previous=HealthDashboardState.medication_entries_has_previous,
-            has_next=HealthDashboardState.medication_entries_has_next,
-            page_info=HealthDashboardState.medication_entries_page_info,
-            showing_info=HealthDashboardState.medication_entries_showing_info,
-            on_previous=HealthDashboardState.medication_entries_previous_page,
-            on_next=HealthDashboardState.medication_entries_next_page,
+            has_previous=MedicationState.medication_entries_has_previous,
+            has_next=MedicationState.medication_entries_has_next,
+            page_info=MedicationState.medication_entries_page_info,
+            showing_info=MedicationState.medication_entries_showing_info,
+            on_previous=MedicationState.medication_entries_previous_page,
+            on_next=MedicationState.medication_entries_next_page,
             empty_icon="clipboard-check",
             empty_message="No doses logged",
             empty_subtitle="Log your first dose to start tracking",
@@ -103,8 +107,8 @@ def _medication_entries_panel() -> rx.Component:
     )
 
 
-def _medication_subscriptions_panel() -> rx.Component:
-    """Right panel: Medication Subscriptions (prescriptions with adherence)."""
+def _prescriptions_panel() -> rx.Component:
+    """Right panel: Medication prescriptions (prescriptions with adherence)."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -120,14 +124,14 @@ def _medication_subscriptions_panel() -> rx.Component:
             class_name="flex flex-col mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.medication_subscriptions_paginated,
+            items=MedicationState.prescriptions_paginated,
             item_renderer=medication_subscription_card,
-            has_previous=HealthDashboardState.medication_subscriptions_has_previous,
-            has_next=HealthDashboardState.medication_subscriptions_has_next,
-            page_info=HealthDashboardState.medication_subscriptions_page_info,
-            showing_info=HealthDashboardState.medication_subscriptions_showing_info,
-            on_previous=HealthDashboardState.medication_subscriptions_previous_page,
-            on_next=HealthDashboardState.medication_subscriptions_next_page,
+            has_previous=MedicationState.prescriptions_has_previous,
+            has_next=MedicationState.prescriptions_has_next,
+            page_info=MedicationState.prescriptions_page_info,
+            showing_info=MedicationState.prescriptions_showing_info,
+            on_previous=MedicationState.prescriptions_previous_page,
+            on_next=MedicationState.prescriptions_next_page,
             empty_icon="pill",
             empty_message="No prescriptions",
             empty_subtitle="Your prescription list is empty",
@@ -154,7 +158,30 @@ def medications_tab() -> rx.Component:
         # Dual Panel Layout
         rx.el.div(
             _medication_entries_panel(),
-            _medication_subscriptions_panel(),
+            _prescriptions_panel(),
             class_name="grid grid-cols-1 lg:grid-cols-2 gap-4",
         ),
+        # Medication entry detail modal
+        medication_entry_detail_modal(
+            show_modal=MedicationState.show_medication_entry_modal,
+            entry_name=MedicationState.selected_entry_name,
+            entry_dosage=MedicationState.selected_entry_dosage,
+            entry_taken_at=MedicationState.selected_entry_taken_at,
+            entry_notes=MedicationState.selected_entry_notes,
+            on_close=MedicationState.close_medication_entry_modal,
+        ),
+        # Prescription detail modal
+        prescription_detail_modal(
+            show_modal=MedicationState.show_prescription_modal,
+            prescription_name=MedicationState.selected_rx_name,
+            prescription_dosage=MedicationState.selected_rx_dosage,
+            prescription_frequency=MedicationState.selected_rx_frequency,
+            prescription_instructions=MedicationState.selected_rx_instructions,
+            prescription_status=MedicationState.selected_rx_status,
+            prescription_adherence=MedicationState.selected_rx_adherence,
+            prescription_assigned_by=MedicationState.selected_rx_assigned_by,
+            on_close=MedicationState.close_prescription_modal,
+            on_log_dose=MedicationState.log_dose,
+        ),
+        on_mount=MedicationState.load_medication_data,
     )

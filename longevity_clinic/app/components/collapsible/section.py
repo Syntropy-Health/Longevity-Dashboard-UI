@@ -88,6 +88,7 @@ def collapsible_container(
     children: list[rx.Component],
     default_expanded: list[str] | rx.Var | None = None,
     allow_multiple: bool = True,
+    class_name: str | None = None,
 ) -> rx.Component:
     """Container for multiple collapsible sections.
 
@@ -96,15 +97,19 @@ def collapsible_container(
         default_expanded: List of section values to expand by default, or a
                          Reflex Var containing the list (e.g., State.all_names)
         allow_multiple: If True, multiple sections can be open; if False, only one
+        class_name: Optional additional CSS classes to apply
 
     Returns:
         Accordion root component
     """
+    base_class = GlassStyles.COLLAPSIBLE_CONTAINER
+    final_class = f"{base_class} {class_name}" if class_name else base_class
+    
     return rx.accordion.root(
         *children,
         type="multiple" if allow_multiple else "single",
         default_value=default_expanded if default_expanded is not None else [],
-        class_name=GlassStyles.COLLAPSIBLE_CONTAINER,
+        class_name=final_class,
     )
 
 

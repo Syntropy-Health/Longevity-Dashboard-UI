@@ -2,7 +2,7 @@
 
 import reflex as rx
 
-from ....states import AuthState, HealthDashboardState
+from ....states import AuthState, SettingsState
 from ....styles.constants import GlassStyles
 
 
@@ -67,18 +67,18 @@ def settings_tab() -> rx.Component:
                             rx.el.div(
                                 rx.el.div(
                                     class_name=rx.cond(
-                                        HealthDashboardState.email_notifications,
+                                        SettingsState.email_notifications,
                                         "w-5 h-5 bg-white rounded-full shadow-md transform translate-x-6 transition-transform duration-200",
                                         "w-5 h-5 bg-slate-300 rounded-full shadow-md transform translate-x-0 transition-transform duration-200",
                                     ),
                                 ),
                                 class_name=rx.cond(
-                                    HealthDashboardState.email_notifications,
+                                    SettingsState.email_notifications,
                                     "w-12 h-6 bg-teal-500 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                     "w-12 h-6 bg-slate-600 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                 ),
                             ),
-                            on_click=HealthDashboardState.toggle_email_notifications,
+                            on_click=SettingsState.toggle_email_notifications,
                             class_name="focus:outline-none",
                         ),
                         class_name="flex items-center justify-between p-4 border-b border-white/5",
@@ -98,19 +98,54 @@ def settings_tab() -> rx.Component:
                             rx.el.div(
                                 rx.el.div(
                                     class_name=rx.cond(
-                                        HealthDashboardState.push_notifications,
+                                        SettingsState.push_notifications,
                                         "w-5 h-5 bg-white rounded-full shadow-md transform translate-x-6 transition-transform duration-200",
                                         "w-5 h-5 bg-slate-300 rounded-full shadow-md transform translate-x-0 transition-transform duration-200",
                                     ),
                                 ),
                                 class_name=rx.cond(
-                                    HealthDashboardState.push_notifications,
+                                    SettingsState.push_notifications,
                                     "w-12 h-6 bg-teal-500 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                     "w-12 h-6 bg-slate-600 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                 ),
                             ),
-                            on_click=HealthDashboardState.toggle_push_notifications,
+                            on_click=SettingsState.toggle_push_notifications,
                             class_name="focus:outline-none",
+                        ),
+                        class_name="flex items-center justify-between p-4",
+                    ),
+                    class_name=f"{GlassStyles.PANEL}",
+                ),
+                class_name="mb-8",
+            ),
+            # Timezone Settings
+            rx.el.div(
+                rx.el.h3(
+                    "Timezone", class_name="text-lg font-semibold text-white mb-4"
+                ),
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p(
+                                "Your Timezone", class_name="text-sm text-white"
+                            ),
+                            rx.el.p(
+                                "Used for displaying meal times and daily tracking",
+                                class_name="text-xs text-slate-400",
+                            ),
+                            class_name="flex-1",
+                        ),
+                        rx.el.select(
+                            rx.foreach(
+                                SettingsState.timezone_options,
+                                lambda opt: rx.el.option(
+                                    opt["label"],
+                                    value=opt["value"],
+                                ),
+                            ),
+                            value=SettingsState.user_timezone,
+                            on_change=SettingsState.set_user_timezone,
+                            class_name="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none min-w-[200px]",
                         ),
                         class_name="flex items-center justify-between p-4",
                     ),

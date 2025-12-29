@@ -14,7 +14,12 @@ The dashboard displays:
 import reflex as rx
 
 from ...components.paginated_view import paginated_list
-from ...states import HealthDashboardState
+from ...states.shared.dashboard import (
+    ConditionState,
+    FoodState,
+    MedicationState,
+    SymptomState,
+)
 from ...styles.constants import GlassStyles
 
 # =============================================================================
@@ -209,7 +214,7 @@ def nutrition_summary_cards() -> rx.Component:
                     class_name="text-xs text-slate-400 uppercase tracking-wider",
                 ),
                 rx.el.p(
-                    HealthDashboardState.nutrition_summary["total_calories"],
+                    FoodState.nutrition_summary["total_calories"],
                     class_name="text-2xl font-bold text-white",
                 ),
                 class_name=f"{GlassStyles.PANEL} p-4",
@@ -225,7 +230,7 @@ def nutrition_summary_cards() -> rx.Component:
                 ),
                 rx.el.p(
                     rx.text(
-                        HealthDashboardState.nutrition_summary["total_protein"], "g"
+                        FoodState.nutrition_summary["total_protein"], "g"
                     ),
                     class_name="text-2xl font-bold text-white",
                 ),
@@ -241,7 +246,7 @@ def nutrition_summary_cards() -> rx.Component:
                     class_name="text-xs text-slate-400 uppercase tracking-wider",
                 ),
                 rx.el.p(
-                    rx.text(HealthDashboardState.nutrition_summary["total_carbs"], "g"),
+                    rx.text(FoodState.nutrition_summary["total_carbs"], "g"),
                     class_name="text-2xl font-bold text-white",
                 ),
                 class_name=f"{GlassStyles.PANEL} p-4",
@@ -256,7 +261,7 @@ def nutrition_summary_cards() -> rx.Component:
                     class_name="text-xs text-slate-400 uppercase tracking-wider",
                 ),
                 rx.el.p(
-                    rx.text(HealthDashboardState.nutrition_summary["total_fat"], "g"),
+                    rx.text(FoodState.nutrition_summary["total_fat"], "g"),
                     class_name="text-2xl font-bold text-white",
                 ),
                 class_name=f"{GlassStyles.PANEL} p-4",
@@ -280,14 +285,14 @@ def medications_section() -> rx.Component:
             class_name="text-lg font-semibold text-white mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.medication_entries_paginated,
+            items=MedicationState.medication_entries_paginated,
             item_renderer=_medication_card,
-            has_previous=HealthDashboardState.medication_entries_has_previous,
-            has_next=HealthDashboardState.medication_entries_has_next,
-            page_info=HealthDashboardState.medication_entries_page_info,
-            showing_info=HealthDashboardState.medication_entries_showing_info,
-            on_previous=HealthDashboardState.medication_entries_previous_page,
-            on_next=HealthDashboardState.medication_entries_next_page,
+            has_previous=MedicationState.medication_entries_has_previous,
+            has_next=MedicationState.medication_entries_has_next,
+            page_info=MedicationState.medication_entries_page_info,
+            showing_info=MedicationState.medication_entries_showing_info,
+            on_previous=MedicationState.medication_entries_previous_page,
+            on_next=MedicationState.medication_entries_next_page,
             empty_icon="pill",
             empty_message="No medications found",
             list_class="space-y-3",
@@ -304,14 +309,14 @@ def conditions_section() -> rx.Component:
             class_name="text-lg font-semibold text-white mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.conditions_paginated,
+            items=ConditionState.conditions_paginated,
             item_renderer=_condition_card,
-            has_previous=HealthDashboardState.conditions_has_previous,
-            has_next=HealthDashboardState.conditions_has_next,
-            page_info=HealthDashboardState.conditions_page_info,
-            showing_info=HealthDashboardState.conditions_showing_info,
-            on_previous=HealthDashboardState.conditions_previous_page,
-            on_next=HealthDashboardState.conditions_next_page,
+            has_previous=ConditionState.conditions_has_previous,
+            has_next=ConditionState.conditions_has_next,
+            page_info=ConditionState.conditions_page_info,
+            showing_info=ConditionState.conditions_showing_info,
+            on_previous=ConditionState.conditions_previous_page,
+            on_next=ConditionState.conditions_next_page,
             empty_icon="heart-pulse",
             empty_message="No conditions found",
             list_class="space-y-3",
@@ -328,14 +333,14 @@ def symptoms_section() -> rx.Component:
             class_name="text-lg font-semibold text-white mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.symptoms_paginated,
+            items=SymptomState.symptoms_paginated,
             item_renderer=_symptom_card,
-            has_previous=HealthDashboardState.symptoms_has_previous,
-            has_next=HealthDashboardState.symptoms_has_next,
-            page_info=HealthDashboardState.symptoms_page_info,
-            showing_info=HealthDashboardState.symptoms_showing_info,
-            on_previous=HealthDashboardState.symptoms_previous_page,
-            on_next=HealthDashboardState.symptoms_next_page,
+            has_previous=SymptomState.symptoms_has_previous,
+            has_next=SymptomState.symptoms_has_next,
+            page_info=SymptomState.symptoms_page_info,
+            showing_info=SymptomState.symptoms_showing_info,
+            on_previous=SymptomState.symptoms_previous_page,
+            on_next=SymptomState.symptoms_next_page,
             empty_icon="thermometer",
             empty_message="No symptoms tracked",
             list_class="space-y-3",
@@ -352,14 +357,14 @@ def food_entries_section() -> rx.Component:
             class_name="text-lg font-semibold text-white mb-4",
         ),
         paginated_list(
-            items=HealthDashboardState.food_entries_paginated,
+            items=FoodState.food_entries_paginated,
             item_renderer=_food_entry_card,
-            has_previous=HealthDashboardState.food_entries_has_previous,
-            has_next=HealthDashboardState.food_entries_has_next,
-            page_info=HealthDashboardState.food_entries_page_info,
-            showing_info=HealthDashboardState.food_entries_showing_info,
-            on_previous=HealthDashboardState.food_entries_previous_page,
-            on_next=HealthDashboardState.food_entries_next_page,
+            has_previous=FoodState.food_entries_has_previous,
+            has_next=FoodState.food_entries_has_next,
+            page_info=FoodState.food_entries_page_info,
+            showing_info=FoodState.food_entries_showing_info,
+            on_previous=FoodState.food_entries_previous_page,
+            on_next=FoodState.food_entries_next_page,
             empty_icon="utensils",
             empty_message="No food entries recorded",
             list_class="space-y-3",

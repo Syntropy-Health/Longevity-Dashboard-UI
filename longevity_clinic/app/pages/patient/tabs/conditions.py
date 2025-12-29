@@ -4,7 +4,7 @@ import reflex as rx
 
 from ....components.paginated_view import paginated_list
 from ....components.tabs import condition_card
-from ....states import HealthDashboardState
+from ....states import ConditionState
 
 
 def conditions_tab() -> rx.Component:
@@ -23,45 +23,43 @@ def conditions_tab() -> rx.Component:
         # Filter buttons
         rx.el.div(
             rx.el.button(
-                rx.fragment("All (", HealthDashboardState.conditions.length(), ")"),
-                on_click=lambda: HealthDashboardState.set_conditions_filter_with_reset(
-                    "all"
-                ),
+                rx.fragment("All (", ConditionState.conditions.length(), ")"),
+                on_click=lambda: ConditionState.set_conditions_filter_with_reset("all"),
                 class_name=rx.cond(
-                    HealthDashboardState.conditions_filter == "all",
+                    ConditionState.conditions_filter == "all",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
             rx.el.button(
-                f"Active ({HealthDashboardState.active_conditions_count})",
-                on_click=lambda: HealthDashboardState.set_conditions_filter_with_reset(
+                f"Active ({ConditionState.active_conditions_count})",
+                on_click=lambda: ConditionState.set_conditions_filter_with_reset(
                     "active"
                 ),
                 class_name=rx.cond(
-                    HealthDashboardState.conditions_filter == "active",
+                    ConditionState.conditions_filter == "active",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
             rx.el.button(
-                f"Managed ({HealthDashboardState.managed_conditions_count})",
-                on_click=lambda: HealthDashboardState.set_conditions_filter_with_reset(
+                f"Managed ({ConditionState.managed_conditions_count})",
+                on_click=lambda: ConditionState.set_conditions_filter_with_reset(
                     "managed"
                 ),
                 class_name=rx.cond(
-                    HealthDashboardState.conditions_filter == "managed",
+                    ConditionState.conditions_filter == "managed",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
             ),
             rx.el.button(
-                f"Resolved ({HealthDashboardState.resolved_conditions_count})",
-                on_click=lambda: HealthDashboardState.set_conditions_filter_with_reset(
+                f"Resolved ({ConditionState.resolved_conditions_count})",
+                on_click=lambda: ConditionState.set_conditions_filter_with_reset(
                     "resolved"
                 ),
                 class_name=rx.cond(
-                    HealthDashboardState.conditions_filter == "resolved",
+                    ConditionState.conditions_filter == "resolved",
                     "px-4 py-2 rounded-xl text-sm font-medium bg-slate-500/20 text-slate-300 border border-slate-500/30",
                     "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                 ),
@@ -70,17 +68,18 @@ def conditions_tab() -> rx.Component:
         ),
         # Conditions List (Paginated)
         paginated_list(
-            items=HealthDashboardState.conditions_paginated,
+            items=ConditionState.conditions_paginated,
             item_renderer=condition_card,
-            has_previous=HealthDashboardState.conditions_has_previous,
-            has_next=HealthDashboardState.conditions_has_next,
-            page_info=HealthDashboardState.conditions_page_info,
-            showing_info=HealthDashboardState.conditions_showing_info,
-            on_previous=HealthDashboardState.conditions_previous_page,
-            on_next=HealthDashboardState.conditions_next_page,
+            has_previous=ConditionState.conditions_has_previous,
+            has_next=ConditionState.conditions_has_next,
+            page_info=ConditionState.conditions_page_info,
+            showing_info=ConditionState.conditions_showing_info,
+            on_previous=ConditionState.conditions_previous_page,
+            on_next=ConditionState.conditions_next_page,
             empty_icon="heart-pulse",
             empty_message="No conditions found",
             empty_subtitle="Your health conditions will appear here",
             list_class="space-y-4",
         ),
+        on_mount=ConditionState.load_condition_data,
     )

@@ -3,7 +3,7 @@
 import reflex as rx
 
 from ...components.layout import authenticated_layout
-from ...states import AuthState, HealthDashboardState
+from ...states import AuthState, SettingsState
 from ...styles.constants import GlassStyles
 from .components import patient_portal_tabs
 from .modals import (
@@ -49,7 +49,7 @@ def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
                 patient_portal_tabs(),
                 # Tab Content
                 rx.match(
-                    HealthDashboardState.active_tab,
+                    SettingsState.active_tab,
                     ("overview", overview_tab()),
                     ("food", food_tracker_tab()),
                     ("medications", medications_tab()),
@@ -66,7 +66,7 @@ def _patient_portal_base(initial_tab: str = "overview") -> rx.Component:
             connect_source_modal(),
             add_food_modal(),
             # on_mount sets initial tab only; data loading is in on_load (longevity_clinic.py)
-            on_mount=lambda: HealthDashboardState.set_active_tab(initial_tab),
+            on_mount=lambda: SettingsState.set_active_tab(initial_tab),
         )
     )
 

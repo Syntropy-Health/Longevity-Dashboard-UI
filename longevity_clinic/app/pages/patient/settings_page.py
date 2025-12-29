@@ -3,7 +3,7 @@
 import reflex as rx
 
 from ...components.layout import authenticated_layout
-from ...states import AuthState, HealthDashboardState
+from ...states import AuthState, DataSourceState, SettingsState
 from ...styles.constants import GlassStyles
 from .modals import connect_source_modal, suggest_integration_modal
 from .tabs import data_source_card, import_drop_zone
@@ -81,18 +81,18 @@ def settings_page() -> rx.Component:
                                 rx.el.div(
                                     rx.el.div(
                                         class_name=rx.cond(
-                                            HealthDashboardState.email_notifications,
+                                            SettingsState.email_notifications,
                                             "w-5 h-5 bg-white rounded-full shadow-md transform translate-x-6 transition-transform duration-200",
                                             "w-5 h-5 bg-slate-300 rounded-full shadow-md transform translate-x-0 transition-transform duration-200",
                                         ),
                                     ),
                                     class_name=rx.cond(
-                                        HealthDashboardState.email_notifications,
+                                        SettingsState.email_notifications,
                                         "w-12 h-6 bg-teal-500 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                         "w-12 h-6 bg-slate-600 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                     ),
                                 ),
-                                on_click=HealthDashboardState.toggle_email_notifications,
+                                on_click=SettingsState.toggle_email_notifications,
                                 class_name="focus:outline-none",
                             ),
                             class_name="flex items-center justify-between p-4 border-b border-white/5",
@@ -113,18 +113,18 @@ def settings_page() -> rx.Component:
                                 rx.el.div(
                                     rx.el.div(
                                         class_name=rx.cond(
-                                            HealthDashboardState.push_notifications,
+                                            SettingsState.push_notifications,
                                             "w-5 h-5 bg-white rounded-full shadow-md transform translate-x-6 transition-transform duration-200",
                                             "w-5 h-5 bg-slate-300 rounded-full shadow-md transform translate-x-0 transition-transform duration-200",
                                         ),
                                     ),
                                     class_name=rx.cond(
-                                        HealthDashboardState.push_notifications,
+                                        SettingsState.push_notifications,
                                         "w-12 h-6 bg-teal-500 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                         "w-12 h-6 bg-slate-600 rounded-full p-0.5 flex items-center transition-colors duration-200",
                                     ),
                                 ),
-                                on_click=HealthDashboardState.toggle_push_notifications,
+                                on_click=SettingsState.toggle_push_notifications,
                                 class_name="focus:outline-none",
                             ),
                             class_name="flex items-center justify-between p-4",
@@ -147,22 +147,22 @@ def settings_page() -> rx.Component:
                     rx.el.div(
                         rx.el.button(
                             "Devices & Wearables",
-                            on_click=lambda: HealthDashboardState.set_data_sources_filter(
+                            on_click=lambda: DataSourceState.set_data_sources_filter(
                                 "devices"
                             ),
                             class_name=rx.cond(
-                                HealthDashboardState.data_sources_filter == "devices",
+                                DataSourceState.data_sources_filter == "devices",
                                 "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                 "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                             ),
                         ),
                         rx.el.button(
                             "API Connections",
-                            on_click=lambda: HealthDashboardState.set_data_sources_filter(
+                            on_click=lambda: DataSourceState.set_data_sources_filter(
                                 "api_connections"
                             ),
                             class_name=rx.cond(
-                                HealthDashboardState.data_sources_filter
+                                DataSourceState.data_sources_filter
                                 == "api_connections",
                                 "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                 "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
@@ -170,12 +170,11 @@ def settings_page() -> rx.Component:
                         ),
                         rx.el.button(
                             "Import History",
-                            on_click=lambda: HealthDashboardState.set_data_sources_filter(
+                            on_click=lambda: DataSourceState.set_data_sources_filter(
                                 "import_history"
                             ),
                             class_name=rx.cond(
-                                HealthDashboardState.data_sources_filter
-                                == "import_history",
+                                DataSourceState.data_sources_filter == "import_history",
                                 "px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30",
                                 "px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent",
                             ),
@@ -184,7 +183,7 @@ def settings_page() -> rx.Component:
                     ),
                     # Content based on filter
                     rx.cond(
-                        HealthDashboardState.data_sources_filter == "import_history",
+                        DataSourceState.data_sources_filter == "import_history",
                         import_drop_zone(),
                         rx.el.div(
                             # Summary Card
@@ -198,7 +197,7 @@ def settings_page() -> rx.Component:
                                     class_name="text-xs text-slate-400 uppercase tracking-wider mb-1",
                                 ),
                                 rx.el.span(
-                                    HealthDashboardState.connected_sources_count,
+                                    DataSourceState.connected_sources_count,
                                     class_name="text-3xl font-bold text-white",
                                 ),
                                 class_name=f"{GlassStyles.PANEL} p-5 mb-6",
@@ -206,7 +205,7 @@ def settings_page() -> rx.Component:
                             # Sources List
                             rx.el.div(
                                 rx.foreach(
-                                    HealthDashboardState.filtered_data_sources,
+                                    DataSourceState.filtered_data_sources,
                                     data_source_card,
                                 ),
                                 class_name="space-y-4",
@@ -219,7 +218,7 @@ def settings_page() -> rx.Component:
                                 ),
                                 rx.el.button(
                                     "Suggest an integration",
-                                    on_click=HealthDashboardState.open_suggest_integration_modal,
+                                    on_click=DataSourceState.open_suggest_integration_modal,
                                     class_name="text-teal-400 text-sm hover:text-teal-300 underline underline-offset-2 transition-colors",
                                 ),
                                 class_name="mt-6 text-center",
@@ -233,7 +232,7 @@ def settings_page() -> rx.Component:
             suggest_integration_modal(),
             on_mount=[
                 # BiomarkerState.load_biomarkers,
-                # HealthDashboardState.load_dashboard_data,
+                # DataSourceState.load_data_sources,
             ],
         )
     )

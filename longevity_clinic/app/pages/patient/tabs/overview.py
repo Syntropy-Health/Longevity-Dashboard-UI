@@ -2,7 +2,8 @@
 
 import reflex as rx
 
-from ....states import AppointmentState, BiomarkerState
+from ....components.paginated_view import paginated_list
+from ....states import AppointmentState, BiomarkerState, TreatmentPortalState
 from ....styles.constants import GlassStyles
 from ..components import (
     appointment_item,
@@ -83,13 +84,35 @@ def overview_tab() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.div(
-                    rx.el.h2(
-                        "Active Protocols",
-                        class_name="text-lg font-semibold text-white mb-4",
-                    ),
                     rx.el.div(
-                        rx.foreach(BiomarkerState.my_treatments, treatment_card),
-                        class_name="space-y-3",
+                        rx.el.h2(
+                            "Active Protocols",
+                            class_name="text-lg font-semibold text-white",
+                        ),
+                        rx.cond(
+                            TreatmentPortalState.treatments_count > 0,
+                            rx.el.span(
+                                TreatmentPortalState.treatments_count,
+                                " active",
+                                class_name="text-xs font-medium text-teal-400 bg-teal-500/10 px-2 py-1 rounded-full border border-teal-500/20",
+                            ),
+                            rx.fragment(),
+                        ),
+                        class_name="flex items-center justify-between mb-4",
+                    ),
+                    paginated_list(
+                        items=TreatmentPortalState.treatments_paginated,
+                        item_renderer=treatment_card,
+                        has_previous=TreatmentPortalState.treatments_has_previous,
+                        has_next=TreatmentPortalState.treatments_has_next,
+                        page_info=TreatmentPortalState.treatments_page_info,
+                        showing_info=TreatmentPortalState.treatments_showing_info,
+                        on_previous=TreatmentPortalState.treatments_previous_page,
+                        on_next=TreatmentPortalState.treatments_next_page,
+                        empty_icon="activity",
+                        empty_message="No active protocols",
+                        empty_subtitle="Your treatment protocols will appear here",
+                        list_class="space-y-3",
                     ),
                     class_name="col-span-1 lg:col-span-2",
                 ),
@@ -115,4 +138,5 @@ def overview_tab() -> rx.Component:
                 class_name="grid grid-cols-1 lg:grid-cols-3 gap-8",
             ),
         ),
+        on_mount=TreatmentPortalState.load_treatments,
     )

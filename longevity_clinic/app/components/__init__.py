@@ -70,7 +70,6 @@ from .tabs import (
     import_drop_zone,
     medication_entry_card,
     medication_subscription_card,
-    reminder_item,
     symptom_card,
     symptom_log_item,
     symptom_trend_item,
@@ -112,7 +111,6 @@ __all__ = [
     "paginated_list_with_filters",
     "patient_select_item",
     # Tab items
-    "reminder_item",
     # Shared UI
     "search_input",
     "section_header",

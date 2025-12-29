@@ -9,6 +9,7 @@ from collections.abc import Callable
 import reflex as rx
 
 from ...config import current_config
+from ...styles.constants import GlassStyles
 
 # =============================================================================
 # Category Badge - Reusable treatment category badge
@@ -77,9 +78,9 @@ def treatment_meta_item(
         A metadata display component
     """
     content = rx.el.div(
-        rx.icon(icon, class_name="w-3.5 h-3.5 text-gray-400 mr-1.5 flex-shrink-0"),
-        rx.el.span(value, class_name="text-xs text-gray-600 font-medium"),
-        class_name="flex items-center",
+        rx.icon(icon, class_name=GlassStyles.TREATMENT_META_ICON),
+        rx.el.span(value, class_name=GlassStyles.TREATMENT_META_TEXT),
+        class_name=GlassStyles.TREATMENT_META_ITEM,
     )
 
     if with_background:
@@ -118,10 +119,11 @@ def treatment_card(
 
     Returns:
         A styled treatment card component
-    """
-    padding = "p-5" if compact else "p-6"
-    desc_height = "h-9" if compact else "h-10"
 
+    Note:
+        Uses GlassStyles.TREATMENT_CARD_CONTENT with adequate bottom padding (pb-7)
+        to prevent letter descender cutoff (g, p, y, q).
+    """
     # Build meta items
     meta_items = [
         treatment_meta_item("clock", protocol["duration"]),
@@ -130,28 +132,32 @@ def treatment_card(
         meta_items.append(treatment_meta_item("repeat", protocol["frequency"]))
     meta_items.append(treatment_meta_item("dollar-sign", f"${protocol['cost']}"))
 
-    # Card content
+    # Card content - uses adequate padding to prevent descender cutoff
     card_content = rx.el.div(
         # Header with title and badge
         rx.el.div(
             rx.el.h3(
                 protocol["name"],
-                class_name="text-lg font-semibold text-gray-800 tracking-tight truncate flex-1",
+                class_name=GlassStyles.TREATMENT_CARD_TITLE,
             ),
             category_badge(protocol["category"], size="xs"),
-            class_name="flex justify-between items-start gap-3 mb-2",
+            class_name="flex justify-between items-start gap-3 mb-3",
         ),
-        # Description
+        # Description with adequate line height and bottom margin
         rx.el.p(
             protocol["description"],
-            class_name=f"text-sm text-gray-500 line-clamp-2 mb-4 font-light leading-relaxed {desc_height}",
+            class_name=GlassStyles.TREATMENT_CARD_DESCRIPTION,
         ),
         # Meta row
         rx.el.div(
             *meta_items,
             class_name="flex items-center justify-between gap-3 pt-4 border-t border-gray-100/60",
         ),
-        class_name=f"{padding} flex-1 flex flex-col",
+        class_name=(
+            GlassStyles.TREATMENT_CARD_CONTENT
+            if not compact
+            else "p-5 pb-6 flex-1 flex flex-col"
+        ),
     )
 
     # Footer buttons
@@ -161,16 +167,14 @@ def treatment_card(
             rx.el.button(
                 secondary_label,
                 on_click=on_secondary_click,
-                class_name="flex-1 py-3 text-sm font-medium text-gray-600 hover:text-teal-600 "
-                "hover:bg-teal-50/50 border-r border-gray-200/50 transition-colors",
+                class_name=GlassStyles.TREATMENT_CARD_BUTTON_SECONDARY,
             ),
             rx.el.button(
                 primary_label,
                 on_click=on_primary_click,
-                class_name="flex-1 py-3 text-sm font-medium text-teal-600 hover:text-teal-700 "
-                "hover:bg-teal-50/50 transition-colors",
+                class_name=GlassStyles.TREATMENT_CARD_BUTTON_PRIMARY,
             ),
-            class_name="flex border-t border-gray-200/50",
+            class_name=GlassStyles.TREATMENT_CARD_FOOTER,
         )
     else:
         # Single button layout (patient)
@@ -178,17 +182,16 @@ def treatment_card(
             rx.el.button(
                 primary_label,
                 on_click=on_primary_click,
-                class_name=f"w-full py-3 text-sm font-semibold {current_config.glass_button_secondary} "
+                class_name=f"w-full py-3.5 text-sm font-semibold {current_config.glass_button_secondary} "
                 "rounded-xl transition-all duration-300",
             ),
-            class_name="px-5 pb-5",
+            class_name="px-6 pb-6",
         )
 
     return rx.el.div(
         card_content,
         footer,
-        class_name=f"{current_config.glass_panel_style} flex flex-col h-full "
-        "hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300",
+        class_name=GlassStyles.TREATMENT_CARD,
     )
 
 

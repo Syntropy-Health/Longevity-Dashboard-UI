@@ -2,9 +2,10 @@
 
 import reflex as rx
 
+from ....components.modals import food_detail_modal
 from ....components.paginated_view import paginated_list
 from ....components.tabs import food_entry_card
-from ....states import HealthDashboardState
+from ....states import FoodState
 from ....styles.constants import GlassStyles
 
 
@@ -34,11 +35,11 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.span(
-                        HealthDashboardState.nutrition_summary["total_calories"],
+                        FoodState.nutrition_summary["total_calories"],
                         class_name="text-3xl font-bold text-white",
                     ),
                     rx.el.span(
-                        f" / {HealthDashboardState.nutrition_summary['goal_calories']}",
+                        f" / {FoodState.nutrition_summary['goal_calories']}",
                         class_name="text-sm text-slate-400",
                     ),
                 ),
@@ -55,7 +56,7 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.span(
-                        f"{HealthDashboardState.nutrition_summary['total_protein']:.0f}",
+                        f"{FoodState.nutrition_summary['total_protein']:.0f}",
                         class_name="text-3xl font-bold text-white",
                     ),
                     rx.el.span("g", class_name="text-sm text-slate-400 ml-1"),
@@ -73,7 +74,7 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.span(
-                        f"{HealthDashboardState.nutrition_summary['total_carbs']:.0f}",
+                        f"{FoodState.nutrition_summary['total_carbs']:.0f}",
                         class_name="text-3xl font-bold text-white",
                     ),
                     rx.el.span("g", class_name="text-sm text-slate-400 ml-1"),
@@ -91,7 +92,7 @@ def food_tracker_tab() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.span(
-                        f"{HealthDashboardState.nutrition_summary['water_intake']:.1f}",
+                        f"{FoodState.nutrition_summary['water_intake']:.1f}",
                         class_name="text-3xl font-bold text-white",
                     ),
                     rx.el.span("L", class_name="text-sm text-slate-400 ml-1"),
@@ -100,7 +101,7 @@ def food_tracker_tab() -> rx.Component:
             ),
             class_name="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8",
         ),
-        # Food Entries
+        # Today's Food Entries
         rx.el.div(
             rx.el.div(
                 rx.el.h3(
@@ -109,24 +110,69 @@ def food_tracker_tab() -> rx.Component:
                 rx.el.button(
                     rx.icon("plus", class_name="w-4 h-4 mr-2"),
                     "Add Food",
-                    on_click=HealthDashboardState.open_add_food_modal,
+                    on_click=FoodState.open_add_food_modal,
                     class_name=GlassStyles.BUTTON_PRIMARY + " flex items-center",
                 ),
                 class_name="flex justify-between items-center mb-4",
             ),
             paginated_list(
-                items=HealthDashboardState.food_entries_paginated,
+                items=FoodState.todays_meals_paginated,
                 item_renderer=food_entry_card,
-                has_previous=HealthDashboardState.food_entries_has_previous,
-                has_next=HealthDashboardState.food_entries_has_next,
-                page_info=HealthDashboardState.food_entries_page_info,
-                showing_info=HealthDashboardState.food_entries_showing_info,
-                on_previous=HealthDashboardState.food_entries_previous_page,
-                on_next=HealthDashboardState.food_entries_next_page,
+                has_previous=FoodState.todays_meals_has_previous,
+                has_next=FoodState.todays_meals_has_next,
+                page_info=FoodState.todays_meals_page_info,
+                showing_info=FoodState.todays_meals_showing_info,
+                on_previous=FoodState.todays_meals_previous_page,
+                on_next=FoodState.todays_meals_next_page,
                 empty_icon="utensils",
-                empty_message="No food entries yet",
+                empty_message="No food entries yet today",
                 empty_subtitle="Add your first meal to start tracking",
                 list_class="space-y-3",
             ),
+            class_name="mb-8",
         ),
+        # Past Meals Section (only shown if there are past meals)
+        rx.cond(
+            FoodState.has_past_meals,
+            rx.el.div(
+                rx.el.div(
+                    rx.el.h3(
+                        "Past Meals", class_name="text-lg font-semibold text-white"
+                    ),
+                    rx.el.span(
+                        FoodState.past_meals_count,
+                        class_name="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full ml-2",
+                    ),
+                    class_name="flex items-center mb-4",
+                ),
+                paginated_list(
+                    items=FoodState.past_meals_paginated,
+                    item_renderer=food_entry_card,
+                    has_previous=FoodState.past_meals_has_previous,
+                    has_next=FoodState.past_meals_has_next,
+                    page_info=FoodState.past_meals_page_info,
+                    showing_info=FoodState.past_meals_showing_info,
+                    on_previous=FoodState.past_meals_previous_page,
+                    on_next=FoodState.past_meals_next_page,
+                    empty_icon="history",
+                    empty_message="No past meals",
+                    empty_subtitle="",
+                    list_class="space-y-3",
+                ),
+                class_name=f"{GlassStyles.PANEL} p-4 border border-slate-700/50",
+            ),
+        ),
+        # Food detail modal
+        food_detail_modal(
+            show_modal=FoodState.show_food_detail_modal,
+            entry_name=FoodState.selected_food_name,
+            entry_calories=FoodState.selected_food_calories,
+            entry_protein=FoodState.selected_food_protein,
+            entry_carbs=FoodState.selected_food_carbs,
+            entry_fat=FoodState.selected_food_fat,
+            entry_time=FoodState.selected_food_time,
+            entry_meal_type=FoodState.selected_food_meal_type,
+            on_close=FoodState.close_food_detail_modal,
+        ),
+        on_mount=FoodState.load_food_data,
     )

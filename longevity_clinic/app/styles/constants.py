@@ -1,5 +1,7 @@
 """Structured style schema used across the application."""
 
+from typing import TypedDict
+
 from pydantic import BaseModel, Field
 
 
@@ -276,12 +278,117 @@ class GlassStyles:
         "shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]"
     )
 
+    # ==========================================================================
+    # Biomarker Card Styles (Dark Mode - Emerald/Teal Glass Theme)
+    # Professional card styling for biomarker metrics in patient portal
+    # ==========================================================================
+
     # Biomarker metric card (dark mode) - emerald-tinted glass
     BIOMARKER_CARD = (
         "bg-gradient-to-br from-slate-800/60 to-emerald-900/20 backdrop-blur-xl "
         "border border-emerald-500/10 rounded-2xl p-6 "
         "hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-500/25 "
         "transition-all duration-300"
+    )
+
+    # Biomarker card selected state
+    BIOMARKER_CARD_SELECTED = "ring-1 ring-teal-500/40 cursor-pointer transition-all duration-300 scale-[1.02]"
+
+    # Biomarker card typography
+    BIOMARKER_CARD_TITLE = "text-sm font-semibold text-white truncate"
+    BIOMARKER_CARD_CATEGORY = "text-[10px] text-slate-400 truncate uppercase tracking-widest font-semibold mt-1"
+    BIOMARKER_CARD_VALUE = "text-4xl font-thin text-white tracking-tighter"
+    BIOMARKER_CARD_UNIT = "text-xs font-medium text-slate-400 ml-1"
+
+    # Biomarker trend indicators
+    BIOMARKER_TREND_ICON_UP = "w-4 h-4 mr-1 text-teal-400"
+    BIOMARKER_TREND_ICON_DOWN = "w-4 h-4 mr-1 text-teal-400"
+    BIOMARKER_TREND_ICON_STABLE = "w-4 h-4 mr-1 text-slate-400"
+    BIOMARKER_TREND_TEXT_UP = "text-xs text-teal-300"
+    BIOMARKER_TREND_TEXT_DOWN = "text-xs text-teal-300"
+    BIOMARKER_TREND_TEXT_STABLE = "text-xs text-slate-300"
+
+    # Biomarker detail panel (dark mode)
+    BIOMARKER_DETAIL_PANEL = (
+        "bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl "
+        "shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] p-6 mb-8 animate-fade-in"
+    )
+    BIOMARKER_DETAIL_TITLE = "text-xl font-bold text-white"
+    BIOMARKER_DETAIL_DESCRIPTION = "text-sm text-slate-400 mt-1"
+    BIOMARKER_DETAIL_CLOSE_BTN = "p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors"
+    BIOMARKER_DETAIL_SECTION_TITLE = "text-sm font-semibold text-slate-300 mb-4"
+    BIOMARKER_DETAIL_LABEL = "text-xs text-slate-400 uppercase font-semibold"
+    BIOMARKER_DETAIL_VALUE = "text-white font-medium"
+    BIOMARKER_DETAIL_ANALYSIS_BOX = (
+        "bg-slate-800/50 p-4 rounded-xl border border-slate-700/50"
+    )
+
+    # Biomarker status text colors
+    BIOMARKER_STATUS_OPTIMAL_TEXT = "text-teal-400 font-bold"
+    BIOMARKER_STATUS_WARNING_TEXT = "text-amber-400 font-bold"
+    BIOMARKER_STATUS_CRITICAL_TEXT = "text-red-400 font-bold"
+    BIOMARKER_STATUS_DEFAULT_TEXT = "text-slate-300 font-bold"
+
+    # ==========================================================================
+    # Portal Treatment Card Styles (Dark Mode - Teal Theme)
+    # Compact treatment cards for patient portal overview
+    # ==========================================================================
+
+    # Portal treatment card (dark mode, compact)
+    PORTAL_TREATMENT_CARD = (
+        "bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 "
+        "hover:bg-white/10 transition-all"
+    )
+    PORTAL_TREATMENT_ICON_CONTAINER = (
+        "w-10 h-10 rounded-full bg-teal-500/10 flex items-center justify-center "
+        "mr-3 shrink-0 border border-teal-500/20"
+    )
+    PORTAL_TREATMENT_ICON = "w-5 h-5 text-teal-400"
+    PORTAL_TREATMENT_TITLE = "text-sm font-semibold text-white"
+    PORTAL_TREATMENT_META = "text-xs text-slate-400"
+    PORTAL_TREATMENT_STATUS_BADGE = (
+        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium "
+        "bg-teal-500/10 text-teal-300 border border-teal-500/20"
+    )
+
+    # ==========================================================================
+    # Treatment Card Styles (Dark Mode - Emerald/Teal Theme)
+    # Professional card styling for treatment protocols - patient/admin views
+    # NOTE: Use adequate padding (p-6+) to prevent descender cutoff (g, p, y, q)
+    # ==========================================================================
+
+    # Treatment card - dark glass panel with emerald accent
+    TREATMENT_CARD = (
+        "bg-slate-800/70 backdrop-blur-xl border border-slate-700/50 rounded-2xl "
+        "shadow-[0_4px_20px_rgba(0,0,0,0.3)] "
+        "hover:border-emerald-500/30 hover:shadow-[0_8px_30px_rgba(16,185,129,0.1)] "
+        "hover:-translate-y-0.5 transition-all duration-300 "
+        "flex flex-col h-full"
+    )
+
+    # Treatment card content padding - extra bottom padding for descenders
+    TREATMENT_CARD_CONTENT = "p-6 pb-7 flex-1 flex flex-col"
+
+    # Treatment card title - white text for dark mode
+    TREATMENT_CARD_TITLE = "text-lg font-semibold text-white tracking-tight truncate flex-1 leading-relaxed"
+
+    # Treatment card description - light slate for readability on dark
+    TREATMENT_CARD_DESCRIPTION = "text-sm text-slate-300 line-clamp-2 mb-5 font-light leading-relaxed min-h-[2.75rem]"
+
+    # Treatment meta item (duration, cost, etc.)
+    TREATMENT_META_ITEM = "flex items-center"
+    TREATMENT_META_ICON = "w-3.5 h-3.5 text-emerald-400 mr-1.5 flex-shrink-0"
+    TREATMENT_META_TEXT = "text-xs text-slate-300 font-medium"
+
+    # Treatment card footer buttons - emerald accent for dark mode
+    TREATMENT_CARD_FOOTER = "flex border-t border-slate-700/50"
+    TREATMENT_CARD_BUTTON_PRIMARY = (
+        "flex-1 py-3.5 text-sm font-medium text-emerald-400 hover:text-emerald-300 "
+        "hover:bg-emerald-500/10 transition-colors"
+    )
+    TREATMENT_CARD_BUTTON_SECONDARY = (
+        "flex-1 py-3.5 text-sm font-medium text-slate-300 hover:text-emerald-400 "
+        "hover:bg-emerald-500/10 border-r border-slate-700/50 transition-colors"
     )
 
     # Metric label (small uppercase)
@@ -369,52 +476,117 @@ class GlassStyles:
     )
 
     # ==========================================================================
-    # Collapsible Section Styles (Dark Teal/Emerald Glass)
+    # Collapsible Section Styles (Dark Slate - Matches Page Background)
+    # Professional accordion styling - seamless with dark slate-900 page
     # ==========================================================================
 
-    # Collapsible item - deep teal glass to match dark UI theme
+    # Collapsible item - dark slate matching page background (slate-900)
+    # Explicit background to override any Radix default blue styles
     COLLAPSIBLE_ITEM = (
-        "bg-gradient-to-br from-slate-800/60 to-teal-900/30 backdrop-blur-xl "
-        "rounded-2xl border border-teal-600/20 "
-        "hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/10 "
-        "my-4 overflow-hidden transition-all duration-300"
+        "!bg-slate-900 rounded-xl "
+        "border border-slate-700/40 "
+        "hover:border-emerald-500/40 "
+        "my-2 overflow-hidden transition-all duration-300 ease-out"
     )
 
-    # Collapsible trigger header
+    # Collapsible trigger header - dark slate background
+    # Explicit !bg to override Radix defaults
     COLLAPSIBLE_TRIGGER = (
-        "group flex w-full p-5 hover:bg-teal-600/15 "
-        "transition-all duration-300 rounded-xl"
+        "group flex w-full px-5 py-4 "
+        "!bg-slate-900 hover:!bg-slate-800 "
+        "transition-all duration-300 cursor-pointer"
     )
 
-    # Collapsible chevron with rotation animation
+    # Collapsible chevron with smooth rotation animation
     COLLAPSIBLE_CHEVRON = (
-        "w-5 h-5 text-teal-400 transition-transform duration-300 ease-out "
+        "w-5 h-5 text-emerald-400 transition-transform duration-300 ease-out "
+        "group-hover:text-emerald-300 "
         "group-data-[state=open]:rotate-180"
     )
 
-    # Collapsible content wrapper
+    # Collapsible content wrapper with smooth accordion animation
+    # No background color - inherits from parent to match app background
     COLLAPSIBLE_CONTENT = (
-        "overflow-hidden data-[state=open]:animate-accordion-down "
+        "overflow-hidden "
+        "data-[state=open]:animate-accordion-down "
         "data-[state=closed]:animate-accordion-up"
     )
 
     # Collapsible content inner padding
-    COLLAPSIBLE_CONTENT_INNER = "px-5 pb-5 pt-2"
+    COLLAPSIBLE_CONTENT_INNER = "px-5 pb-5 pt-3"
 
     # Collapsible container (accordion root)
-    COLLAPSIBLE_CONTAINER = "w-full space-y-2 px-2 py-3"
+    # Explicit dark slate background to override Radix default blue
+    COLLAPSIBLE_CONTAINER = "w-full space-y-3 px-1 py-2 !bg-transparent"
 
-    # Collapsible badge
+    # Collapsible badge - refined emerald pill
     COLLAPSIBLE_BADGE = (
-        "text-xs font-medium text-teal-300 bg-teal-600/20 "
-        "px-2.5 py-0.5 rounded-full mr-3 border border-teal-500/30"
+        "text-xs font-semibold text-emerald-300 "
+        "bg-emerald-500/15 backdrop-blur-sm "
+        "px-3 py-1 rounded-full mr-3 "
+        "border border-emerald-500/25 "
+        "shadow-[0_0_8px_rgba(16,185,129,0.15)]"
     )
 
-    # Collapsible title
-    COLLAPSIBLE_TITLE = "text-lg font-semibold text-slate-200"
+    # Collapsible title - clean white text with subtle shadow
+    COLLAPSIBLE_TITLE = (
+        "text-base font-semibold text-slate-100 "
+        "group-hover:text-white transition-colors duration-200"
+    )
 
-    # Collapsible icon default color
-    COLLAPSIBLE_ICON = "w-5 h-5 text-teal-400 mr-3"
+    # Collapsible icon - emerald accent
+    COLLAPSIBLE_ICON = (
+        "w-5 h-5 text-emerald-400 mr-3 "
+        "group-hover:text-emerald-300 transition-colors duration-200"
+    )
+
+
+# =============================================================================
+# Tab Card Configuration (for standardized health cards)
+# =============================================================================
+
+
+class TabCardTheme(TypedDict):
+    """Theme configuration for tab cards."""
+
+    icon_color: str  # Tailwind text color for icon
+    icon_bg: str  # Background color for icon container
+    icon_border: str  # Border color for icon container
+
+
+# Predefined themes for different health categories
+TAB_CARD_THEMES: dict[str, TabCardTheme] = {
+    "food": {
+        "icon_color": "text-teal-400",
+        "icon_bg": "bg-teal-500/10",
+        "icon_border": "border-teal-500/20",
+    },
+    "medication": {
+        "icon_color": "text-purple-400",
+        "icon_bg": "bg-purple-500/10",
+        "icon_border": "border-purple-500/20",
+    },
+    "symptom": {
+        "icon_color": "text-orange-400",
+        "icon_bg": "bg-orange-500/10",
+        "icon_border": "border-orange-500/20",
+    },
+    "condition": {
+        "icon_color": "text-rose-400",
+        "icon_bg": "bg-rose-500/10",
+        "icon_border": "border-rose-500/20",
+    },
+    "appointment": {
+        "icon_color": "text-blue-400",
+        "icon_bg": "bg-blue-500/10",
+        "icon_border": "border-blue-500/20",
+    },
+    "exercise": {
+        "icon_color": "text-amber-400",
+        "icon_bg": "bg-amber-500/10",
+        "icon_border": "border-amber-500/20",
+    },
+}
 
 
 # Shared building blocks ----------------------------------------------------
@@ -564,8 +736,6 @@ styles = AppStyles()
 # =============================================================================
 # Category Display Styles
 # =============================================================================
-from typing import TypedDict
-
 from longevity_clinic.app.data.schemas.db.domain_enums import TreatmentCategoryEnum
 
 
@@ -595,6 +765,7 @@ TREATMENT_CATEGORY_COLORS: dict[TreatmentCategoryEnum, CategoryColorConfig] = {
 
 
 __all__ = [
+    "TAB_CARD_THEMES",
     "TREATMENT_CATEGORY_COLORS",
     "AlertStyles",
     "AppStyles",
@@ -607,6 +778,7 @@ __all__ = [
     "GridStyles",
     "ModalStyles",
     "StatusBadgeStyles",
+    "TabCardTheme",
     "TextStyles",
     "TreatmentCategoryEnum",  # Re-exported from domain_enums
     "ZIndexStyles",

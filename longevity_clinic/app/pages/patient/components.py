@@ -4,15 +4,13 @@ import reflex as rx
 
 from ...components.charts import biomarker_history_chart
 from ...data.schemas.state import Biomarker, PortalAppointment, PortalTreatment
-from ...states import (
-    BiomarkerState,
-    HealthDashboardState,
-)
+from ...states import BiomarkerState
+from ...states.shared.dashboard import SettingsState
 from ...styles.constants import GlassStyles
 
 
 def status_badge(status: str) -> rx.Component:
-    """Status badge with dark theme styling."""
+    """Status badge with dark theme styling using GlassStyles."""
     return rx.el.span(
         status,
         class_name=rx.match(
@@ -26,30 +24,38 @@ def status_badge(status: str) -> rx.Component:
 
 
 def trend_indicator(trend: str) -> rx.Component:
-    """Trend indicator with dark theme styling."""
+    """Trend indicator with dark theme styling using GlassStyles."""
     return rx.match(
         trend,
         (
             "up",
             rx.el.div(
-                rx.icon("trending-up", class_name="w-4 h-4 mr-1 text-teal-400"),
-                rx.el.span("Increasing", class_name="text-xs text-teal-300"),
+                rx.icon("trending-up", class_name=GlassStyles.BIOMARKER_TREND_ICON_UP),
+                rx.el.span(
+                    "Increasing", class_name=GlassStyles.BIOMARKER_TREND_TEXT_UP
+                ),
                 class_name="flex items-center",
             ),
         ),
         (
             "down",
             rx.el.div(
-                rx.icon("trending-down", class_name="w-4 h-4 mr-1 text-teal-400"),
-                rx.el.span("Decreasing", class_name="text-xs text-teal-300"),
+                rx.icon(
+                    "trending-down", class_name=GlassStyles.BIOMARKER_TREND_ICON_DOWN
+                ),
+                rx.el.span(
+                    "Decreasing", class_name=GlassStyles.BIOMARKER_TREND_TEXT_DOWN
+                ),
                 class_name="flex items-center",
             ),
         ),
         (
             "stable",
             rx.el.div(
-                rx.icon("minus", class_name="w-4 h-4 mr-1 text-slate-400"),
-                rx.el.span("Stable", class_name="text-xs text-slate-300"),
+                rx.icon("minus", class_name=GlassStyles.BIOMARKER_TREND_ICON_STABLE),
+                rx.el.span(
+                    "Stable", class_name=GlassStyles.BIOMARKER_TREND_TEXT_STABLE
+                ),
                 class_name="flex items-center",
             ),
         ),
@@ -58,17 +64,17 @@ def trend_indicator(trend: str) -> rx.Component:
 
 
 def biomarker_card(biomarker: Biomarker) -> rx.Component:
-    """Biomarker card with dark theme styling."""
+    """Biomarker card with dark theme styling using GlassStyles."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
                 rx.el.h3(
                     biomarker["name"],
-                    class_name="text-sm font-semibold text-white truncate",
+                    class_name=GlassStyles.BIOMARKER_CARD_TITLE,
                 ),
                 rx.el.p(
                     biomarker["category"],
-                    class_name="text-[10px] text-slate-400 truncate uppercase tracking-widest font-semibold mt-1",
+                    class_name=GlassStyles.BIOMARKER_CARD_CATEGORY,
                 ),
             ),
             status_badge(biomarker["status"]),
@@ -77,11 +83,11 @@ def biomarker_card(biomarker: Biomarker) -> rx.Component:
         rx.el.div(
             rx.el.span(
                 biomarker["current_value"],
-                class_name="text-4xl font-thin text-white tracking-tighter",
+                class_name=GlassStyles.BIOMARKER_CARD_VALUE,
             ),
             rx.el.span(
                 f" {biomarker['unit']}",
-                class_name="text-xs font-medium text-slate-400 ml-1",
+                class_name=GlassStyles.BIOMARKER_CARD_UNIT,
             ),
             class_name="flex items-baseline mb-3",
         ),
@@ -89,14 +95,14 @@ def biomarker_card(biomarker: Biomarker) -> rx.Component:
         on_click=lambda: BiomarkerState.select_biomarker(biomarker),
         class_name=rx.cond(
             BiomarkerState.selected_biomarker["id"] == biomarker["id"],
-            f"{GlassStyles.BIOMARKER_CARD} ring-1 ring-teal-500/40 cursor-pointer transition-all duration-300 scale-[1.02]",
+            GlassStyles.BIOMARKER_CARD_SELECTED,
             f"{GlassStyles.BIOMARKER_CARD} cursor-pointer",
         ),
     )
 
 
 def biomarker_detail_panel() -> rx.Component:
-    """Detail panel for selected biomarker with dark theme."""
+    """Detail panel for selected biomarker with dark theme using GlassStyles."""
     return rx.cond(
         BiomarkerState.selected_biomarker,
         rx.el.div(
@@ -104,17 +110,17 @@ def biomarker_detail_panel() -> rx.Component:
                 rx.el.div(
                     rx.el.h2(
                         BiomarkerState.selected_biomarker["name"],
-                        class_name="text-xl font-bold text-white",
+                        class_name=GlassStyles.BIOMARKER_DETAIL_TITLE,
                     ),
                     rx.el.p(
                         BiomarkerState.selected_biomarker["description"],
-                        class_name="text-sm text-slate-400 mt-1",
+                        class_name=GlassStyles.BIOMARKER_DETAIL_DESCRIPTION,
                     ),
                 ),
                 rx.el.button(
                     rx.icon("x", class_name="w-5 h-5"),
                     on_click=BiomarkerState.clear_selected_biomarker,
-                    class_name="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors",
+                    class_name=GlassStyles.BIOMARKER_DETAIL_CLOSE_BTN,
                 ),
                 class_name="flex justify-between items-start mb-6",
             ),
@@ -122,7 +128,7 @@ def biomarker_detail_panel() -> rx.Component:
                 rx.el.div(
                     rx.el.h4(
                         "Historical Trend",
-                        class_name="text-sm font-semibold text-slate-300 mb-4",
+                        class_name=GlassStyles.BIOMARKER_DETAIL_LABEL,
                     ),
                     biomarker_history_chart(),
                     class_name="flex-1 min-h-[300px]",
@@ -130,13 +136,13 @@ def biomarker_detail_panel() -> rx.Component:
                 rx.el.div(
                     rx.el.h4(
                         "Analysis",
-                        class_name="text-sm font-semibold text-slate-300 mb-3",
+                        class_name=GlassStyles.BIOMARKER_DETAIL_LABEL,
                     ),
                     rx.el.div(
                         rx.el.div(
                             rx.el.p(
                                 "Current Status",
-                                class_name="text-xs text-slate-400 uppercase font-semibold",
+                                class_name=GlassStyles.BIOMARKER_DETAIL_LABEL,
                             ),
                             rx.el.p(
                                 BiomarkerState.selected_biomarker["status"],
@@ -153,50 +159,50 @@ def biomarker_detail_panel() -> rx.Component:
                         rx.el.div(
                             rx.el.p(
                                 "Optimal Range",
-                                class_name="text-xs text-slate-400 uppercase font-semibold",
+                                class_name=GlassStyles.BIOMARKER_DETAIL_LABEL,
                             ),
                             rx.el.p(
                                 f"{BiomarkerState.selected_biomarker['optimal_min']} - {BiomarkerState.selected_biomarker['optimal_max']} {BiomarkerState.selected_biomarker['unit']}",
-                                class_name="text-white font-medium",
+                                class_name=GlassStyles.BIOMARKER_DETAIL_VALUE,
                             ),
                             class_name="mb-3",
                         ),
                         rx.el.div(
                             rx.el.p(
                                 "Latest Reading",
-                                class_name="text-xs text-slate-400 uppercase font-semibold",
+                                class_name=GlassStyles.BIOMARKER_DETAIL_LABEL,
                             ),
                             rx.el.p(
                                 f"{BiomarkerState.selected_biomarker['current_value']} {BiomarkerState.selected_biomarker['unit']}",
-                                class_name="text-white font-medium",
+                                class_name=GlassStyles.BIOMARKER_DETAIL_VALUE,
                             ),
                         ),
-                        class_name="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50",
+                        class_name=GlassStyles.BIOMARKER_DETAIL_ANALYSIS_BOX,
                     ),
                     class_name="w-full lg:w-64 shrink-0 lg:ml-6 mt-6 lg:mt-0",
                 ),
                 class_name="flex flex-col lg:flex-row",
             ),
-            class_name=f"{GlassStyles.PANEL} p-6 rounded-xl mb-8 animate-fade-in",
+            class_name=GlassStyles.BIOMARKER_DETAIL_PANEL,
         ),
     )
 
 
 def treatment_card(treatment: PortalTreatment) -> rx.Component:
-    """Treatment card with dark theme styling."""
+    """Treatment card with dark theme styling using GlassStyles."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.icon("activity", class_name="w-5 h-5 text-teal-400"),
-                class_name="w-10 h-10 rounded-full bg-teal-500/10 flex items-center justify-center mr-3 shrink-0 border border-teal-500/20",
+                rx.icon("activity", class_name=GlassStyles.PORTAL_TREATMENT_ICON),
+                class_name=GlassStyles.PORTAL_TREATMENT_ICON_CONTAINER,
             ),
             rx.el.div(
                 rx.el.h4(
-                    treatment["name"], class_name="text-sm font-semibold text-white"
+                    treatment["name"], class_name=GlassStyles.PORTAL_TREATMENT_TITLE
                 ),
                 rx.el.p(
                     f"{treatment['frequency']} • {treatment['duration']}",
-                    class_name="text-xs text-slate-400",
+                    class_name=GlassStyles.PORTAL_TREATMENT_META,
                 ),
             ),
             class_name="flex items-center",
@@ -204,11 +210,11 @@ def treatment_card(treatment: PortalTreatment) -> rx.Component:
         rx.el.div(
             rx.el.span(
                 treatment["status"],
-                class_name="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20",
+                class_name=GlassStyles.PORTAL_TREATMENT_STATUS_BADGE,
             ),
             class_name="ml-auto",
         ),
-        class_name=f"{GlassStyles.PANEL} p-4 rounded-xl hover:bg-white/10 transition-all",
+        class_name=GlassStyles.PORTAL_TREATMENT_CARD,
     )
 
 
@@ -255,9 +261,9 @@ def tab_button(label: str, tab_id: str, icon: str) -> rx.Component:
     return rx.el.button(
         rx.icon(icon, class_name="w-4 h-4 mr-2"),
         label,
-        on_click=lambda: HealthDashboardState.set_active_tab(tab_id),
+        on_click=lambda: SettingsState.set_active_tab(tab_id),
         class_name=rx.cond(
-            HealthDashboardState.active_tab == tab_id,
+            SettingsState.active_tab == tab_id,
             "flex items-center px-4 py-2.5 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30 transition-all",
             "flex items-center px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition-all",
         ),

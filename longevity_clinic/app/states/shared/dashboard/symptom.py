@@ -385,6 +385,14 @@ class SymptomState(rx.State):
             self.symptom_logs = [new_log, *self.symptom_logs]
         self.show_symptom_modal = False
 
+    def reset_data_loaded(self):
+        """Reset data loaded flag to allow reload on next load call.
+
+        Unlike clear_data(), this preserves existing data to prevent UI flicker
+        while new data is being fetched.
+        """
+        self._data_loaded = False
+
     def clear_data(self):
         """Clear all symptom data."""
         self.symptoms = []

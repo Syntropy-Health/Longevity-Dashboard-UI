@@ -7,7 +7,7 @@
 | Document | Description |
 |----------|-------------|
 | [README.md](./README.md) (this file) | State architecture, loading patterns, best practices |
-| [processes/CHECKIN.md](./processes/CHECKIN.md) | Check-in data flow: patient input, call log CDC, dashboard sync |
+| [processes/CHECKIN.md](./processes/CHECKIN.md) | Check-in data flow: patient input, call log CDC, dashboard sync, **user_id segregation** |
 | [SYSTEM.md](./SYSTEM.md) | System architecture, future work: webhooks, task queues |
 
 ## Quick Reference
@@ -22,7 +22,7 @@
 | `/admin/checkins` | `CheckinState.load_admin_checkins` | `CheckinState` |
 | `/admin/treatments` | `TreatmentState.load_protocols` | `TreatmentState` |
 | `/patient/portal` | `BiomarkerState.load_biomarkers`, decomposed dashboard states | `BiomarkerState`, `FoodState`, `MedicationState`, etc. |
-| `/patient/checkins` | `BiomarkerState.load_biomarkers`, `CheckinState.refresh_call_logs` | `BiomarkerState`, `CheckinState` |
+| `/patient/checkins` | Decomposed dashboard states, `CheckinState.start_periodic_call_logs_refresh` | `BiomarkerState`, `CheckinState`, `FoodState`, `MedicationState`, `SymptomState` |
 | `/patient/treatment-search` | `TreatmentSearchState.load_treatments` | `TreatmentSearchState` |
 | `/patient/analytics` | - | - |
 | `/patient/settings` | - | - |
@@ -33,6 +33,25 @@
 |------|-------|--------|----------|
 | `on_load` | Page | Before render, on route navigation | Data fetching, auth checks |
 | `on_mount` | Component | After DOM mount | UI initialization, tab defaults |
+
+### Periodic Background Refresh Pattern
+
+The `/patient/checkins` page uses `CheckinState.start_periodic_call_logs_refresh` for CDC polling:
+
+1. **Immediate refresh** on page load via `refresh_call_logs`
+2. **Periodic refresh** every `process_config.refresh_interval` seconds
+3. **Dashboard sync** after processing: resets `_data_loaded` flags and reloads `FoodState`, `MedicationState`, `SymptomState`
+
+```python
+# After processing new call logs, trigger dashboard refresh:
+if processed_count > 0:
+    yield FoodState.reset_data_loaded  # Clear cache guard
+    yield FoodState.load_food_data
+    yield MedicationState.reset_data_loaded
+    yield MedicationState.load_medication_data
+    yield SymptomState.reset_data_loaded
+    yield SymptomState.load_symptom_data
+```
 
 ## State Architecture
 
@@ -129,17 +148,25 @@ user_id = auth_state.user_id
 
 ### Guard Variables
 
-| State | Guard Variable | Reset On |
-|-------|---------------|----------|
+| State | Guard Variable | Reset Methods |
+|-------|---------------|---------------|
 | `BiomarkerState` | `_data_loaded` | - |
-| `FoodState` | `_data_loaded` | `clear_data()` |
-| `MedicationState` | `_data_loaded` | `clear_data()` |
+| `FoodState` | `_data_loaded` | `reset_data_loaded()`, `clear_data()` |
+| `MedicationState` | `_data_loaded` | `reset_data_loaded()`, `clear_data()` |
 | `ConditionState` | `_data_loaded` | `clear_data()` |
-| `SymptomState` | `_data_loaded` | `clear_data()` |
+| `SymptomState` | `_data_loaded` | `reset_data_loaded()`, `clear_data()` |
 | `AdminPatientHealthState` | `_data_loaded` | `clear_patient_health_data()` |
 | `CheckinState` | `_admin_data_loaded` | - |
 | `AdminMetricsState` | `_data_loaded` | `refresh_metrics()` |
 | `TreatmentState` | `_loaded` | - |
+
+**Force Reload Pattern**: Use `reset_data_loaded()` to clear the guard without clearing data (prevents UI flicker):
+
+```python
+# From another state that needs to trigger a reload:
+yield FoodState.reset_data_loaded  # Clear guard, preserve data
+yield FoodState.load_food_data     # Will now execute
+```
 
 ## Event Handler Types
 

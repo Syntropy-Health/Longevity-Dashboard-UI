@@ -10,9 +10,11 @@ from typing import Any
 import reflex as rx
 
 from ....config import current_config, get_logger
-from ....data.schemas.llm import (
-    MedicationEntryModel as MedicationEntry,
-    PatientTreatmentModel as Prescription,
+from ....data.schemas.state import (
+    MedicationLogEntry,
+    MedicationLogEntryStateModel,
+    Prescription,
+    PrescriptionStateModel,
 )
 from ....functions.db_utils import (
     get_medication_entries_sync,
@@ -31,8 +33,8 @@ class MedicationState(rx.State):
     - prescriptions: What's prescribed (via PatientTreatment)
     """
 
-    # Data
-    medication_entries: list[MedicationEntry] = []
+    # Data - TypedDicts for Reflex foreach compatibility
+    medication_entries: list[MedicationLogEntry] = []
     prescriptions: list[Prescription] = []
 
     # Medication entry (log) detail modal
@@ -139,14 +141,14 @@ class MedicationState(rx.State):
         """Calculate overall medication adherence from prescriptions."""
         if not self.prescriptions:
             return 0.0
-        return sum(m.adherence_rate for m in self.prescriptions) / len(
+        return sum(m.get("adherence_rate", 0.0) for m in self.prescriptions) / len(
             self.prescriptions
         )
 
     @rx.var
     def active_prescriptions_count(self) -> int:
         """Count of active medication prescriptions."""
-        return len([s for s in self.prescriptions if s.status == "active"])
+        return len([s for s in self.prescriptions if s.get("status") == "active"])
 
     @rx.var
     def medication_entries_count(self) -> int:
@@ -158,11 +160,14 @@ class MedicationState(rx.State):
     # =========================================================================
 
     @rx.var
-    def medication_entries_paginated(self) -> list[MedicationEntry]:
+    def medication_entries_paginated(self) -> list[MedicationLogEntryStateModel]:
         """Paginated slice of Medication Entries."""
         start = (self.medication_entries_page - 1) * self._MED_LOGS_PAGE_SIZE
         end = start + self._MED_LOGS_PAGE_SIZE
-        return self.medication_entries[start:end]
+        return [
+            MedicationLogEntryStateModel(**entry)
+            for entry in self.medication_entries[start:end]
+        ]
 
     @rx.var
     def medication_entries_total_pages(self) -> int:
@@ -198,11 +203,11 @@ class MedicationState(rx.State):
     # =========================================================================
 
     @rx.var
-    def prescriptions_paginated(self) -> list[Prescription]:
+    def prescriptions_paginated(self) -> list[PrescriptionStateModel]:
         """Paginated slice of medication prescriptions."""
         start = (self.prescriptions_page - 1) * self._MED_SUBS_PAGE_SIZE
         end = start + self._MED_SUBS_PAGE_SIZE
-        return self.prescriptions[start:end]
+        return [PrescriptionStateModel(**p) for p in self.prescriptions[start:end]]
 
     @rx.var
     def prescriptions_total_pages(self) -> int:
@@ -366,6 +371,14 @@ class MedicationState(rx.State):
         """Log dose for a medication."""
         self.show_prescription_modal = False
         self.show_medication_modal = False
+
+    def reset_data_loaded(self):
+        """Reset data loaded flag to allow reload on next load call.
+
+        Unlike clear_data(), this preserves existing data to prevent UI flicker
+        while new data is being fetched.
+        """
+        self._data_loaded = False
 
     def clear_data(self):
         """Clear all medication data."""

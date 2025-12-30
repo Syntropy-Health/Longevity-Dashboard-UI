@@ -750,9 +750,13 @@ class CheckinState(rx.State):
             logger.debug("Loaded %d checkins from DB", len(checkins_from_db))
 
             # Trigger dashboard refresh so user sees new health entries
+            # Reset data_loaded flags first to bypass cache guards, then reload
             if processed_count > 0:
+                yield FoodState.reset_data_loaded
                 yield FoodState.load_food_data
+                yield MedicationState.reset_data_loaded
                 yield MedicationState.load_medication_data
+                yield SymptomState.reset_data_loaded
                 yield SymptomState.load_symptom_data
 
         except Exception as e:
@@ -763,7 +767,10 @@ class CheckinState(rx.State):
 
     @rx.event(background=True)
     async def start_periodic_call_logs_refresh(self):
-        """Start periodic refresh loop for call logs (uses process_config.refresh_interval)."""
+        """Start periodic refresh loop for call logs (uses process_config.refresh_interval).
+
+        Triggers an immediate refresh on start, then continues refreshing periodically.
+        """
         async with self:
             if self.is_processing_background:
                 return
@@ -773,14 +780,24 @@ class CheckinState(rx.State):
             "Periodic refresh started (interval=%ds)", process_config.refresh_interval
         )
 
+        # Immediate refresh on page load
+        yield CheckinState.refresh_call_logs
+
         while True:
+            async with self:
+                if not self.is_processing_background:
+                    break
+
+            # Wait before next refresh
+            await asyncio.sleep(process_config.refresh_interval)
+
+            # Check again after sleep (user may have navigated away)
             async with self:
                 if not self.is_processing_background:
                     break
 
             # Trigger full refresh pipeline
             yield CheckinState.refresh_call_logs
-            await asyncio.sleep(process_config.refresh_interval)
 
         logger.debug("Periodic refresh stopped")
 

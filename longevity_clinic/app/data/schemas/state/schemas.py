@@ -1,15 +1,67 @@
 """
-State schema definitions (TypedDicts) for Reflex state management.
+State schema definitions for Reflex state management.
 
-This module contains TypedDict definitions that are used in Reflex state
-classes for type-safe state management. These are NOT Pydantic models -
-use schemas/llm/ for LLM-related Pydantic models.
+This module contains:
+- TypedDict definitions for type hints and dict-based state
+- Pydantic models (suffixed with Model) for Reflex foreach compatibility
 
-Naming convention: Plain names for TypedDicts (e.g., Patient, CheckIn)
-since they're used directly in component props.
+Naming convention:
+- TypedDicts: Plain names (e.g., FoodEntry, Prescription)
+- Pydantic models: Suffixed with Model (e.g., FoodEntryStateModel)
 """
 
 from typing import TypedDict
+
+from pydantic import BaseModel
+
+# =============================================================================
+# Pydantic Models for Reflex foreach compatibility
+# =============================================================================
+
+
+class FoodEntryStateModel(BaseModel):
+    """Pydantic model for food entries in Reflex foreach.
+
+    Used in computed vars that need to be iterated with rx.foreach.
+    """
+
+    id: str = ""
+    name: str = ""
+    amount: str = ""
+    calories: int = 0
+    protein: float = 0.0
+    carbs: float = 0.0
+    fat: float = 0.0
+    time: str = ""
+    meal_type: str = ""
+    logged_at: str | None = None
+
+
+class MedicationLogEntryStateModel(BaseModel):
+    """Pydantic model for medication log entries in Reflex foreach."""
+
+    id: str = ""
+    name: str = ""
+    dosage: str = ""
+    taken_at: str | None = None
+    notes: str = ""
+
+
+class PrescriptionStateModel(BaseModel):
+    """Pydantic model for prescriptions in Reflex foreach."""
+
+    id: str = ""
+    name: str = ""
+    category: str = ""
+    dosage: str = ""
+    frequency: str = ""
+    instructions: str = ""
+    status: str = ""
+    adherence_rate: float = 0.0
+    assigned_by: str = ""
+    sessions_completed: int = 0
+    sessions_total: int | None = None
+
 
 # =============================================================================
 # Patient Schemas
@@ -47,6 +99,69 @@ class NutritionSummary(TypedDict):
     total_carbs: float
     total_fat: float
     water_intake: float
+
+
+class FoodEntry(TypedDict, total=False):
+    """Food log entry for patient dashboard.
+
+    TypedDict for Reflex foreach compatibility. Mirrors FoodEntryModel fields.
+    """
+
+    id: str
+    name: str
+    amount: str
+    calories: int
+    protein: float
+    carbs: float
+    fat: float
+    time: str  # Display time (e.g., "8:00 AM")
+    meal_type: str  # breakfast, lunch, dinner, snack
+    logged_at: str | None  # ISO timestamp for filtering
+
+
+class MedicationLogEntry(TypedDict, total=False):
+    """Medication log entry for patient dashboard.
+
+    TypedDict for Reflex foreach compatibility. Mirrors MedicationEntryModel.
+    """
+
+    id: str
+    name: str
+    dosage: str
+    taken_at: str | None
+    notes: str
+
+
+class Prescription(TypedDict, total=False):
+    """Prescription (patient treatment) for patient dashboard.
+
+    TypedDict for Reflex foreach compatibility. Mirrors PatientTreatmentModel.
+    """
+
+    id: str
+    name: str
+    category: str
+    dosage: str
+    frequency: str
+    instructions: str
+    status: str  # active, completed, paused
+    adherence_rate: float
+    assigned_by: str
+    sessions_completed: int
+    sessions_total: int | None
+
+
+class SymptomLogEntry(TypedDict, total=False):
+    """Symptom log entry for patient dashboard.
+
+    TypedDict for Reflex foreach compatibility.
+    """
+
+    id: str
+    name: str
+    severity: str
+    notes: str
+    logged_at: str | None
 
 
 class Reminder(TypedDict):
@@ -377,12 +492,16 @@ __all__ = [
     "CallLogEntry",
     "CheckIn",
     "CheckInWithTranscript",
+    "FoodEntry",
+    "MedicationLogEntry",
     "Notification",
     "NutritionSummary",
     "Patient",
     "PortalAppointment",
     "PortalTreatment",
+    "Prescription",
     "Reminder",
+    "SymptomLogEntry",
     "TimeSlot",
     "TranscriptSummary",
     "TreatmentCategoryGroup",

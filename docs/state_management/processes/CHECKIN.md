@@ -95,27 +95,27 @@ sequenceDiagram
     User->>Modal: Record voice / Enter text
     User->>Modal: Click "Save"
     Modal->>CheckinState: save_checkin_and_log_health()
-    
+
     Note over CheckinState: Set checkin_saving = True
-    
+
     CheckinState->>VlogsAgent: parse_checkin_with_health_data(content)
     VlogsAgent->>VlogsAgent: LLM extracts structured data
     VlogsAgent-->>CheckinState: MetricLogsOutput
-    
+
     CheckinState->>Database: create_checkin_sync()
     Database-->>CheckinState: CheckIn record
-    
+
     CheckinState->>Database: save_health_entries_sync()
     Note over Database: INSERT medication_entries
     Note over Database: INSERT food_log_entries
     Note over Database: INSERT symptom_entries
-    
+
     CheckinState->>CheckinState: Reload checkins from DB
-    
+
     Note over CheckinState: Set checkin_saving = False
-    
+
     CheckinState->>Modal: Close modal
-    
+
     User->>Dashboard: Navigate to portal
     Dashboard->>Database: get_medications_sync()
     Dashboard->>Database: get_food_entries_sync()
@@ -188,15 +188,15 @@ sequenceDiagram
     participant Database
 
     Page->>CheckinState: on_mount: start_calls_to_checkin_sync_loop()
-    
+
     Note over CheckinState: is_processing_background = True
-    
+
     loop Every poll_interval seconds
         CheckinState->>VlogsAgent: process_unprocessed_logs()
-        
+
         VlogsAgent->>Database: SELECT * FROM call_logs WHERE processed_to_metrics = False
         Database-->>VlogsAgent: Unprocessed call logs
-        
+
         loop For each unprocessed call log
             VlogsAgent->>Database: Get transcript from call_transcripts
             VlogsAgent->>VlogsAgent: LLM extracts MetricLogsOutput
@@ -207,13 +207,13 @@ sequenceDiagram
             Note over Database: INSERT symptom_entries
             VlogsAgent->>Database: SET processed_to_metrics = True
         end
-        
+
         VlogsAgent-->>CheckinState: processed_count
-        
+
         alt processed_count > 0
             CheckinState->>Database: Reload checkins
         end
-        
+
         CheckinState->>CheckinState: await asyncio.sleep(poll_interval)
     end
 
@@ -234,9 +234,9 @@ sequenceDiagram
 | Step | Function | Table(s) |
 |------|----------|----------|
 | 1 | `fetch_and_sync_raw()` | `call_logs`, `call_transcripts` |
-| 2 | `get_unprocessed_call_logs_sync()` | `call_logs` (read) |
+| 2 | `claim_unprocessed_call_logs_sync()` | `call_logs` (atomic claim) |
 | 3 | `update_call_log_metrics()` | `checkins`, `medication_entries`, `food_log_entries`, `symptom_entries` |
-| 4 | `mark_call_log_processed_sync()` | `call_logs.processed_to_metrics = True` |
+| 4 | (implicit) | `call_logs.processed_to_metrics = True` (set during claim) |
 
 ### Configuration
 
@@ -261,7 +261,7 @@ async def load_dashboard_data(self):
     # Get user ID from AuthState
     auth_state = await self.get_state(AuthState)
     user_id = auth_state.user_id
-    
+
     # Fetch from normalized tables
     medications = await asyncio.to_thread(get_medications_sync, user_id)
     food_entries = await asyncio.to_thread(get_food_entries_sync, user_id)
@@ -362,3 +362,66 @@ except Exception as e:
 - [State Management Overview](../README.md) - Loading guards, event patterns
 - [VlogsAgent Setup](../../vlogs_agent_setup.md) - LLM configuration
 - [System Architecture](../SYSTEM.md) - Future work: webhooks, task queues
+
+---
+
+## User ID Segregation & Data Security
+
+All health data (medications, food, symptoms) is segregated by `user_id` to ensure patients only see their own data.
+
+### User ID Assignment Flow (CDC Pipeline)
+
+```mermaid
+flowchart TB
+    A[External API: caller_phone] -->|parse_phone| B[sync_raw_log_to_db]
+    B -->|phone lookup| C{User exists?}
+    C -->|Yes| D[Return existing user_id]
+    C -->|No + customer_name| E[create_user_sync]
+    E --> D
+    D --> F[CallLog.user_id]
+    F --> G[update_call_log_metrics]
+    G --> H[CheckIn.user_id = CallLog.user_id]
+    G --> I[MedicationEntry.user_id = CallLog.user_id]
+    G --> J[FoodLogEntry.user_id = CallLog.user_id]
+    G --> K[SymptomEntry.user_id = CallLog.user_id]
+```
+
+### Database Functions with User ID
+
+| Function | user_id Source | Filter Pattern |
+|----------|---------------|----------------|
+| `sync_raw_log_to_db()` | Phone → `get_or_create_user_by_phone()` | Creates/assigns |
+| `update_call_log_metrics()` | `CallLog.user_id` | Inherited to all entries |
+| `create_checkin_sync()` | `AuthState.user_id` (passed in) | Assigned to CheckIn |
+| `save_health_entries_sync()` | `user_id` param | Assigned to all entries |
+| `get_food_entries_sync()` | `user_id` param | `.where(FoodLogEntry.user_id == user_id)` |
+| `get_medication_entries_sync()` | `user_id` param | `.where(MedicationEntry.user_id == user_id)` |
+| `get_symptoms_sync()` | `user_id` param | `.where(SymptomEntry.user_id == user_id)` |
+
+### Role-Based Check-in Loading
+
+```python
+# CheckinState - role-based data loading
+checkins_from_db = await (
+    self._load_all_checkins_from_db()           # Admin: no user_id filter
+    if is_admin
+    else self._load_checkins_from_db(user_id=user_id)  # Patient: filtered
+)
+
+# Patient query includes WHERE clause
+def _query_checkins(uid: int):
+    session.exec(
+        select(CheckInDB, ...)
+        .where(CheckInDB.user_id == uid)  # ✅ User-filtered
+        ...
+    )
+```
+
+### Security Guarantees
+
+| Scenario | Behavior |
+|----------|----------|
+| Patient views dashboard | Only sees entries where `user_id = AuthState.user_id` |
+| Call log from unknown phone | `user_id = None` until customer_name available |
+| Admin views check-ins | Sees all check-ins (no user_id filter) |
+| Admin views patient health | Uses `AdminPatientHealthState.load_patient_health_data(patient_id)` |

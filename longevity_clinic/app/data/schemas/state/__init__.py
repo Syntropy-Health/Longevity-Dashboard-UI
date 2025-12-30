@@ -1,13 +1,12 @@
 """
-State schemas (TypedDicts) for Reflex state management.
+State schemas for Reflex state management.
 
-Contains TypedDict definitions used in Reflex state classes for:
-- Component props
-- API responses
-- UI display data
+Contains:
+- TypedDict definitions for type hints and dict-based state
+- Pydantic models (suffixed with StateModel) for Reflex foreach compatibility
 
 Usage:
-    from longevity_clinic.app.data.schemas.state import Patient, Notification, Biomarker
+    from longevity_clinic.app.data.schemas.state import Patient, FoodEntryStateModel
 """
 
 from .schemas import (
@@ -25,12 +24,19 @@ from .schemas import (
     CheckInCreated,
     CheckInStatusUpdate,
     CheckInWithTranscript,
+    FoodEntry,
+    FoodEntryStateModel,
+    MedicationLogEntry,
+    MedicationLogEntryStateModel,
     Notification,
     NutritionSummary,
     Patient,
     PortalAppointment,
     PortalTreatment,
+    Prescription,
+    PrescriptionStateModel,
     Reminder,
+    SymptomLogEntry,
     TimeSlot,
     TranscriptSummary,
     TreatmentCategoryGroup,
@@ -53,12 +59,19 @@ __all__ = [
     "CheckInCreated",
     "CheckInStatusUpdate",
     "CheckInWithTranscript",
+    "FoodEntry",
+    "FoodEntryStateModel",
+    "MedicationLogEntry",
+    "MedicationLogEntryStateModel",
     "Notification",
     "NutritionSummary",
     "Patient",
     "PortalAppointment",
     "PortalTreatment",
+    "Prescription",
+    "PrescriptionStateModel",
     "Reminder",
+    "SymptomLogEntry",
     "TimeSlot",
     "TranscriptSummary",
     "TreatmentCategoryGroup",

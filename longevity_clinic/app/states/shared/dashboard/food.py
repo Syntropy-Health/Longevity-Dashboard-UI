@@ -6,14 +6,12 @@ Separates today's meals from past meals with timezone-aware date comparison.
 
 import asyncio
 from datetime import datetime
-from typing import Any
 from zoneinfo import ZoneInfo
 
 import reflex as rx
 
 from ....config import current_config, get_logger
-from ....data.schemas.llm import FoodEntryModel as FoodEntry
-from ....data.schemas.state import NutritionSummary
+from ....data.schemas.state import FoodEntry, FoodEntryStateModel, NutritionSummary
 from ....functions.db_utils import get_food_entries_sync
 from ...auth.base import AuthState
 from .settings import SettingsState
@@ -31,10 +29,10 @@ DEFAULT_NUTRITION: NutritionSummary = {
 }
 
 
-def calculate_nutrition(food_entries: list[FoodEntry]) -> dict[str, Any]:
+def calculate_nutrition(food_entries: list[FoodEntry]) -> NutritionSummary:
     """Calculate nutrition summary from food entries."""
     if not food_entries:
-        return dict(DEFAULT_NUTRITION)
+        return dict(DEFAULT_NUTRITION)  # type: ignore[return-value]
 
     total_calories = sum(entry.get("calories", 0) for entry in food_entries)
     total_protein = sum(float(entry.get("protein", 0)) for entry in food_entries)
@@ -74,10 +72,10 @@ def parse_logged_at(entry: FoodEntry) -> datetime | None:
 class FoodState(rx.State):
     """State for food and nutrition tracking."""
 
-    # Data - all food entries (raw from DB)
+    # Data - all food entries (TypedDict for Reflex foreach compatibility)
     food_entries: list[FoodEntry] = []
     # Nutrition summary computed from TODAY's meals only
-    nutrition_summary: dict[str, Any] = dict(DEFAULT_NUTRITION)
+    nutrition_summary: NutritionSummary = dict(DEFAULT_NUTRITION)  # type: ignore[assignment]
 
     # Add food modal state
     show_add_food_modal: bool = False
@@ -90,13 +88,16 @@ class FoodState(rx.State):
 
     # Detail modal state
     show_food_detail_modal: bool = False
-    selected_food_entry: dict[str, Any] = {}
+    selected_food_entry: FoodEntry = {}  # type: ignore[assignment]
 
     # Pagination - page size from config
     _FOOD_PAGE_SIZE: int = current_config.food_page_size
     # Separate pagination for today and past
     todays_meals_page: int = 1
     past_meals_page: int = 1
+
+    # User timezone (synced from SettingsState during load)
+    _user_timezone: str = current_config.default_timezone
 
     # Loading
     is_loading: bool = False
@@ -116,13 +117,7 @@ class FoodState(rx.State):
     # =========================================================================
 
     @rx.var
-    def _user_timezone(self) -> str:
-        """Get user's timezone from SettingsState."""
-        # Default to config timezone - will be updated when SettingsState is available
-        return current_config.default_timezone
-
-    @rx.var
-    def todays_meals(self) -> list[FoodEntry]:
+    def todays_meals(self) -> list[FoodEntryStateModel]:
         """Filter food entries to only today's meals (user's timezone)."""
         try:
             tz = ZoneInfo(self._user_timezone)
@@ -137,7 +132,7 @@ class FoodState(rx.State):
             logged_at = parse_logged_at(entry)
             if logged_at is None:
                 # If no timestamp, assume it's from today (for manual entries)
-                result.append(entry)
+                result.append(FoodEntryStateModel(**entry))
                 continue
 
             # Make timezone-aware if naive
@@ -147,12 +142,12 @@ class FoodState(rx.State):
             # Convert to user's timezone and compare dates
             logged_local = logged_at.astimezone(tz)
             if logged_local >= today_start:
-                result.append(entry)
+                result.append(FoodEntryStateModel(**entry))
 
         return result
 
     @rx.var
-    def past_meals(self) -> list[FoodEntry]:
+    def past_meals(self) -> list[FoodEntryStateModel]:
         """Filter food entries to past meals (before today in user's timezone)."""
         try:
             tz = ZoneInfo(self._user_timezone)
@@ -176,7 +171,7 @@ class FoodState(rx.State):
             # Convert to user's timezone and compare dates
             logged_local = logged_at.astimezone(tz)
             if logged_local < today_start:
-                result.append(entry)
+                result.append(FoodEntryStateModel(**entry))
 
         return result
 
@@ -230,7 +225,7 @@ class FoodState(rx.State):
     # =========================================================================
 
     @rx.var
-    def todays_meals_paginated(self) -> list[FoodEntry]:
+    def todays_meals_paginated(self) -> list[FoodEntryStateModel]:
         """Paginated slice of today's meals."""
         start = (self.todays_meals_page - 1) * self._FOOD_PAGE_SIZE
         end = start + self._FOOD_PAGE_SIZE
@@ -269,7 +264,7 @@ class FoodState(rx.State):
     # =========================================================================
 
     @rx.var
-    def past_meals_paginated(self) -> list[FoodEntry]:
+    def past_meals_paginated(self) -> list[FoodEntryStateModel]:
         """Paginated slice of past meals."""
         start = (self.past_meals_page - 1) * self._FOOD_PAGE_SIZE
         end = start + self._FOOD_PAGE_SIZE
@@ -313,7 +308,7 @@ class FoodState(rx.State):
     # =========================================================================
 
     @rx.var
-    def food_entries_paginated(self) -> list[FoodEntry]:
+    def food_entries_paginated(self) -> list[FoodEntryStateModel]:
         """Paginated slice of food entries (legacy - now uses todays_meals)."""
         return self.todays_meals_paginated
 
@@ -343,7 +338,7 @@ class FoodState(rx.State):
 
     def _compute_todays_nutrition(
         self, entries: list[FoodEntry], timezone: str
-    ) -> dict[str, Any]:
+    ) -> NutritionSummary:
         """Compute nutrition from today's meals only."""
         try:
             tz = ZoneInfo(timezone)
@@ -383,9 +378,10 @@ class FoodState(rx.State):
             self.is_loading = True
             auth_state = await self.get_state(AuthState)
             user_id = auth_state.user_id
-            # Get user's timezone from settings
+            # Get user's timezone from settings and sync to this state
             settings_state = await self.get_state(SettingsState)
             timezone = settings_state.user_timezone
+            self._user_timezone = timezone
 
         if not user_id:
             async with self:
@@ -404,6 +400,7 @@ class FoodState(rx.State):
             async with self:
                 self.food_entries = food_entries
                 self.nutrition_summary = nutrition
+                self._user_timezone = timezone
                 self.is_loading = False
                 self._data_loaded = True
         except Exception as e:
@@ -478,7 +475,7 @@ class FoodState(rx.State):
         self.new_food_fat = ""
         self.new_food_meal_type = "snack"
 
-    def select_food_entry(self, entry: dict[str, Any]):
+    def select_food_entry(self, entry: FoodEntry):
         """Select a food entry for viewing details."""
         self.selected_food_entry = entry
         self.show_food_detail_modal = True
@@ -515,23 +512,32 @@ class FoodState(rx.State):
         # Set logged_at to current time in ISO format
         now = datetime.now(ZoneInfo("UTC"))
 
-        new_entry = FoodEntry(
-            id=str(uuid.uuid4())[:8],
-            name=self.new_food_name,
-            calories=int(self.new_food_calories) if self.new_food_calories else 0,
-            protein=float(self.new_food_protein) if self.new_food_protein else 0.0,
-            carbs=float(self.new_food_carbs) if self.new_food_carbs else 0.0,
-            fat=float(self.new_food_fat) if self.new_food_fat else 0.0,
-            time=now.strftime("%I:%M %p"),
-            meal_type=self.new_food_meal_type,
-            logged_at=now.isoformat(),
-        )
+        new_entry: FoodEntry = {
+            "id": str(uuid.uuid4())[:8],
+            "name": self.new_food_name,
+            "amount": "",
+            "calories": int(self.new_food_calories) if self.new_food_calories else 0,
+            "protein": float(self.new_food_protein) if self.new_food_protein else 0.0,
+            "carbs": float(self.new_food_carbs) if self.new_food_carbs else 0.0,
+            "fat": float(self.new_food_fat) if self.new_food_fat else 0.0,
+            "time": now.strftime("%I:%M %p"),
+            "meal_type": self.new_food_meal_type,
+            "logged_at": now.isoformat(),
+        }
         self.food_entries = [new_entry, *self.food_entries]
         # Recompute nutrition from today's meals
         self.nutrition_summary = self._compute_todays_nutrition(
             self.food_entries, self._user_timezone
         )
         self.show_add_food_modal = False
+
+    def reset_data_loaded(self):
+        """Reset data loaded flag to allow reload on next load call.
+
+        Unlike clear_data(), this preserves existing data to prevent UI flicker
+        while new data is being fetched.
+        """
+        self._data_loaded = False
 
     def clear_data(self):
         """Clear all food data."""

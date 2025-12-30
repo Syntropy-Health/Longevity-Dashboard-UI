@@ -17,12 +17,18 @@ from longevity_clinic.app.data.schemas.db import (
     TreatmentCategory as TreatmentCategoryDB,
 )
 from longevity_clinic.app.data.schemas.db.domain_enums import TreatmentCategoryEnum
+
+# Import Pydantic models for internal use (LLM extraction)
 from longevity_clinic.app.data.schemas.llm import (
-    FoodEntryModel as FoodEntry,
-    MedicationEntryModel as MedicationEntry,
-    PatientTreatmentModel as PatientTreatment,
     Symptom,
     SymptomEntryModel as SymptomLog,
+)
+
+# Import TypedDicts for return types (used in state)
+from longevity_clinic.app.data.schemas.state import (
+    FoodEntry,
+    MedicationLogEntry,
+    Prescription,
 )
 
 logger = get_logger("longevity_clinic.db_utils.health")
@@ -37,12 +43,12 @@ def get_prescriptions_sync(
     user_id: int,
     status: str | None = None,
     limit: int = 100,
-) -> list[PatientTreatment]:
+) -> list[Prescription]:
     """Get medication subscriptions (prescriptions) for a user.
 
     Queries PatientTreatment joined with Treatment and TreatmentCategory
     where category name = 'Medications'.
-    Returns PatientTreatmentModel (aliased as Prescription for compat).
+    Returns Prescription TypedDict for Reflex state compatibility.
     """
     try:
         with rx.session() as session:
@@ -70,7 +76,7 @@ def get_prescriptions_sync(
             )
 
             return [
-                PatientTreatment(
+                Prescription(
                     id=str(pt.id),
                     name=t.name,
                     category=cat.name,  # Get category name from TreatmentCategory
@@ -101,7 +107,7 @@ def get_prescriptions_sync(
 def get_medication_entries_sync(
     user_id: int,
     limit: int = 100,
-) -> list[MedicationEntry]:
+) -> list[MedicationLogEntry]:
     """Get Medication Entries (what was taken) for a user."""
     try:
         with rx.session() as session:
@@ -113,7 +119,7 @@ def get_medication_entries_sync(
             ).all()
 
             return [
-                MedicationEntry(
+                MedicationLogEntry(
                     id=str(log.id),
                     name=log.name,
                     dosage=log.dosage,
@@ -163,7 +169,7 @@ def create_medication_entry_sync(
 def get_medications_sync(
     user_id: int,
     limit: int = 100,
-) -> list[MedicationEntry]:
+) -> list[MedicationLogEntry]:
     """Get Medication Entries for a user (legacy alias for get_medication_entries_sync)."""
     return get_medication_entries_sync(user_id, limit)
 
@@ -242,6 +248,7 @@ def create_food_entry_sync(
                 fat=entry.fat or 0.0,
                 time=entry.consumed_at or "",
                 meal_type=entry.meal_type or "snack",
+                logged_at=entry.logged_at.isoformat() if entry.logged_at else None,
             )
     except Exception as e:
         logger.error("Failed to create food entry: %s", e)

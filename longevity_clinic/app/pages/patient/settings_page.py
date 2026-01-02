@@ -29,30 +29,176 @@ def settings_page() -> rx.Component:
             rx.el.div(
                 # Profile Section
                 rx.el.div(
-                    rx.el.h3(
-                        "Profile", class_name="text-lg font-semibold text-white mb-4"
+                    rx.el.div(
+                        rx.el.h3(
+                            "Profile", class_name="text-lg font-semibold text-white"
+                        ),
+                        rx.cond(
+                            ~AuthState.is_editing_profile,
+                            rx.el.button(
+                                rx.icon("pencil", class_name="w-4 h-4 mr-2"),
+                                "Edit",
+                                on_click=AuthState.start_editing_profile,
+                                class_name="flex items-center text-sm text-teal-400 hover:text-teal-300 transition-colors",
+                            ),
+                            rx.el.span(),
+                        ),
+                        class_name="flex items-center justify-between mb-4",
                     ),
                     rx.el.div(
-                        rx.el.div(
+                        # View Mode
+                        rx.cond(
+                            ~AuthState.is_editing_profile,
                             rx.el.div(
-                                rx.el.span(
-                                    AuthState.user_initials,
-                                    class_name="text-2xl font-bold text-teal-300",
+                                rx.el.div(
+                                    rx.el.div(
+                                        rx.el.span(
+                                            AuthState.user_initials,
+                                            class_name="text-2xl font-bold text-teal-300",
+                                        ),
+                                        class_name="w-20 h-20 rounded-full bg-teal-900/50 flex items-center justify-center border border-teal-500/30",
+                                    ),
+                                    rx.el.div(
+                                        rx.el.h4(
+                                            AuthState.user_full_name,
+                                            class_name="text-lg font-semibold text-white",
+                                        ),
+                                        rx.el.p(
+                                            AuthState.role_label,
+                                            class_name="text-sm text-teal-400 mb-2",
+                                        ),
+                                        rx.cond(
+                                            AuthState.user_email != "",
+                                            rx.el.p(
+                                                rx.icon(
+                                                    "mail",
+                                                    class_name="w-4 h-4 mr-2 inline-block text-slate-500",
+                                                ),
+                                                AuthState.user_email,
+                                                class_name="text-sm text-slate-300",
+                                            ),
+                                            rx.el.span(),
+                                        ),
+                                        rx.cond(
+                                            AuthState.user_phone_formatted != "",
+                                            rx.el.p(
+                                                rx.icon(
+                                                    "phone",
+                                                    class_name="w-4 h-4 mr-2 inline-block text-slate-500",
+                                                ),
+                                                AuthState.user_phone_formatted,
+                                                class_name="text-sm text-slate-300 mt-1",
+                                            ),
+                                            rx.el.span(),
+                                        ),
+                                        class_name="ml-4",
+                                    ),
+                                    class_name="flex items-start",
                                 ),
-                                class_name="w-20 h-20 rounded-full bg-teal-900/50 flex items-center justify-center border border-teal-500/30",
                             ),
+                            # Edit Mode
                             rx.el.div(
-                                rx.el.h4(
-                                    AuthState.user_full_name,
-                                    class_name="text-lg font-semibold text-white",
+                                # Success Message
+                                rx.cond(
+                                    AuthState.profile_update_success != "",
+                                    rx.el.div(
+                                        rx.icon(
+                                            "check-circle",
+                                            class_name="w-5 h-5 mr-2 text-green-400",
+                                        ),
+                                        AuthState.profile_update_success,
+                                        class_name="flex items-center p-3 mb-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm",
+                                    ),
+                                    rx.el.span(),
                                 ),
-                                rx.el.p(
-                                    AuthState.role_label,
-                                    class_name="text-sm text-teal-400",
+                                # Error Message
+                                rx.cond(
+                                    AuthState.profile_update_error != "",
+                                    rx.el.div(
+                                        rx.icon(
+                                            "alert-circle",
+                                            class_name="w-5 h-5 mr-2 text-red-400",
+                                        ),
+                                        AuthState.profile_update_error,
+                                        class_name="flex items-center p-3 mb-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm",
+                                    ),
+                                    rx.el.span(),
                                 ),
-                                class_name="ml-4",
+                                # Form Fields
+                                rx.el.div(
+                                    rx.el.label(
+                                        "Full Name",
+                                        class_name="block text-sm font-medium text-slate-300 mb-1",
+                                    ),
+                                    rx.el.input(
+                                        type="text",
+                                        value=AuthState.edit_full_name,
+                                        on_change=AuthState.set_edit_full_name,
+                                        placeholder="Enter your full name",
+                                        class_name=f"{GlassStyles.INPUT} w-full",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.label(
+                                        "Email",
+                                        class_name="block text-sm font-medium text-slate-300 mb-1",
+                                    ),
+                                    rx.el.input(
+                                        type="email",
+                                        value=AuthState.edit_email,
+                                        on_change=AuthState.set_edit_email,
+                                        placeholder="Enter your email",
+                                        class_name=f"{GlassStyles.INPUT} w-full",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.label(
+                                        "Phone Number",
+                                        class_name="block text-sm font-medium text-slate-300 mb-1",
+                                    ),
+                                    rx.el.input(
+                                        type="tel",
+                                        value=AuthState.edit_phone,
+                                        on_change=AuthState.set_edit_phone,
+                                        placeholder="+1 (XXX) XXX-XXXX",
+                                        class_name=f"{GlassStyles.INPUT} w-full",
+                                    ),
+                                    rx.el.p(
+                                        "Used for check-in calls and notifications",
+                                        class_name="text-xs text-slate-500 mt-1",
+                                    ),
+                                    class_name="mb-6",
+                                ),
+                                # Action Buttons
+                                rx.el.div(
+                                    rx.el.button(
+                                        "Cancel",
+                                        on_click=AuthState.cancel_editing_profile,
+                                        disabled=AuthState.is_loading,
+                                        class_name="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors mr-3",
+                                    ),
+                                    rx.el.button(
+                                        rx.cond(
+                                            AuthState.is_loading,
+                                            rx.el.span(
+                                                rx.icon(
+                                                    "loader-2",
+                                                    class_name="w-4 h-4 mr-2 animate-spin",
+                                                ),
+                                                "Saving...",
+                                                class_name="flex items-center",
+                                            ),
+                                            "Save Changes",
+                                        ),
+                                        on_click=AuthState.save_profile,
+                                        disabled=AuthState.is_loading,
+                                        class_name=f"{GlassStyles.BUTTON_PRIMARY} px-4 py-2 text-sm disabled:opacity-50",
+                                    ),
+                                    class_name="flex justify-end",
+                                ),
                             ),
-                            class_name="flex items-center",
                         ),
                         class_name=f"{GlassStyles.PANEL} p-6",
                     ),

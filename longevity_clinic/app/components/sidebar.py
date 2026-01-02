@@ -118,38 +118,46 @@ def sidebar_content() -> rx.Component:
             class_name="flex-1 py-4 overflow-y-auto scrollbar-hide",
         ),
         rx.el.div(
-            rx.el.div(
+            rx.link(
                 rx.el.div(
-                    rx.el.span(
-                        rx.cond(
-                            AuthState.user_initials != "",
-                            AuthState.user_initials,
-                            demo_user.initials,
+                    rx.el.div(
+                        rx.el.span(
+                            rx.cond(
+                                AuthState.user_initials != "",
+                                AuthState.user_initials,
+                                demo_user.initials,
+                            ),
+                            class_name="text-xs font-bold text-teal-300",
                         ),
-                        class_name="text-xs font-bold text-teal-300",
+                        class_name="w-10 h-10 rounded-full bg-teal-900/50 flex items-center justify-center mr-3 border border-teal-500/30",
                     ),
-                    class_name="w-10 h-10 rounded-full bg-teal-900/50 flex items-center justify-center mr-3 border border-teal-500/30",
+                    rx.el.div(
+                        rx.el.p(
+                            rx.cond(
+                                AuthState.user_full_name != "",
+                                AuthState.user_full_name,
+                                demo_user.full_name,
+                            ),
+                            class_name="text-sm font-medium text-white leading-none mb-1 truncate max-w-[120px]",
+                        ),
+                        rx.el.p(
+                            rx.cond(
+                                AuthState.role_label != "",
+                                AuthState.role_label,
+                                demo_user.role_label,
+                            ),
+                            class_name="text-[10px] text-teal-400 uppercase tracking-wider",
+                        ),
+                        class_name="flex flex-col flex-1 min-w-0",
+                    ),
+                    rx.icon(
+                        "chevron-right",
+                        class_name="w-4 h-4 text-slate-500 group-hover:text-teal-400 transition-colors ml-auto",
+                    ),
+                    class_name="flex items-center group cursor-pointer hover:bg-white/5 rounded-lg p-2 -m-2 transition-colors",
                 ),
-                rx.el.div(
-                    rx.el.p(
-                        rx.cond(
-                            AuthState.user_full_name != "",
-                            AuthState.user_full_name,
-                            demo_user.full_name,
-                        ),
-                        class_name="text-sm font-medium text-white leading-none mb-1 truncate max-w-[120px]",
-                    ),
-                    rx.el.p(
-                        rx.cond(
-                            AuthState.role_label != "",
-                            AuthState.role_label,
-                            demo_user.role_label,
-                        ),
-                        class_name="text-[10px] text-teal-400 uppercase tracking-wider",
-                    ),
-                    class_name="flex flex-col",
-                ),
-                class_name="flex items-center mb-4",
+                href="/patient/settings",
+                class_name="block",
             ),
             class_name="mt-auto p-4 border-t border-white/10 bg-slate-900/30",
         ),

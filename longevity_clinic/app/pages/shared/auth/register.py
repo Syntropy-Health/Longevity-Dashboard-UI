@@ -33,7 +33,7 @@ def register_form() -> rx.Component:
                 rx.cond(
                     AuthState.register_error != "",
                     rx.el.div(
-                        rx.icon("badge_alert", class_name="w-5 h-5 text-red-400 mr-2"),
+                        rx.icon("badge-alert", class_name="w-5 h-5 text-red-400 mr-2"),
                         rx.el.span(
                             AuthState.register_error,
                             class_name="text-sm text-red-300 font-medium",
@@ -125,7 +125,7 @@ def register_form() -> rx.Component:
                     rx.el.input(
                         type="tel",
                         name="phone",
-                        placeholder="+1 (555) 123-4567",
+                        placeholder="[+1] [555] [123-4567]",
                         required=True,
                         class_name=GlassStyles.INPUT,
                     ),

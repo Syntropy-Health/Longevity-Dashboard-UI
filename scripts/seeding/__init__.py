@@ -21,7 +21,7 @@ Or use the CLI:
 """
 
 from .appointments import load_appointments
-from .base import SeedResult, create_tables, drop_tables, get_engine
+from .base import SeedResult, create_tables, drop_tables, get_engine, reset_sequences
 from .biomarkers import (
     load_biomarker_aggregates,
     load_biomarker_definitions,
@@ -121,6 +121,9 @@ def load_all_seed_data(reset: bool = False) -> dict[str, SeedResult]:
         results["daily_metrics"] = load_daily_metrics(session)
         results["provider_metrics"] = load_provider_metrics(session)
 
+    # Reset PostgreSQL sequences to prevent PK conflicts on new inserts
+    reset_sequences(engine)
+
     return results
 
 
@@ -158,4 +161,5 @@ __all__ = [
     "load_treatments",
     "load_urgency_levels",
     "load_users",
+    "reset_sequences",
 ]

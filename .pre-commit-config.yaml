@@ -32,3 +32,12 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         always_run: true
+
+      # Remind to update feature tag when version files change
+      - id: check-feature-tag
+        name: Check feature tag is updated
+        entry: bash -c 'if git diff --cached --name-only | grep -qE "^longevity_clinic/app/(states|pages|components)/"; then echo "⚠️  Remember to update FEATURE_TAG in longevity_clinic/app/version.py if adding features"; fi; exit 0'
+        language: system
+        stages: [pre-commit]
+        pass_filenames: false
+        always_run: true

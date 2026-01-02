@@ -35,6 +35,7 @@ from seeding import (
     load_health_entries,
     load_symptom_trends,
     load_users,
+    reset_sequences,
 )
 
 import rxconfig  # noqa: F401
@@ -116,6 +117,9 @@ def load_selective_seed_data(categories: list[str]) -> dict[str, SeedResult]:
 
             result = loader(session, user_id_map)
             results[canonical] = result
+
+    # Reset PostgreSQL sequences to prevent PK conflicts on new inserts
+    reset_sequences(engine)
 
     return results
 

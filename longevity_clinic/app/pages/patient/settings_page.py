@@ -116,7 +116,7 @@ def settings_page() -> rx.Component:
                                     AuthState.profile_update_error != "",
                                     rx.el.div(
                                         rx.icon(
-                                            "alert-circle",
+                                            "circle-alert",
                                             class_name="w-5 h-5 mr-2 text-red-400",
                                         ),
                                         AuthState.profile_update_error,
@@ -162,7 +162,7 @@ def settings_page() -> rx.Component:
                                         type="tel",
                                         value=AuthState.edit_phone,
                                         on_change=AuthState.set_edit_phone,
-                                        placeholder="+1 (XXX) XXX-XXXX",
+                                        placeholder="[+1] [XXX] [XXX-XXXX]",
                                         class_name=f"{GlassStyles.INPUT} w-full",
                                     ),
                                     rx.el.p(
@@ -184,7 +184,7 @@ def settings_page() -> rx.Component:
                                             AuthState.is_loading,
                                             rx.el.span(
                                                 rx.icon(
-                                                    "loader-2",
+                                                    "loader-circle",
                                                     class_name="w-4 h-4 mr-2 animate-spin",
                                                 ),
                                                 "Saving...",

@@ -33,7 +33,7 @@ def login_form() -> rx.Component:
                 rx.cond(
                     AuthState.login_error != "",
                     rx.el.div(
-                        rx.icon("badge_alert", class_name="w-5 h-5 text-red-400 mr-2"),
+                        rx.icon("badge-alert", class_name="w-5 h-5 text-red-400 mr-2"),
                         rx.el.span(
                             AuthState.login_error,
                             class_name="text-sm text-red-300 font-medium",
